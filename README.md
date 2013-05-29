@@ -1,4 +1,0 @@
-mra
-===
-
-MapServer Rest API

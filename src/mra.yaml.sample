@@ -1,0 +1,23 @@
+storage:
+    mapfiles: "/path/to/your/mapfiles/directory"
+    resources: "/path/to/your/data/directory"
+
+mapserver:
+    url: "http://127.0.0.1/cgi-bin/mapserv?"
+    wms_version: "1.3.0"
+    wfs_version: "1.1.1"
+    wcs_version: "1.0.0"
+
+debug:
+    # web_debug allows for easy debuging in the the browser, should be deactivated in production.
+    web_debug: False
+    # Normaly some exceptions are transformed into web errors. (404, ...)
+    # This can be prevented by setting raise_all to True.
+    raise_all: False
+
+logging:
+    format: "%(asctime)s %(levelname)7s: (%(funcName)s:%(lineno)s) %(message)s"
+    file: "./mra.log"
+    level: "DEBUG"
+    # Add the logs to the generated output of the webapp by setting web_logs.
+    web_logs: False

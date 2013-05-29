@@ -1,0 +1,53 @@
+$def with (base, path, links, code)
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+  <head>
+    <title>MRA</title>
+    <link rel="StyleSheet" type="text/css" href="http://twitter.github.com/bootstrap/assets/css/bootstrap.css" />
+
+    <style>
+      .key:hover {
+      text-decoration:underline;
+      }
+    </style>
+  </head>
+
+  <body style="margin: 1em">
+    <div class="alert alert-block">
+      <h4>This data is also available in other formats!</h4>
+      Here is a list:
+      $for comma, (type, link) in ((',' if i < len(links)-1 else '.', data) for i, data in enumerate(links)):
+        <b><a href="$base$link">$type</a></b>$comma
+    </div>
+
+    <ul class="breadcrumb">
+      $for name in path[:-1]: <li><a href="$base$('/'.join(path[:loop.index]))">$name</a><span class="divider">/</span></li>
+      <li class="active">$path[-1]</li>
+    </ul>
+
+    <script>
+      function toggle(id) {
+        e = document.getElementById(id);
+        if (e.style.overflow != "hidden") {
+          old_size = e.offsetHeight;
+          e.style.overflow = "hidden";
+          e.style.maxHeight ="3.5em";
+          if (e.offsetHeight < old_size) {
+            e.parentNode.innerHTML += "<span class='more'>...</span>";
+          }
+        } else {
+          e.style.maxHeight = null;
+          e.style.overflow = "visible";
+          more = e.parentNode.lastChild;
+          if (more.className == "more") {
+            e.parentNode.removeChild(more);
+          }
+        }
+      }
+    </script>
+
+$:code
+  </body>
+
+</html>
