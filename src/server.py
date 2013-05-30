@@ -70,7 +70,6 @@ class mapfiles(object):
                 "layergroups": href("%s/maps/%s/layergroups.%s" % (web.ctx.home, filename, format)),
                 "styles": href("%s/maps/%s/styles.%s" % (web.ctx.home, filename, format)),
                 "map_file": href("%s/maps/%s.%s" % (web.ctx.home, filename, format)),
-
                 "wms_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WMS" % (
                             get_config("mapserver")["url"], mf.path, get_config("mapserver")["wms_version"])),
                 "wfs_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WFS" % (
@@ -120,8 +119,9 @@ class workspace(object):
                         href("%s/maps/%s/workspaces/%s/datastores.%s" % (web.ctx.home, map_name, ws.name, format)),
                     "coverageStores":
                         href("%s/maps/%s/workspaces/%s/coveragestores.%s" % (web.ctx.home, map_name, ws.name, format)),
-                    "wmsStores":
-                        href("%s/maps/%s/workspaces/%s/wmsstores.%s" % (web.ctx.home, map_name, ws.name, format))
+                    # TODO
+                    # "wmsStores":
+                    #     href("%s/maps/%s/workspaces/%s/wmsstores.%s" % (web.ctx.home, map_name, ws.name, format))
                     })
                 }
 
@@ -169,7 +169,7 @@ class datastore(object):
 
         data = get_data(name="dataStore", mandatory=["name", "connectionParameters"], forbidden=["href"])
         if ds_name != data.pop("name"):
-            raise webapp.Forbidden("Can't change the name of a dataStore.")
+            raise webapp.Forbidden("Can't change the name of a data store.")
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             ws.update_datastore(ds_name, data)
@@ -214,7 +214,7 @@ class featuretype(object):
             ft = ws.get_featuretype(ft_name, ds_name)
 
         ds = ws.get_datastore(ds_name)
-        with webapp.mightNotFound("dataStore entry", datastore=ds_name):
+        with webapp.mightNotFound("dataStore", datastore=ds_name):
             dsft = ds[ft_name]
 
         extent = dsft.get_extent()
@@ -268,18 +268,18 @@ class featuretype(object):
     def PUT(self, map_name, ws_name, ds_name, ft_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="featuretype", mandatory=["name"])
+        data = get_data(name="featureType", mandatory=["name"])
         if ft_name != data["name"]:
-            raise webapp.Forbidden("Can't change the name of a featuretype.")
+            raise webapp.Forbidden("Can't change the name of a feature type.")
 
-        with webapp.mightNotFound("featuretype", datastore=ds_name):
+        with webapp.mightNotFound("featureType", datastore=ds_name):
             ws.update_featuretype(ft_name, ds_name, data)
         ws.save()
 
     def DELETE(self, map_name, ws_name, ds_name, ft_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        with webapp.mightNotFound("featuretype", datastore=ds_name):
+        with webapp.mightNotFound("featureType", datastore=ds_name):
             ws.delete_featuretype(ft_name, ds_name)
         ws.save()
 
@@ -327,7 +327,7 @@ class coveragestore(object):
 
         data = get_data(name="coverageStore", mandatory=["name", "type", "connectionParameters"], forbidden=["href"])
         if cs_name != data.pop("name"):
-            raise webapp.Forbidden("Can't change the name of a coverageStore.")
+            raise webapp.Forbidden("Can't change the name of a coverage store.")
 
         with webapp.mightNotFound("coverageStore", workspace=ws_name):
             ws.update_coveragestore(cs_name, data)
@@ -540,10 +540,10 @@ class style(object):
 
         return {
             "name": s_name,
-            "sldVersions": [
+            "sldVersion": Entries([
                 #TODO: Return the correct value...
                 "1.0.0"
-                ],
+                ], tag_name="version"),
             "filename": s_name + ".sld",
             "href": "%s/maps/%s/styles/%s.sld" % (web.ctx.home, map_name, s_name)
             }
@@ -637,10 +637,9 @@ class layer(object):
             }[layer.get_mra_metadata("type")]
 
         return {"layer" : ({
-                    "id": layer.ms.index,
                     "name": l_name,
                     "path": "/",
-                    "type": layer.get_type_name(),
+                    "type": "VECTOR",
                     "defaultStyle": {
                         "name": layer.ms.classgroup,
                         "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, layer.ms.classgroup, format),
@@ -649,15 +648,14 @@ class layer(object):
                             "name": s_name,
                             "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, s_name, format),
                             } for s_name in layer.iter_styles()],
-                    "resources": {
+                    "resource": {
                         "name": layer.get_mra_metadata("name"),
-                        "@class": data_type,
                         "href": "%s/maps/%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
                             web.ctx.home, map_name, layer.get_mra_metadata("workspace"),
                             store_type, layer.get_mra_metadata("storage"), data_type, layer.get_mra_metadata("name"), format),
                         },
                     "enabled": bool(layer.ms.status),
-                    "attributions": {"logoWidth": 10, "logoHeight": 10}
+                    "attribution": {"logoWidth": 0, "logoHeight": 0}
                     })
                 }
 
@@ -761,7 +759,7 @@ class layerfields(object):
 
         return {"fields": [{
                     "name": layer.get_metadata("gml_%s_alias" % field, None),
-                    "fieldtype": layer.get_metadata("gml_%s_type" % field, None),
+                    "fieldType": layer.get_metadata("gml_%s_type" % field, None),
                     } for field in layer.iter_fields(mf)]
                 }
 
@@ -771,7 +769,7 @@ class layergroups(object):
     def GET(self, map_name, format):
         mf = get_mapfile(map_name)
 
-        return {"layergroups" : [{
+        return {"layerGroups" : [{
                     "name": lg.name,
                     "href": "%s/maps/%s/layergroups/%s.%s" % (web.ctx.home, map_name, lg.name, format)
                     } for lg in mf.iter_layergroups()]
@@ -780,11 +778,11 @@ class layergroups(object):
     def POST(self, map_name, format):
         mf = get_mapfile(map_name)
 
-        data = get_data(name="layergroup", mandatory=["name"])
+        data = get_data(name="layerGroup", mandatory=["name"])
         lg_name = data.pop("name")
         layers = data.pop("layers", [])
 
-        with webapp.mightConflict("layergroup", mapfile=map_name):
+        with webapp.mightConflict("layerGroup", mapfile=map_name):
             lg = mf.create_layergroup(lg_name, data)
         lg.add(*layers)
 
@@ -803,12 +801,10 @@ class layergroup(object):
 
         extent = lg.get_extent()
 
-        return {"layergroup": ({
+        return {"layerGroup": ({
                     "name": lg.name,
                     "layers": [{
-                            "id": layer.ms.index,
                             "name": layer.ms.name,
-                            "type": layer.ms.type,
                             "href": "%s/maps/%s/layers/%s.%s" % (web.ctx.home, map_name, layer.ms.name, format),
                             # Do we implement styler or not ?
                             # "styler_href": "%s/styler/?namespace=%s&layer=%s" % (
@@ -820,16 +816,18 @@ class layergroup(object):
                         "maxx": extent.maxX(),
                         "maxy": extent.maxY(),
                         },
+                    # TODO: "metadata"
+                    # TODO: "styles"
                     })
                 }
 
     def PUT(self, map_name, lg_name, format):
         mf = get_mapfile(map_name)
 
-        with webapp.mightNotFound("layergroup", mapfile=map_name):
+        with webapp.mightNotFound("layerGroup", mapfile=map_name):
             lg = mf.get_layergroup(lg_name)
 
-        data = get_data(name="layergroup", mandatory=["name"])
+        data = get_data(name="layerGroup", mandatory=["name"])
         if lg_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a layergroup.")
 
@@ -841,7 +839,7 @@ class layergroup(object):
 
     def DELETE(self, map_name, lg_name, format):
         mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layergroup", mapfile=map_name):
+        with webapp.mightNotFound("layerGroup", mapfile=map_name):
             mf.delete_layergroup(lg_name)
 
 
