@@ -28,30 +28,33 @@ import xml.etree.ElementTree as etree
 from xml.etree.ElementTree import Element
 from xml.sax.saxutils import escape
 
-class Entries(dict):
-    """Helper class to specify how dictonaries should be handled in more detail.
-    """
+# Here we have the Entries, it wraps either a list or a dict.
+# Its not trivial because we want to inherit from a list or
+# from a dict, but we want both instances to inherit from Entries.
+# Also we want the factory to be Entries and not a function.
+class Entries(object):
+    def __new__(clazz, obj, *args, **kwargs):
+        class _Entries(Entries, type(obj)):
+            def __init__(self, *args, **kwargs):
+                # Try to be as transparent as possible.
+                self.tag_name = kwargs.pop("tag_name", None)
+                self.key_name = kwargs.pop("key_name", "key")
+                type(obj).__init__(self, *args, **kwargs)
 
-    def __init__(self, *args, **kwargs):
-        """ All arguments are passed to dict(), except for:
-        tag_name: this can be used to specify the tag name of the dict's entries.
-        key_name: if a tag_name is used this will be the attribute's name.
+            # Now define get_hints, the ifs are not in it because we want
+            # the exception to be raised at instanciation.
+            if isinstance(obj, list):
+                def get_hints(self):
+                    return (xml_list, self.tag_name) if self.tag_name else (xml_list, ())
+            elif isinstance(obj, dict):
+                def get_hints(self):
+                    return (xml_dict, (self.tag_name, self.key_name)) if self.tag_name else (xml_dict, ())
+            else:
+                raise TypeError("Entries must be given a list or a dict as first argument.")
 
-        By default no tag name is used and the dict's keys are used as tags.
-        """
+        # We need to call __new__ on the parent of our _Entries
+        return type(obj).__new__(_Entries, *args, **kwargs)
 
-        # Let's try to be as transparent as possible.
-        self.tag_name = kwargs.pop("tag_name", None)
-        self.key_name = kwargs.pop("key_name", "key")
-
-        dict.__init__(self, *args, **kwargs)
-
-    def get_dict_hints(self):
-        "Generating hints for %s" % self
-        if self.tag_name:
-            return self.tag_name, self.key_name
-        else:
-            return None
 
 def href(link, element=None):
     """Builds an atom:link object for the link."""
@@ -116,7 +119,7 @@ def default_xml_mapper(obj, obj_name,
     if obj == None:
         return None, None
     elif isinstance(obj, Entries):
-        return xml_dict, obj.get_dict_hints()
+        return obj.get_hints()
     elif obj_name == "href":
         return xml_href, None
     elif isinstance(obj, dict):

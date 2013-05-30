@@ -540,10 +540,8 @@ class style(object):
 
         return {
             "name": s_name,
-            "sldVersion": Entries([
-                #TODO: Return the correct value...
-                "1.0.0"
-                ], tag_name="version"),
+            #TODO: Return the correct value...
+            "sldVersion": Entries(["1.0.0"], tag_name="version"),
             "filename": s_name + ".sld",
             "href": "%s/maps/%s/styles/%s.sld" % (web.ctx.home, map_name, s_name)
             }
