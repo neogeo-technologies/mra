@@ -62,14 +62,13 @@ class mapfiles(object):
                 continue
             filename = mf.filename.replace(".map", "")
             mapfiles.append({
-                "map_name": mf.ms.name,
+                "name": filename,
                 "map_full_path": mf.path,
-
+                "href": "%s/maps/%s.%s" % (web.ctx.home, filename, format),
                 "workspaces": href("%s/maps/%s/workspaces.%s" % (web.ctx.home, filename, format)),
                 "layers": href("%s/maps/%s/layers.%s" % (web.ctx.home, filename, format)),
                 "layergroups": href("%s/maps/%s/layergroups.%s" % (web.ctx.home, filename, format)),
                 "styles": href("%s/maps/%s/styles.%s" % (web.ctx.home, filename, format)),
-                "map_file": href("%s/maps/%s.%s" % (web.ctx.home, filename, format)),
                 "wms_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WMS" % (
                             get_config("mapserver")["url"], mf.path, get_config("mapserver")["wms_version"])),
                 "wfs_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WFS" % (
@@ -95,7 +94,11 @@ class named_mapfile(object):
         mf = get_mapfile(map_name)
         with open(mf.path, "r") as f:
             data = f.read()
-        return {"mapfile": data} if format != "map" else data
+        return {"mapfile":
+                ({
+                    "name": map_name,
+                    "content": data})
+            } if format != "map" else data
 
 
 class workspaces(object):
@@ -540,8 +543,10 @@ class style(object):
 
         return {
             "name": s_name,
-            #TODO: Return the correct value...
-            "sldVersion": Entries(["1.0.0"], tag_name="version"),
+            "sldVersion": Entries([
+                #TODO: Return the correct value...
+                "1.0.0"
+                ], tag_name="version"),
             "filename": s_name + ".sld",
             "href": "%s/maps/%s/styles/%s.sld" % (web.ctx.home, map_name, s_name)
             }
@@ -778,7 +783,7 @@ class layergroups(object):
 
         data = get_data(name="layerGroup", mandatory=["name"])
         lg_name = data.pop("name")
-        layers = data.pop("layers", [])
+        layers = [mf.get_layer(l_name) for l_name in data.pop("layers", [])]
 
         with webapp.mightConflict("layerGroup", mapfile=map_name):
             lg = mf.create_layergroup(lg_name, data)
@@ -794,7 +799,7 @@ class layergroup(object):
     @HTTPCompatible()
     def GET(self, map_name, lg_name, format):
         mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layergroup", mapfile=map_name):
+        with webapp.mightNotFound("layerGroup", mapfile=map_name):
             lg = mf.get_layergroup(lg_name)
 
         extent = lg.get_extent()
@@ -836,9 +841,11 @@ class layergroup(object):
         mf.save()
 
     def DELETE(self, map_name, lg_name, format):
+
         mf = get_mapfile(map_name)
         with webapp.mightNotFound("layerGroup", mapfile=map_name):
             mf.delete_layergroup(lg_name)
+        mf.save()
 
 
 # Index:
