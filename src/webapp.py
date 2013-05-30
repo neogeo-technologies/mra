@@ -132,7 +132,7 @@ class exceptionsToHTTPError(exceptionManager):
         exceptionManager.__init__(self, exceptions or self.exceptions)
 
     def handle(self, exc_type, exc_value, traceback):
-        msg = self.message.format(exception=exc_value.message, **self.msg_args)
+        msg = self.message.format(exception=getattr(exc_value, "message", str(exc_value)), **self.msg_args)
         raise self.HTTPError(message=msg)
 
 class nargString(list):
