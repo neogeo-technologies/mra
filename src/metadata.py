@@ -66,7 +66,7 @@ def iter_metadata_keys(obj):
     return keys
 
 def get_metadata_keys(obj):
-    return list(self.iter_metadata_keys)
+    return list(iter_metadata_keys(obj))
 
 def set_metadata(obj, key, value):
     obj.setMetaData(key, value)

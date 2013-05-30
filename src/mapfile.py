@@ -90,7 +90,7 @@ class Layer(MetadataMixin):
 
     def get_extent(self):
         extent = self.ms.getExtent()
-        return stores.Extent(extent.minX, extent.minY, extent.maxX, extent.maxY)
+        return stores.Extent(extent.minx, extent.miny, extent.maxx, extent.maxy)
 
     def get_fields(self, mf=None):
         fields = self.get_metadata("gml_include_items", "")
@@ -166,26 +166,25 @@ class LayerGroup(object):
         self.mapfile = mapfile
 
     def iter_layers(self):
-        # return self.mapfile.iter_layers(attr={"GROUP":self.name})
-        return self.mapfile.iter_layers(attr={"wms_group_name":self.name})
+        return self.mapfile.iter_layers(meta={"wms_group_name":self.name})
 
     def get_layers(self):
         return list(self.iter_layers())
 
     def add_layer(self, layer):
         layer.ms.group = self.name
-        layer.set_metadatas("wms_group_name", self.name)
+        layer.set_metadata("wms_group_name", self.name)
         for k, v in self.mapfile.get_mra_metadata("layergroups")[self.name]:
-            layer.set_metadata("wms_group_%s", v)
+            layer.set_metadata("wms_group_%s" % k, v)
 
     def add(self, *args):
         for layer in args:
             if isinstance(layer, basestring):
-                layer = mapfile.get_layer(layer)
+                layer = self.mapfile.get_layer(layer)
             self.add_layer(layer)
 
     def remove_layer(self, layer):
-        layer.group = None
+        layer.ms.group = None
         for mkey in layer.get_metadata_keys():
             # (We really do not want to use iter_metadata_keys())
             if mkey.startswith("wms_group_"):
@@ -199,7 +198,7 @@ class LayerGroup(object):
 
     def clear(self):
         # Remove all the layers from this group.
-        for layer in self.mapfile.iter_layers(attr={"group": layer_group.name}):
+        for layer in self.mapfile.iter_layers(attr={"group": self.name}):
             self.remove_layer(layer)
 
     def get_extent(self):
@@ -207,10 +206,11 @@ class LayerGroup(object):
         if not layers:
             return stores.Extent(0, 0, 0, 0)
 
-        extent = layers[0]
+        extent = layers[0].get_extent()
         for layer in layers[1:]:
-            extent.addX(layer.minX, layer.maxX)
-            extent.addY(layer.minY, layer.maxY)
+            e = layer.get_extent()
+            extent.addX(e.minX, e.maxX)
+            extent.addY(e.minY, e.maxY)
 
         return extent
 
@@ -778,17 +778,17 @@ class Mapfile(MetadataMixin):
         lg = self.get_layergroup(lg_name)
         lg.remove(*args)
 
-    def delete_layergroup(self, layer_group):
-        if not isinstance(layer_group, LayerGroup):
-            layer_group = self.get_layergroup(layergroup)
+    def delete_layergroup(self, lg_name):
 
+        layer_group = self.get_layergroup(lg_name)
         # Remove all the layers from this group.
         for layer in self.iter_layers(attr={"group": layer_group.name}):
             layer_group.remove(layer)
 
         # Remove the group from mra metadats.
         with self.mra_metadata("layergroups", {}) as layergroups:
-            del layergroups[layer_group]
+            del layergroups[lg_name]
+
 
     # Styles:
 

@@ -540,8 +540,10 @@ class style(object):
 
         return {
             "name": s_name,
-            #TODO: Return the correct value...
-            "sldVersion": Entries(["1.0.0"], tag_name="version"),
+            "sldVersion": Entries([
+                #TODO: Return the correct value...
+                "1.0.0"
+                ], tag_name="version"),
             "filename": s_name + ".sld",
             "href": "%s/maps/%s/styles/%s.sld" % (web.ctx.home, map_name, s_name)
             }
@@ -778,7 +780,7 @@ class layergroups(object):
 
         data = get_data(name="layerGroup", mandatory=["name"])
         lg_name = data.pop("name")
-        layers = data.pop("layers", [])
+        layers = [mf.get_layer(l_name) for l_name in data.pop("layers", [])]
 
         with webapp.mightConflict("layerGroup", mapfile=map_name):
             lg = mf.create_layergroup(lg_name, data)
@@ -794,7 +796,7 @@ class layergroup(object):
     @HTTPCompatible()
     def GET(self, map_name, lg_name, format):
         mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layergroup", mapfile=map_name):
+        with webapp.mightNotFound("layerGroup", mapfile=map_name):
             lg = mf.get_layergroup(lg_name)
 
         extent = lg.get_extent()
@@ -836,9 +838,11 @@ class layergroup(object):
         mf.save()
 
     def DELETE(self, map_name, lg_name, format):
+
         mf = get_mapfile(map_name)
         with webapp.mightNotFound("layerGroup", mapfile=map_name):
             mf.delete_layergroup(lg_name)
+        mf.save()
 
 
 # Index:
