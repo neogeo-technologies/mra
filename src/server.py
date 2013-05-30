@@ -143,7 +143,7 @@ class datastores(object):
     def POST(self, map_name, ws_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="dataStore", mandatory=["name", "connectionParameters"])
+        data = get_data(name="dataStore", mandatory=["name"])
         ds_name = data.pop("name")
 
         with webapp.mightConflict("dataStore", workspace=ws_name):
@@ -170,7 +170,7 @@ class datastore(object):
     def PUT(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="dataStore", mandatory=["name", "connectionParameters"], forbidden=["href"])
+        data = get_data(name="dataStore", mandatory=["name"], forbidden=["href"])
         if ds_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a data store.")
 
@@ -479,7 +479,7 @@ class files(object):
                 z.extract(f, path=tools.get_st_data_path(ws_name, st_type, st_name))
 
         # Set new connection parameters:
-        ws.update_store(st_type, st_name, {"ConnectionParameters":{"path":path}})
+        ws.update_store(st_type, st_name, {"connectionParameters":{"path":path}})
         ws.save()
 
         # Finally we might have to configure it.
