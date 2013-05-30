@@ -50,7 +50,7 @@ def get_store_connection_string(info):
     cparam = info["connectionParameters"]
     if cparam.get("dbtype", "") == "postgis":
         return "PG:dbname=%s port=%s host=%s user=%s password=%s" % (
-            cparam["dbname"], cparam["port"], cparam["host"], cparam["user"], cparam["password"])
+            cparam["database"], cparam["port"], cparam["host"], cparam["user"], cparam["password"])
     elif "url" in cparam:
         url = urlparse.urlparse(cparam["url"])
         if url.scheme != "file" or url.netloc:
@@ -128,7 +128,7 @@ class Layer(MetadataMixin):
         xmlsld = etree.fromstring(re.sub(' [a-zzA-Z]+:([a-zA-Z]+=")', ' \\1', new_sld))
         xmlsld.find("NamedLayer/Name").text = sld_layer_name
         new_sld = etree.tostring(xmlsld)
-        
+
 
         ms_template_layer = self.ms.clone()
         ms_template_layer.name = sld_layer_name
@@ -141,7 +141,7 @@ class Layer(MetadataMixin):
             self.ms.insertClass(ms_class)
 
         mf.ms.removeLayer(ms_template_layer.index)
-    
+
     def remove_style(self, s_name):
         for c_index in reversed(xrange(self.ms.numclasses)):
             c = self.ms.getClass(c_index)
@@ -299,7 +299,7 @@ class FeatureType(LayerModel):
         if cparam.get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
             self.ms.connectiontype = mapscript.MS_POSTGIS
             self.ms.connection = "dbname=%s port=%s host=%s user=%s password=%s" % (
-                cparam["dbname"], cparam["port"], cparam["host"], cparam["user"], cparam["password"])
+                cparam["database"], cparam["port"], cparam["host"], cparam["user"], cparam["password"])
             self.ms.data = "%s FROM %s" % (ds[ft_name].get_geometry_column(), ft_name)
         #elif cpram["dbtype"] in ["shp", "shapefile"]:
         else:

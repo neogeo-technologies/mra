@@ -39,6 +39,8 @@ from webapp import HTTPCompatible, urlmap, get_data
 import tools
 from tools import get_mapfile, get_mapfile_workspace, get_config, href
 
+from pyxml import Entries
+
 import os.path
 
 mralogs.setup(get_config("logging")["level"], get_config("logging")["file"],
@@ -158,6 +160,8 @@ class datastore(object):
             info = ws.get_datastore_info(ds_name)
         info["href"] = "%s/maps/%s/workspaces/%s/datastores/%s/featuretypes.%s" % (
             web.ctx.home, map_name, ws.name, ds_name, format)
+        if "connectionParameters" in info:
+            info["connectionParameters"] = Entries(info["connectionParameters"], tag_name="entry", key_name="key")
         return {"dataStore": info}
 
     def PUT(self, map_name, ws_name, ds_name, format):
@@ -314,6 +318,8 @@ class coveragestore(object):
         info = ws.get_coveragestore_info(cs_name)
         info["href"] = "%s/maps/%s/workspaces/%s/coveragestores/%s/coverages.%s" % (
             web.ctx.home, map_name, ws.name, cs_name, format)
+        if "connectionParameters" in info:
+            info["connectionParameters"] = Entries(info["connectionParameters"], tag_name="entry", key_name="key")
         return {"coverageStore": info}
 
     def PUT(self, map_name, ws_name, cs_name, format):
