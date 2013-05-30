@@ -128,7 +128,7 @@ class datastores(object):
     @HTTPCompatible()
     def GET(self, map_name, ws_name, format, *args, **kwargs):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
-        return {"datastores": [{
+        return {"dataStores": [{
                     "name": ds_name,
                     "href": "%s/maps/%s/workspaces/%s/datastores/%s.%s" % (
                         web.ctx.home, map_name, ws.name, ds_name, format)
@@ -138,10 +138,10 @@ class datastores(object):
     def POST(self, map_name, ws_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="datastore", mandatory=["name", "connectionParameters"])
+        data = get_data(name="dataStore", mandatory=["name", "connectionParameters"])
         ds_name = data.pop("name")
 
-        with webapp.mightConflict("datastore", workspace=ws_name):
+        with webapp.mightConflict("dataStore", workspace=ws_name):
             ws.create_datastore(ds_name, data)
         ws.save()
 
@@ -154,27 +154,27 @@ class datastore(object):
     def GET(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        with webapp.mightNotFound("datastore", workspace=ws_name):
+        with webapp.mightNotFound("dataStore", workspace=ws_name):
             info = ws.get_datastore_info(ds_name)
         info["href"] = "%s/maps/%s/workspaces/%s/datastores/%s/featuretypes.%s" % (
             web.ctx.home, map_name, ws.name, ds_name, format)
-        return {"datastore": info}
+        return {"dataStore": info}
 
     def PUT(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="datastore", mandatory=["name", "connectionParameters"], forbidden=["href"])
+        data = get_data(name="dataStore", mandatory=["name", "connectionParameters"], forbidden=["href"])
         if ds_name != data.pop("name"):
-            raise webapp.Forbidden("Can't change the name of a datastore.")
+            raise webapp.Forbidden("Can't change the name of a dataStore.")
 
-        with webapp.mightNotFound("datastore", workspace=ws_name):
+        with webapp.mightNotFound("dataStore", workspace=ws_name):
             ws.update_datastore(ds_name, data)
         ws.save()
 
     def DELETE(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        with webapp.mightNotFound("datastore", workspace=ws_name):
+        with webapp.mightNotFound("dataStore", workspace=ws_name):
             ws.delete_datastore(ds_name)
         ws.save()
 
@@ -183,7 +183,7 @@ class featuretypes(object):
     @HTTPCompatible()
     def GET(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
-        return {"featuretypes": [{
+        return {"featureTypes": [{
                     "name": ft.name,
                     "href": "%s/maps/%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
                         web.ctx.home, map_name, ws.name, ds_name, ft.name, format)
@@ -193,8 +193,8 @@ class featuretypes(object):
     def POST(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="featuretype", mandatory=["name"])
-        with webapp.mightConflict("featuretype", datastore=ds_name):
+        data = get_data(name="featureType", mandatory=["name"])
+        with webapp.mightConflict("featureType", datastore=ds_name):
             ws.create_featuretype(data["name"], ds_name, data)
         ws.save()
 
@@ -206,17 +206,17 @@ class featuretype(object):
     @HTTPCompatible()
     def GET(self, map_name, ws_name, ds_name, ft_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
-        with webapp.mightNotFound("featuretype", datastore=ds_name):
+        with webapp.mightNotFound("featureType", datastore=ds_name):
             ft = ws.get_featuretype(ft_name, ds_name)
 
         ds = ws.get_datastore(ds_name)
-        with webapp.mightNotFound("datastore entry", datastore=ds_name):
+        with webapp.mightNotFound("dataStore entry", datastore=ds_name):
             dsft = ds[ft_name]
 
         extent = dsft.get_extent()
         latlon_extent = dsft.get_latlon_extent()
 
-        return {"featuretype": ({
+        return {"featureType": ({
                     "name": ft.name,
                     "nativeName": ft.name,
                     "namespace": {
@@ -285,7 +285,7 @@ class coveragestores(object):
     def GET(self, map_name, ws_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        return {"coveragestores": [{
+        return {"coverageStores": [{
                     "name": cs_name,
                     "href": "%s/maps/%s/workspaces/%s/coveragestores/%s.%s" % (
                         web.ctx.home, map_name, ws.name, cs_name, format)
@@ -295,10 +295,10 @@ class coveragestores(object):
     def POST(self, map_name, ws_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="coveragestore", mandatory=["name", "connectionParameters"])
+        data = get_data(name="coverageStore", mandatory=["name", "connectionParameters"])
         cs_name = data.pop("name")
 
-        with webapp.mightConflict("coveragestore", workspace=ws_name):
+        with webapp.mightConflict("coverageStore", workspace=ws_name):
             ws.create_coveragestore(cs_name, data)
         ws.save()
 
@@ -314,23 +314,23 @@ class coveragestore(object):
         info = ws.get_coveragestore_info(cs_name)
         info["href"] = "%s/maps/%s/workspaces/%s/coveragestores/%s/coverages.%s" % (
             web.ctx.home, map_name, ws.name, cs_name, format)
-        return {"coveragestore": info}
+        return {"coverageStore": info}
 
     def PUT(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="coveragestore", mandatory=["name", "type", "connectionParameters"], forbidden=["href"])
+        data = get_data(name="coverageStore", mandatory=["name", "type", "connectionParameters"], forbidden=["href"])
         if cs_name != data.pop("name"):
-            raise webapp.Forbidden("Can't change the name of a coveragestore.")
+            raise webapp.Forbidden("Can't change the name of a coverageStore.")
 
-        with webapp.mightNotFound("coveragestore", workspace=ws_name):
+        with webapp.mightNotFound("coverageStore", workspace=ws_name):
             ws.update_coveragestore(cs_name, data)
         ws.save()
 
     def DELETE(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        with webapp.mightNotFound("coveragestore", workspace=ws_name):
+        with webapp.mightNotFound("coverageStore", workspace=ws_name):
             ws.delete_coveragestore(cs_name)
         ws.save()
 
