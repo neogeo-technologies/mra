@@ -9,19 +9,22 @@ Prerequisites
 
 **MapServer Rest API** needs the following components:
 
-* Python with following packages:
-	* web.py
-	* pyyaml
-* GDAL (>= 1.9.x with Python support)
-* MapServer (>= 6.x with MapScript-Python support)
+* 	Python with following packages:
 
+	*	web.py
+
+	*	pyyaml
+
+*	GDAL/OGR (>= 1.9.x with Python support)
+
+*	MapServer (>= 6.x with MapScript-Python support)
 
 Download
 ========
 Get the newest source code by downloading the archive at `download`_ page.
 Then extract the archive in a directory of your choice. Or checkout the Git in some place.
 
-.. _download: http://
+.. _download: https://github.com/neogeo-technologies/mra
 
 Installation
 ============
@@ -45,7 +48,7 @@ Just create a virtual directory and the following aliases: ::
 
 
 You must reload Apache to make the change take effect.
-Check the ALIAS is working:
+Check the alias is working:
 	
 	http://localhost/mra
 
@@ -56,78 +59,70 @@ All settings are done in the ``mra/src/mra/mra.yaml`` file, which should be rath
 If you have checked out the svn repository, just rename the ``mra.yaml.sample`` in ``mra.yaml``. 
 That way, your own configuration won't be discarded by a further update.
 
-*	``storage``:
+*	**storage**
 
-	*	``mapfiles``
+	*	**mapfiles**
 
 		Path to the directory containing your mapfiles, which can be located anywhere on your disk. 
 		The MapServerRestAPI will scan this directory recursively to find all the mapfiles.
 
 		``mapfiles: "/path/to/your/mapfiles/directory"``
 
-
-	*	``resources``
+	*	**resources**
 		
 		Path to the directory containing your data, which can be located anywhere on your disk.
 
 		``resources: "/path/to/your/data/directory"``
 
+*	**mapserver**
 
-*	``mapserver``:
-
-	*	``url``
+	*	**url**
 
 		URL that should be used to access your mapserver.
 
 		``url: "http://127.0.0.1/cgi-bin/mapserv?"``
 
-
-	*	``wms_version``, ``wfs_version``, ``wcs_version`` 
+	*	**wms_version**, **wfs_version**, **wcs_version**
 
 		Default version to use for WMS, WFS and WCS.
 
+*	**debug**
 
-*	``debug``
-
-	*	``web_debug`` [True|False]
+	*	**web_debug** [True | False]
 
 		web_debug allows for easy debuging in the the browser, should be deactivated in production.
 
 
-	*	``raise_all`` [True|False]
+	*	**raise_all** [True | False]
 
-		Exceptions are transformed into web errors. (404, ...)
+		Exceptions are transformed into web errors.
 		This can be prevented by setting raise_all to True.
 
+*	**logging**
 
-*	``logging``
+	*	**format**
 
-		*	``format``
+		Format of the debug log. Here is a typical message:
 
-			Format of the debug log. Here is a typical message:
+		``format: "%(asctime)s %(levelname)7s: (%(funcName)s:%(lineno)s) %(message)s"``
 
-			``format: "%(asctime)s %(levelname)7s: (%(funcName)s:%(lineno)s) %(message)s"``
+	*	**file**
 
+		Path to the log file, which can be located anywhere on your disk.
 
-		*	``file``
+		``file: "./mra.log"``
 
-			Path to the log file, which can be located anywhere on your disk.
+	*	**level** [DEBUG | INFO | WARNING | ERROR]
 
-			``file: "./mra.log"``
+		Level of debugging output.
 
+	*	**web_logs** [False | True]
+		
+		To add the logs to the generated output of the webapp.
 
-		*	``level`` [DEBUG|INFO|WARNING|ERROR]
+Finally check MapServer Rest API is working correctly: 
 
-			Level of debugging output.
-
-
-		*	``web_logs`` [False|True]
-			
-			To add the logs to the generated output of the webapp by setting web_logs.
-
-
-Finally check MapServer Rest API is working correctly: ``http://localhost/mra/maps.xml``
-
+	http://localhost/mra/maps
 
 Enjoy!
 ======
