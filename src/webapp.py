@@ -53,6 +53,7 @@ def Created(location):
 class BadRequest(web.webapi.HTTPError):
     """`400 Bad Request` error."""
     def __init__(self, message="bad request"):
+        self.message = message
         status = '404 Bad Request'
         headers = {'Content-Type': 'text/html'}
         web.webapi.HTTPError.__init__(self, status, headers, message)
@@ -60,6 +61,7 @@ class BadRequest(web.webapi.HTTPError):
 class NotFound(web.webapi.HTTPError):
     """`404 Not Found` error."""
     def __init__(self, message="not found"):
+        self.message = message
         status = '404 Not Found'
         headers = {'Content-Type': 'text/html'}
         web.webapi.HTTPError.__init__(self, status, headers, message)
@@ -67,6 +69,7 @@ class NotFound(web.webapi.HTTPError):
 class Unauthorized(web.webapi.HTTPError):
     """`401 Unauthorized` error."""
     def __init__(self, message="unauthorized"):
+        self.message = message
         status = "401 Unauthorized"
         headers = {'Content-Type': 'text/html'}
         web.webapi.HTTPError.__init__(self, status, headers, message)
@@ -75,6 +78,7 @@ class Unauthorized(web.webapi.HTTPError):
 class Forbidden(web.webapi.HTTPError):
     """`403 Forbidden` error."""
     def __init__(self, message="forbidden"):
+        self.message = message
         status = "403 Forbidden"
         headers = {'Content-Type': 'text/html'}
         web.webapi.HTTPError.__init__(self, status, headers, message)
@@ -83,6 +87,7 @@ class Forbidden(web.webapi.HTTPError):
 class Conflict(web.webapi.HTTPError):
     """`409 Conflict` error."""
     def __init__(self, message="conflict"):
+        self.message = message
         status = "409 Conflict"
         headers = {'Content-Type': 'text/html'}
         web.webapi.HTTPError.__init__(self, status, headers, message)
@@ -91,6 +96,7 @@ class Conflict(web.webapi.HTTPError):
 class NotAcceptable(web.webapi.HTTPError):
     """`406 Not Acceptable` error."""
     def __init__(self, message="not acceptable"):
+        self.message = message
         status = "406 Not Acceptable"
         headers = {'Content-Type': 'text/html'}
         web.webapi.HTTPError.__init__(self, status, headers, message)
@@ -98,6 +104,7 @@ class NotAcceptable(web.webapi.HTTPError):
 class NotImplemented(web.webapi.HTTPError):
     """`501 Not Implemented` error."""
     def __init__(self, message="not implemented"):
+        self.message = message
         status = "501 Not Implemented"
         headers = {'Content-Type': 'text/html'}
         web.webapi.HTTPError.__init__(self, status, headers, message)
