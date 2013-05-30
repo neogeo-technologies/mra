@@ -62,14 +62,13 @@ class mapfiles(object):
                 continue
             filename = mf.filename.replace(".map", "")
             mapfiles.append({
-                "map_name": mf.ms.name,
+                "name": filename,
                 "map_full_path": mf.path,
-
+                "href": "%s/maps/%s.%s" % (web.ctx.home, filename, format),
                 "workspaces": href("%s/maps/%s/workspaces.%s" % (web.ctx.home, filename, format)),
                 "layers": href("%s/maps/%s/layers.%s" % (web.ctx.home, filename, format)),
                 "layergroups": href("%s/maps/%s/layergroups.%s" % (web.ctx.home, filename, format)),
                 "styles": href("%s/maps/%s/styles.%s" % (web.ctx.home, filename, format)),
-                "map_file": href("%s/maps/%s.%s" % (web.ctx.home, filename, format)),
                 "wms_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WMS" % (
                             get_config("mapserver")["url"], mf.path, get_config("mapserver")["wms_version"])),
                 "wfs_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WFS" % (
