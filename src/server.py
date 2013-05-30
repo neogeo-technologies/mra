@@ -160,7 +160,7 @@ class datastore(object):
             info = ws.get_datastore_info(ds_name)
         info["href"] = "%s/maps/%s/workspaces/%s/datastores/%s/featuretypes.%s" % (
             web.ctx.home, map_name, ws.name, ds_name, format)
-        if "connectionParameters" in info:
+        if "connectionParameters" in info and isinstance(info["connectionParameters"], dict):
             info["connectionParameters"] = Entries(info["connectionParameters"], tag_name="entry", key_name="key")
         return {"dataStore": info}
 
@@ -318,7 +318,7 @@ class coveragestore(object):
         info = ws.get_coveragestore_info(cs_name)
         info["href"] = "%s/maps/%s/workspaces/%s/coveragestores/%s/coverages.%s" % (
             web.ctx.home, map_name, ws.name, cs_name, format)
-        if "connectionParameters" in info:
+        if "connectionParameters" in info and isinstance(info["connectionParameters"], dict):
             info["connectionParameters"] = Entries(info["connectionParameters"], tag_name="entry", key_name="key")
         return {"coverageStore": info}
 
