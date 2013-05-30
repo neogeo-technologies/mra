@@ -94,7 +94,11 @@ class named_mapfile(object):
         mf = get_mapfile(map_name)
         with open(mf.path, "r") as f:
             data = f.read()
-        return {"mapfile": data} if format != "map" else data
+        return {"mapfile":
+                ({
+                    "name": map_name,
+                    "content": data})
+            } if format != "map" else data
 
 
 class workspaces(object):
