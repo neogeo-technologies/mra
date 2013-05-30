@@ -251,7 +251,7 @@ The following extensions are supported:
 +-------------------+---------------------------------------------------------+
 | Extension         | Datastore                                               |
 +===================+=========================================================+
-| zip (ShapeZip)    | OGR/ESRI Shapefile as a zipped archive                  |
+| shp               | OGR/ESRI Shapefile                                      |
 +-------------------+---------------------------------------------------------+
 
 +--------+--------------------------+-------------+-----------+---------------+
@@ -261,35 +261,24 @@ The following extensions are supported:
 +--------+--------------------------+-------------+-----------+---------------+
 | POST   |                          | 405         |           |               |
 +--------+--------------------------+-------------+-----------+---------------+
-| PUT    | Uploads files to the     | 200         | See notes | See notes     |
-|        | data stores <ds>         |             | below.    | below.        |
+| PUT    | Uploads files to the     | 200         | See notes | ``configure`` |
+|        | data stores <ds>         |             | below.    | See notes     |
+|        |                          |             |           | below.        |
 +--------+--------------------------+-------------+-----------+---------------+
 | DELETE |                          | 405         |           |               |
 +--------+--------------------------+-------------+-----------+---------------+
 
-*Exceptions:*
+Data stores like Shapefile must be sent as a zip archive.
+When uploading a zip archive the ``Content-type`` should be set to ``application/zip``
 
-*	GET for a data stores does not exist: 404 Not Found
-*	*TODO: GET for a data stores that in not file based: 404 Not Found*
+The ``configure`` parameter is used to control how the data store is configured upon file upload.
+It can take one of the below values :
 
+*	``none`` - Do not configure any feature types. This is the default value
 
-PUT *Formats*:
-
-	Data stores like Shapefile must be sent as a zip archive.
-	When uploading a standalone file the content type should be appropriately set based on the file type.
-	For example, when uploading a zip archive the ``Content-type`` should be set to ``application/zip``
-
-
-PUT *Parameters*:
-
-	The ``configure`` parameter is used to control how the data store is configured upon file upload.
-	It can take one of the below values :
-
-	*	``none`` - Do not configure any feature types. This is the default value
+*	*TODO: ``first`` - Only setup the first feature type available in the data store.*
 	
-	*	*TODO: ``first`` - Only setup the first feature type available in the data store.*
-	
-	*	*TODO: ``all` - Configure all feature types.*
+*	*TODO: ``all` - Configure all feature types.*
 
 
 Feature types
