@@ -72,6 +72,12 @@ See `Mapfile specification`_ for more information about the Mapfile.
 Operations
 ----------
 
+For current version of MapServer Rest API, manipulate a ``mapfile`` is not implemented.
+And so, you can't create, modify or delete a mapfile.
+Please use the `mapfile model`_ and just give us some time to implement this operations.
+
+.. _Mapfile model: https://github.com/neogeo-technologies/mra/blob/develop/docs/model.map
+
 ``/maps.<format>``
 ^^^^^^^^^^^^^^^^^^
 
@@ -88,6 +94,7 @@ Operations
 +--------+---------------------------------+-------------+--------------------+
 | DELETE |                                 | 405         |                    |
 +--------+---------------------------------+-------------+--------------------+
+
 
 *Exceptions:*
 

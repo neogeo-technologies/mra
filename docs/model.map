@@ -1,0 +1,83 @@
+MAP
+
+  NAME "model"
+  STATUS ON  
+  IMAGETYPE "png"
+  RESOLUTION 96
+  SIZE 600 600
+  EXTENT -180 -90 180 90
+  UNITS DD
+
+  OUTPUTFORMAT
+    NAME "png"
+    MIMETYPE "image/png"
+    DRIVER "AGG/PNG"
+    EXTENSION "png"
+    IMAGEMODE RGBA
+    TRANSPARENT TRUE
+  END
+
+  OUTPUTFORMAT
+    NAME "png8"
+    MIMETYPE "image/png; mode=8bit"
+    DRIVER "AGG/PNG8"
+    EXTENSION "png"
+    IMAGEMODE RGB
+    TRANSPARENT FALSE
+    FORMATOPTION "QUANTIZE_FORCE=on"
+    FORMATOPTION "QUANTIZE_COLORS=256"
+    FORMATOPTION "GAMMA=0.75"
+  END
+
+  OUTPUTFORMAT
+    NAME "jpeg"
+    MIMETYPE "image/jpeg"
+    DRIVER "AGG/JPEG"
+    EXTENSION "jpg"
+    IMAGEMODE RGB
+    TRANSPARENT FALSE
+    FORMATOPTION "GAMMA=0.75"
+  END
+
+  PROJECTION
+    "init=epsg:4326"
+  END
+
+  LEGEND
+    KEYSIZE 20 10
+    KEYSPACING 5 5
+    LABEL
+      SIZE MEDIUM
+      OFFSET 0 0
+      SHADOWSIZE 1 1
+      TYPE BITMAP
+    END
+    STATUS OFF
+  END
+
+  WEB
+
+    TEMPLATE "foo"
+
+    METADATA
+      ows_title "model"
+      ows_abstract "This is a model"
+      ows_onlineresource ""
+      ows_service_onlineresource ""
+      ows_schemas_location "http://schemas.opengeospatial.net"
+      ows_server_version "1.3.0"
+      ows_encoding "UTF-8"
+      ows_srs "EPSG:4326"
+
+      # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
+      # `mra' meta contains all the information that MapserverRestAPI #
+      # needs to work properly.                                       #
+      # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
+      
+      "mra"	"{coveragestores: {}, datastores: {}, layergroups: {}, workspaces: {default: {title: default}}}"
+
+    END
+
+  END
+
+END
