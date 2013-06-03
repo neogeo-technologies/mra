@@ -52,8 +52,10 @@ def APIRequest(method, url, data=None, encode="json", decode="json", content_typ
 
     if encode and not url.endswith("." + encode):
         url = surl.path + "." + encode
+    else:
+        url = surl.path
 
-    print >>sys.stderr, method, url
+    print >>sys.stderr, method, surl.geturl().replace(surl.path, url)
     conn = httplib.HTTPConnection(surl.hostname, surl.port)
     conn.request(method, url, body=data, headers={"Content-Type":content_type})
 
@@ -62,6 +64,7 @@ def APIRequest(method, url, data=None, encode="json", decode="json", content_typ
     if expected_type == None:
         expected_type = deduce_content_type(decode)
 
+    # TODO: enable this test once it is suported.
     # assert expected_type in r.getheader("Content-Type"), "received %s instead of %s" % (
     #     r.getheader("Content-Type"), expected_type)
 

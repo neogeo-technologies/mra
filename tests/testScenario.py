@@ -28,15 +28,18 @@ from utils import APIRequest
 
 import sys
 
-def testScenario():
 
-    target = "http://192.168.1.39/mra/"
-    map_name = "test"
+def test_scenario():
 
+    target = "http://localhost:8080"
+    map_name = "tests"
+
+    # Clean the test file, now we are sure it is empty.
+    APIRequest("PUT", target + "/tests/" + map_name)
 
     # GET workspaces.
 
-    wss = APIRequest("GET", target + "/maps/test/workspaces")["workspaces"]
+    wss = APIRequest("GET", target + "/maps/" + map_name + "/workspaces")["workspaces"]
     assert len(wss) == 1
     assert wss[0]["name"] == "default"
 
@@ -48,11 +51,7 @@ def testScenario():
     # GET dataStores
 
     dss = APIRequest("GET", ws["dataStores"]["href"])["dataStores"]
-
-    # DELETE the dataStores
-
-    for ds in dss:
-        APIRequest("DELETE", ds["href"])
+    assert len(dss) == 0
 
     # POST a datastore and GET it
 
@@ -80,12 +79,22 @@ def testScenario():
     assert len(fts) == 0
 
 
-    # PUT file
+    # PUT file, and check if datastore is updated.
 
     APIRequest("PUT", ds_link + "/file.shp", open("./files/timezones_shp.zip", "rb"),
                encode=None, content_type="application/zip")
 
     ds = APIRequest("GET", ds_link)["dataStore"]
-    assert ds["connectionParameters"]["path"] = "workspaces/%s/datastores/%s/timezones.shp" % (
-        ws["name"], ds["name"])
+    assert ds["connectionParameters"]["url"] == "file:/workspaces/%s/datastores/%s/timezones.shp" % (ws["name"], ds["name"])
+
+    # POST a featuretype
+
+    name, title = "testFT1", "test feature type 1"
+    _, r = APIRequest("POST", ds["href"], {"featureType":{"name":name, "title":title}},
+                      get_response=True)
+    ft_link = r.getheader("Location")
+
+    ft = APIRequest("GET", ft_link)["featureType"]
+    assert ft["name"] == name
+    assert ds["title"] == title
 

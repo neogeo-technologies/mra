@@ -131,6 +131,14 @@ def mk_style_path(name, *args):
     mk_path(path)
     return path
 
+def no_root(root, path):
+    path = os.path.abspath(path)
+    root = os.path.abspath(root)
+    return path[len(root):] if path.startswith(root) else path
+
+def no_res_root(path):
+    return no_root(get_config('storage')['resources'], path)
+
 def is_hidden(path):
     # TODO Add a lot of checks, recursive option (to check folders)
     # MacOSX has at least four ways to hide files...

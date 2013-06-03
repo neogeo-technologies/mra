@@ -50,6 +50,13 @@ class index(object):
     def GET(self, format):
         return "This is MRA."
 
+class tests(object):
+    def PUT(self, name, format):
+        spath = tools.safe_path_join(get_config('storage')['mapfiles'], "%s.map" % get_config("testing")["model"])
+        tpath = tools.safe_path_join(get_config('storage')['mapfiles'], "%s.map" % name)
+        open(tpath, "w").write(open(spath).read())
+
+        webapp.Created("%s/maps/%s.%s" % (web.ctx.home, name, format))
 
 class mapfiles(object):
     @HTTPCompatible()
@@ -479,7 +486,7 @@ class files(object):
                 z.extract(f, path=tools.get_st_data_path(ws_name, st_type, st_name))
 
         # Set new connection parameters:
-        ws.update_store(st_type, st_name, {"connectionParameters":{"path":path}})
+        ws.update_store(st_type, st_name, {"connectionParameters":{"url":"file:"+tools.no_res_root(path)}})
         ws.save()
 
         # Finally we might have to configure it.
@@ -850,6 +857,10 @@ class layergroup(object):
 
 # Index:
 urlmap(index, "")
+
+# Tests
+if get_config("testing")["active"]:
+    urlmap(tests, "tests", ())
 
 # Styler: TODO
 #urlmap(styler, format = False)
