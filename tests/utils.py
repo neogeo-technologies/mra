@@ -38,7 +38,8 @@ def deduce_content_type(type):
         return "application/xml"
 
 
-def APIRequest(method, url, data=None, encode="json", decode="json", content_type=None, expected_type=None, get_response=False):
+def APIRequest(method, url, data=None, encode="json", decode="json", content_type=None, expected_type=None,
+               get_response=False):
 
     if encode == "json":
         data = json.dumps(data)
@@ -54,6 +55,9 @@ def APIRequest(method, url, data=None, encode="json", decode="json", content_typ
         url = surl.path + "." + encode
     else:
         url = surl.path
+
+    if surl.query:
+        url += "?" + surl.query
 
     print >>sys.stderr, method, surl.geturl().replace(surl.path, url)
     conn = httplib.HTTPConnection(surl.hostname, surl.port)
