@@ -94,14 +94,16 @@ class Layer(MetadataMixin):
         extent = self.ms.getExtent()
         return stores.Extent(extent.minx, extent.miny, extent.maxx, extent.maxy)
 
-    def get_fields(self, mf=None):
+    def get_fields(self):
         fields = self.get_metadata("gml_include_items", "")
 
         if fields == "all":
             # TODO: Get fields from feature type
             raise NotImplemented()
+        elif not fields:
+            return []
         else:
-            fields = fields.split()
+            fields = fields.split(",")
         return fields
 
     def iter_fields(self):
@@ -126,11 +128,29 @@ class Layer(MetadataMixin):
         # we need to rename it to something we are sure is not used.
         sld_layer_name = "__mra_tmp_template"
 
-        # This is realy ugly but etree has trouble with namespaces...
-        xmlsld = etree.fromstring(re.sub(' [a-zzA-Z]+:([a-zA-Z]+=")', ' \\1', new_sld))
-        xmlsld.find("NamedLayer/Name").text = sld_layer_name
-        new_sld = etree.tostring(xmlsld)
+        print new_sld
 
+        # This is realy ugly but etree has trouble with namespaces...
+        # TODO: Do this again in an other way.
+        fixedxml = re.sub(' [a-zzA-Z0-9]+:([a-zA-Z0-9]+=")', ' \\1', new_sld)
+        xmlsld = etree.fromstring(fixedxml)
+
+        # Still problems with namespaces...
+        for child in xmlsld.getchildren():
+            if child.tag.endswith("NamedLayer"):
+                for gchild in child.getchildren():
+                    if gchild.tag.endswith("Name"):
+                        gchild.text = sld_layer_name
+                        break
+                else:
+                    continue
+            break
+        else:
+            raise ValueError("Bad sld (No NamedLayer/Name)")
+
+
+        etree.register_namespace("", "http://www.opengis.net/sld")
+        new_sld = etree.tostring(xmlsld)
 
         ms_template_layer = self.ms.clone()
         ms_template_layer.name = sld_layer_name
@@ -307,7 +327,7 @@ class FeatureType(LayerModel):
         else:
             self.ms.connectiontype = mapscript.MS_SHAPEFILE
             url = urlparse.urlparse(cparam["url"])
-            self.ms.data = url.path
+            self.ms.data = tools.get_resource_path(url.path)
 
             # TODO: strip extention.
         #else:
@@ -323,6 +343,9 @@ class FeatureType(LayerModel):
                                    "workspace": ws.name, "is_model": True})
 
     def configure_layer(self, layer, ws, enabled=True):
+
+        # TODO: We must also update all our personal attributes (type, ...)
+        # because we might not have been cloned.
 
         layer.set_metadatas({
                 "wfs_name": layer.get_metadata("wms_name"),
@@ -401,7 +424,7 @@ class Coverage(LayerModel):
         #if cparam["dbtype"] in ["tif", "tiff"]:
         self.ms.connectiontype = mapscript.MS_RASTER
         url = urlparse.urlparse(cparam["url"])
-        self.ms.data = url.path
+        self.ms.data = tools.get_resource_path(url.path)
             # TODO: strip extention.
         #else:
         #    raise ValueError("Unhandled type '%s'" % cparam["dbtype"])
@@ -416,6 +439,9 @@ class Coverage(LayerModel):
                                    "workspace": ws.name, "is_model": True})
 
     def configure_layer(self, layer, ws, enabled=True):
+
+        # TODO: We must also update all our personal attributes (type, ...)
+        # because we might not have been cloned.
 
         layer.set_metadatas({
                 "wfs_name": layer.get_metadata("wms_name"),

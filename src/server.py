@@ -526,7 +526,7 @@ class styles(object):
         name = params.name
         if name == None:
             raise webapp.BadRequest(message="no parameter 'name' given.")
-        with webapp.mightConflict("style", mapfile=map_name):
+        with webapp.mightConflict(message="style {exception} already exists."):
             if name in tools.iter_styles(mf):
                 raise webapp.KeyExists(name)
 
@@ -623,7 +623,10 @@ class layers(object):
         else:
             raise webapp.BadRequest(message="Resource href is not handled by MRA.")
 
-        _, _, map_name, _, ws_name, st_type, st_name, r_type, r_name = path.split("/")
+        try:
+            _, map_name, _, ws_name, st_type, st_name, r_type, r_name = path.rsplit("/", 7)
+        except ValueError:
+            raise webapp.NotFound(message="ressource '%s' was not found." % path)
 
         r_name = r_name.rsplit(".", 1)[0]
 
@@ -656,7 +659,7 @@ class layer(object):
         return {"layer" : ({
                     "name": l_name,
                     "path": "/",
-                    "type": "VECTOR",
+                    "type": layer.get_type_name(),
                     "defaultStyle": {
                         "name": layer.ms.classgroup,
                         "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, layer.ms.classgroup, format),
@@ -688,18 +691,23 @@ class layer(object):
         # This means we can have one mapfile for each workspace
         # and if eveything uses urls it should work *almost* as is.
         r_href = data["resource"]["href"]
-        _, _, map_name, _, ws_name, st_type, st_name, r_type, r_name = r_href.split("/")
+        try:
+            _, map_name, _, ws_name, st_type, st_name, r_type, r_name = r_href.rsplit("/", 7)
+        except ValueError:
+            raise webapp.NotFound(message="ressource '%s' was not found." % r_href)
+
         r_name = r_name.rsplit(".", 1)[0]
 
         ws = mf.get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
             try:
-                model = ws.get_model(r_name, st_type, st_name)
+                model = ws.get_model(r_name, r_type[:-1], st_name)
             except ValueError:
-                webapp.NotFound("Invalid layer model '%s'" % st_type)
+                raise webapp.NotFound("Invalid layer model '%s'" % st_type)
 
         with webapp.mightNotFound("layer", mapfile=map_name):
-            model.configure_layer(ws, mf, l_name, l_enabled)
+            layer = mf.get_layer(l_name)
+            model.configure_layer(layer, ws, l_enabled)
         mf.save()
 
 
@@ -735,7 +743,10 @@ class layerstyles(object):
         else:
             raise webapp.BadRequest(message="Resource href (%s) is not handled by MRA." % url.path)
 
-        _, _, map_name, _, s_name = path.split("/")
+        try:
+            _, map_name, _, s_name = path.rsplit("/", 3)
+        except ValueError:
+            raise webapp.NotFound(message="ressource '%s' was not found." % path)
 
         s_name = s_name.rsplit(".", 1)[0]
 
@@ -774,10 +785,10 @@ class layerfields(object):
         with webapp.mightNotFound("layer", mapfile=map_name):
             layer = mf.get_layer(l_name)
 
-        return {"fields": [{
+            return {"fields": [{
                     "name": layer.get_metadata("gml_%s_alias" % field, None),
                     "fieldType": layer.get_metadata("gml_%s_type" % field, None),
-                    } for field in layer.iter_fields(mf)]
+                    } for field in layer.iter_fields()]
                 }
 
 
@@ -922,5 +933,5 @@ app = web.application(urls, globals())
 
 if __name__ == "__main__":
     app.run()
-u
+
 application = app.wsgifunc()
