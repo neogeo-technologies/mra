@@ -113,6 +113,8 @@ class NotImplemented(web.webapi.HTTPError):
 # The folowing helpers are for managing exceptions and transforming them into http errors:
 
 class exceptionManager(object):
+    raise_all = False
+
     def __init__(self, exceptions):
         self.exceptions = exceptions
 
@@ -120,7 +122,7 @@ class exceptionManager(object):
         pass
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type in self.exceptions:
+        if not self.raise_all and exc_type in self.exceptions:
             return not self.handle(exc_type, exc_value, traceback)
 
 

@@ -56,7 +56,7 @@ class tests(object):
         tpath = tools.safe_path_join(get_config('storage')['mapfiles'], "%s.map" % name)
         open(tpath, "w").write(open(spath).read())
 
-        webapp.Created("%s/maps/%s.%s" % (web.ctx.home, name, format))
+        webapp.Created("%s/maps/%s%s" % (web.ctx.home, name, format))
 
 class mapfiles(object):
     @HTTPCompatible()
@@ -86,12 +86,12 @@ class mapfiles(object):
 
         return {"mapfiles": mapfiles}
 
-    def POST(self, map_name):
+    def POST(self, map_name, format):
         data = get_data()
 
         # TODO: Create mapfile
         raise NotImplemented()
-        webapp.Created("%s/maps/%s" % (web.ctx.home, map_name))
+        webapp.Created("%s/maps/%s%s" % (web.ctx.home, map_name, format))
 
 
 class named_mapfile(object):
@@ -157,8 +157,8 @@ class datastores(object):
             ws.create_datastore(ds_name, data)
         ws.save()
 
-        webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s" % (
-                web.ctx.home, map_name, ws_name, ds_name))
+        webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s%s" % (
+                web.ctx.home, map_name, ws_name, ds_name, format))
 
 
 class datastore(object):
@@ -209,10 +209,11 @@ class featuretypes(object):
 
         data = get_data(name="featureType", mandatory=["name"])
         with webapp.mightConflict("featureType", datastore=ds_name):
-            ws.create_featuretype(data["name"], ds_name, data)
+            with webapp.mightNotFound("featureType", datastore=ds_name):
+                ws.create_featuretype(data["name"], ds_name, data)
         ws.save()
 
-        webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
+        webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s/featuretypes/%s%s" % (
                 web.ctx.home, map_name, ws.name, ds_name, data["name"], format))
 
 
@@ -237,9 +238,9 @@ class featuretype(object):
                         "name": map_name,
                         "href": "%s/maps/%s/namespaces/%s.%s" % (web.ctx.home, map_name, ws_name, format)
                         },
-                    "title": ft.get_metadata("title", ft.name),
-                    "abstract": ft.get_metadata("abstract", None),
-                    "keywords": ft.get_metadata("keywords", []),
+                    "title": ft.get_mra_metadata("title", ft.name),
+                    "abstract": ft.get_mra_metadata("abstract", None),
+                    "keywords": ft.get_mra_metadata("keywords", []),
                     "srs": dsft.get_projection(),
                     "nativeCRS": dsft.get_native(),
                     "attributes": [{
@@ -282,8 +283,10 @@ class featuretype(object):
         if ft_name != data["name"]:
             raise webapp.Forbidden("Can't change the name of a feature type.")
 
+        metadata = dict((k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
+
         with webapp.mightNotFound("featureType", datastore=ds_name):
-            ws.update_featuretype(ft_name, ds_name, data)
+            ws.update_featuretype(ft_name, ds_name, metadata)
         ws.save()
 
     def DELETE(self, map_name, ws_name, ds_name, ft_name, format):
@@ -309,15 +312,15 @@ class coveragestores(object):
     def POST(self, map_name, ws_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="coverageStore", mandatory=["name", "connectionParameters"])
+        data = get_data(name="coverageStore", mandatory=["name"])
         cs_name = data.pop("name")
 
         with webapp.mightConflict("coverageStore", workspace=ws_name):
             ws.create_coveragestore(cs_name, data)
         ws.save()
 
-        webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s" % (
-                web.ctx.home, map_name, ws_name, cs_name))
+        webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s%s" % (
+                web.ctx.home, map_name, ws_name, cs_name, format))
 
 
 class coveragestore(object):
@@ -335,7 +338,7 @@ class coveragestore(object):
     def PUT(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="coverageStore", mandatory=["name", "type", "connectionParameters"], forbidden=["href"])
+        data = get_data(name="coverageStore", mandatory=["name"], forbidden=["href"])
         if cs_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a coverage store.")
 
@@ -371,7 +374,7 @@ class coverages(object):
             ws.create_coverage(data["name"], cs_name, data)
         ws.save()
 
-        webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
+        webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s/coverages/%s%s" % (
                 web.ctx.home, map_name, ws.name, cs_name, data["name"], format))
 
 
@@ -379,7 +382,8 @@ class coverage(object):
     @HTTPCompatible()
     def GET(self, map_name, ws_name, cs_name, c_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
-        c = ws.get_coverage(c_name, cs_name)
+        with webapp.mightNotFound("coverage", coveragestore=cs_name):
+            c = ws.get_coverage(c_name, cs_name)
 
         with webapp.mightNotFound("coveragestore", workspace=ws_name):
             cs = ws.get_coveragestore(cs_name)
@@ -394,9 +398,9 @@ class coverage(object):
                         "name": map_name,
                         "href": "%s/maps/%s/namespaces/%s.%s" % (web.ctx.home, map_name, ws_name, format)
                         },
-                    "title": c.get_metadata("title", c.name),
-                    "abstract": c.get_metadata("abstract", None),
-                    "keywords": c.get_metadata("keywords", []),
+                    "title": c.get_mra_metadata("title", c.name),
+                    "abstract": c.get_mra_metadata("abstract", None),
+                    "keywords": c.get_mra_metadata("keywords", []),
                     "srs": cs.get_projection(),
                     "nativeBoundingBox": {
                         "minx": extent.minX(),
@@ -428,8 +432,11 @@ class coverage(object):
         if c_name != data["name"]:
             raise webapp.Forbidden("Can't change the name of a coverage.")
 
+
+        metadata = dict((k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
+
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
-            ws.update_coverage(c_name, cs_name, data)
+            ws.update_coverage(c_name, cs_name, metadata)
         ws.save()
 
     def DELETE(self, map_name, ws_name, cs_name, c_name, format):
@@ -631,7 +638,7 @@ class layers(object):
             model.create_layer(ws, mf, l_name, l_enabled)
         mf.save()
 
-        webapp.Created("%s/maps/%s/layers/%s" % (web.ctx.home, map_name, l_name))
+        webapp.Created("%s/maps/%s/layers/%s%s" % (web.ctx.home, map_name, l_name, format))
 
 
 class layer(object):
@@ -747,7 +754,7 @@ class layerstyles(object):
         layer.add_style_sld(mf, s_name, style)
         mf.save()
 
-        webapp.Created("%s/maps/%s/layers/%s/layerstyles/%s" % (web.ctx.home, map_name, l_name, s_name))
+        webapp.Created("%s/maps/%s/layers/%s/layerstyles/%s%s" % (web.ctx.home, map_name, l_name, s_name, format))
 
 
 class layerstyle(object):
@@ -798,7 +805,7 @@ class layergroups(object):
 
         mf.save()
 
-        webapp.Created("%s/maps/%s/layergroups/%s" % (web.ctx.home, map_name, lg.name))
+        webapp.Created("%s/maps/%s/layergroups/%s%s" % (web.ctx.home, map_name, lg.name, format))
 
 
 class layergroup(object):
@@ -907,14 +914,13 @@ urlmap(layergroup, "maps", (), "layergroups", ())
 
 urls = tuple(urlmap)
 
-if get_config("debug")["web_debug"]:
-    web.config.debug = True
-if get_config("logging")["web_logs"]:
-    HTTPCompatible.return_logs = True
+web.config.debug = get_config("debug")["web_debug"]
+webapp.exceptionManager.raise_all = get_config("debug")["raise_all"]
+HTTPCompatible.return_logs = get_config("logging")["web_logs"]
 
 app = web.application(urls, globals())
 
 if __name__ == "__main__":
     app.run()
-
+u
 application = app.wsgifunc()

@@ -76,8 +76,11 @@ def safe_path_join(root, *args):
         raise webapp.Forbidden(message="path '%s' outside root directory." % (args))
     return full_path
 
+def get_resource_path(*args):
+    return safe_path_join(get_config('storage')['resources'], *args)
+
 def get_st_data_path(ws_name, st_type, name, *args):
-    return safe_path_join(get_config('storage')['resources'], "workspaces", ws_name, st_type, name, *args)
+    return get_resource_path("workspaces", ws_name, st_type, name, *args)
 
 def get_ds_data_path(ws_name, name, *args):
     return get_st_data_path(ws_name, "datastores", name, *args)
@@ -137,7 +140,7 @@ def no_root(root, path):
     return path[len(root):] if path.startswith(root) else path
 
 def no_res_root(path):
-    return no_root(get_config('storage')['resources'], path)
+    return os.path.relpath(path, get_config('storage')['resources'])
 
 def is_hidden(path):
     # TODO Add a lot of checks, recursive option (to check folders)

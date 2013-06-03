@@ -324,7 +324,7 @@ class Datastore(object):
             if item == None: raise IndexError("No layer '%s'" % key)
         else:
             item = self.backend.GetLayerByName(key.encode('ascii', 'ignore'))
-            if item == None: raise KeyError("No layer '%s'" % key)
+            if item == None: raise KeyError(key)
         return Featuretype(item, self)
 
     def nblayers(self):

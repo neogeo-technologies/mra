@@ -37,6 +37,8 @@ import functools
 import maptools
 from webapp import KeyExists
 
+import tools
+
 class MetadataMixin(object):
 
     def __getattr__(self, attr):
@@ -55,7 +57,7 @@ def get_store_connection_string(info):
         url = urlparse.urlparse(cparam["url"])
         if url.scheme != "file" or url.netloc:
             raise ValueError("Only local files are suported.")
-        return url.path
+        return tools.get_resource_path(url.path)
     else:
         raise ValueError("Unhandled type '%s'" % cparam.get("dbtype", "<unknown>"))
 
@@ -316,9 +318,9 @@ class FeatureType(LayerModel):
         self.set_metadata("wfs_enable_request", "!GetCapabilities !DescribeFeatureType !GetFeature")
 
         # Update mra metadatas, and make sure the mandatory ones are left untouched.
+        self.update_mra_metadatas(metadata)
         self.update_mra_metadatas({"name": ft_name, "type": "featuretype", "storage": ds_name,
                                    "workspace": ws.name, "is_model": True})
-        self.update_metadatas(metadata)
 
     def configure_layer(self, layer, ws, enabled=True):
 
@@ -381,7 +383,6 @@ class Coverage(LayerModel):
     def update(self, ws, c_name, cs_name, metadata):
 
         cs = ws.get_coveragestore(cs_name)
-
         self.name = c_name
 
         # Set basic attributes.
@@ -410,9 +411,9 @@ class Coverage(LayerModel):
         self.set_metadata("wcs_enable_request", "!GetCapabilities !DescribeCoverage !GetCoverage")
 
         # Update mra metadatas, and make sure the mandatory ones are left untouched.
-        self.update_mra_metadatas({"name": cs_name, "type": "coverage", "storage": cs_name,
+        self.update_mra_metadatas(metadata)
+        self.update_mra_metadatas({"name": c_name, "type": "coverage", "storage": cs_name,
                                    "workspace": ws.name, "is_model": True})
-        self.update_metadatas(metadata)
 
     def configure_layer(self, layer, ws, enabled=True):
 
