@@ -46,7 +46,7 @@ def get_config(key=None, mode='r'):
             __config = yaml.load(open(os.path.join(sys.path[0], 'mra.yaml'), mode))
         except yaml.YAMLError, exc:
             exit('Error in configuration file: %s' % exc)
-    return __config if key == None else __config[key] if key in config else {}
+    return __config if key == None else __config[key] if key in __config else {}
 
 def get_mapfile_paths():
     """Generates a list of mapfile paths managed by Mapserver REST API."""

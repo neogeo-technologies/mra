@@ -86,12 +86,13 @@ class mapfiles(object):
 
         return {"mapfiles": mapfiles}
 
+    @HTTPCompatible()
     def POST(self, map_name, format):
         data = get_data()
 
         # TODO: Create mapfile
         raise NotImplemented()
-        webapp.Created("%s/maps/%s%s" % (web.ctx.home, map_name, format or ""))
+        webapp.Created("%s/maps/%s%s" % (web.ctx.home, map_name, (".%s" % format) if format else ""))
 
 
 class named_mapfile(object):
@@ -147,6 +148,7 @@ class datastores(object):
                     } for ds_name in ws.iter_datastore_names()]
                 }
 
+    @HTTPCompatible()
     def POST(self, map_name, ws_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -158,7 +160,7 @@ class datastores(object):
         ws.save()
 
         webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s%s" % (
-                web.ctx.home, map_name, ws_name, ds_name, format or ""))
+                web.ctx.home, map_name, ws_name, ds_name, (".%s" % format) if format else ""))
 
 
 class datastore(object):
@@ -174,6 +176,7 @@ class datastore(object):
             info["connectionParameters"] = Entries(info["connectionParameters"], tag_name="entry", key_name="key")
         return {"dataStore": info}
 
+    @HTTPCompatible()
     def PUT(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -185,6 +188,7 @@ class datastore(object):
             ws.update_datastore(ds_name, data)
         ws.save()
 
+    @HTTPCompatible()
     def DELETE(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -207,6 +211,7 @@ class featuretypes(object):
                     } for ft in ws.iter_featuretypes(ds_name)]
                 }
 
+    @HTTPCompatible()
     def POST(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -217,7 +222,7 @@ class featuretypes(object):
         ws.save()
 
         webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s/featuretypes/%s%s" % (
-                web.ctx.home, map_name, ws.name, ds_name, data["name"], format or ""))
+                web.ctx.home, map_name, ws.name, ds_name, data["name"], (".%s" % format) if format else ""))
 
 
 class featuretype(object):
@@ -279,6 +284,7 @@ class featuretype(object):
                     })
                 }
 
+    @HTTPCompatible()
     def PUT(self, map_name, ws_name, ds_name, ft_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -292,6 +298,7 @@ class featuretype(object):
             ws.update_featuretype(ft_name, ds_name, metadata)
         ws.save()
 
+    @HTTPCompatible()
     def DELETE(self, map_name, ws_name, ds_name, ft_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -316,6 +323,7 @@ class coveragestores(object):
                     } for cs_name in ws.iter_coveragestore_names()]
                 }
 
+    @HTTPCompatible()
     def POST(self, map_name, ws_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -327,7 +335,7 @@ class coveragestores(object):
         ws.save()
 
         webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s%s" % (
-                web.ctx.home, map_name, ws_name, cs_name, format or ""))
+                web.ctx.home, map_name, ws_name, cs_name, (".%s" % format) if format else ""))
 
 
 class coveragestore(object):
@@ -342,6 +350,7 @@ class coveragestore(object):
             info["connectionParameters"] = Entries(info["connectionParameters"], tag_name="entry", key_name="key")
         return {"coverageStore": info}
 
+    @HTTPCompatible()
     def PUT(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -353,6 +362,7 @@ class coveragestore(object):
             ws.update_coveragestore(cs_name, data)
         ws.save()
 
+    @HTTPCompatible()
     def DELETE(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -376,6 +386,7 @@ class coverages(object):
                     } for c in ws.iter_coverages(cs_name)]
                 }
 
+    @HTTPCompatible()
     def POST(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -386,7 +397,7 @@ class coverages(object):
         ws.save()
 
         webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s/coverages/%s%s" % (
-                web.ctx.home, map_name, ws.name, cs_name, data["name"], format or ""))
+                web.ctx.home, map_name, ws.name, cs_name, data["name"], (".%s" % format) if format else ""))
 
 
 class coverage(object):
@@ -436,6 +447,7 @@ class coverage(object):
                     })
                 }
 
+    @HTTPCompatible()
     def PUT(self, map_name, ws_name, cs_name, c_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -450,6 +462,7 @@ class coverage(object):
             ws.update_coverage(c_name, cs_name, metadata)
         ws.save()
 
+    @HTTPCompatible()
     def DELETE(self, map_name, ws_name, cs_name, c_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
@@ -464,6 +477,7 @@ class coverage(object):
 
 class files(object):
 
+    @HTTPCompatible(allow_all=True)
     def PUT(self, map_name, ws_name, st_type, st_name, f_type, format):
         import zipfile
 
@@ -534,6 +548,7 @@ class styles(object):
                     } for s_name in tools.iter_styles(mf)]
                 }
 
+    @HTTPCompatible()
     def POST(self, map_name, format):
         mf = get_mapfile(map_name)
 
@@ -580,6 +595,7 @@ class style(object):
             "href": "%s/maps/%s/styles/%s.sld" % (web.ctx.home, map_name, s_name)
             }
 
+    @HTTPCompatible()
     def PUT(self, map_name, s_name, format):
         path = tools.get_style_path(s_name)
         try:
@@ -596,6 +612,7 @@ class style(object):
             f.write(data)
 
 
+    @HTTPCompatible()
     def DELETE(self, map_name, s_name, format):
         mf = get_mapfile(map_name)
 
@@ -633,6 +650,7 @@ class layers(object):
                     } for layer in mf.iter_layers()]
                 }
 
+    @HTTPCompatible()
     def POST(self, map_name, format):
         data = get_data(name="layer", mandatory=["name", "resource"])
 
@@ -665,7 +683,7 @@ class layers(object):
             model.create_layer(ws, mf, l_name, l_enabled)
         mf.save()
 
-        webapp.Created("%s/maps/%s/layers/%s%s" % (web.ctx.home, map_name, l_name, format or ""))
+        webapp.Created("%s/maps/%s/layers/%s%s" % (web.ctx.home, map_name, l_name, (".%s" % format) if format else ""))
 
 
 class layer(object):
@@ -703,6 +721,7 @@ class layer(object):
                     })
                 }
 
+    @HTTPCompatible()
     def PUT(self, map_name, l_name, format):
         mf = get_mapfile(map_name)
 
@@ -734,7 +753,7 @@ class layer(object):
             model.configure_layer(layer, ws, l_enabled)
         mf.save()
 
-
+    @HTTPCompatible()
     def DELETE(self, map_name, l_name, format):
         mf = get_mapfile(map_name)
         with webapp.mightNotFound("layer", mapfile=map_name):
@@ -758,6 +777,7 @@ class layerstyles(object):
                     } for s_name in layer.iter_styles()],
                 }
 
+    @HTTPCompatible()
     def POST(self, map_name, l_name, format):
         data = get_data(name="style", mandatory=["resource"])
 
@@ -789,10 +809,11 @@ class layerstyles(object):
         layer.add_style_sld(mf, s_name, style)
         mf.save()
 
-        webapp.Created("%s/maps/%s/layers/%s/layerstyles/%s%s" % (web.ctx.home, map_name, l_name, s_name, format or ""))
+        webapp.Created("%s/maps/%s/layers/%s/layerstyles/%s%s" % (web.ctx.home, map_name, l_name, s_name, (".%s" % format) if format else ""))
 
 
 class layerstyle(object):
+    @HTTPCompatible()
     def DELETE(self, map_name, l_name, s_name, format):
         mf = get_mapfile(map_name)
         with webapp.mightNotFound("layer", mapfile=map_name):
@@ -827,6 +848,7 @@ class layergroups(object):
                     } for lg in mf.iter_layergroups()]
                 }
 
+    @HTTPCompatible()
     def POST(self, map_name, format):
         mf = get_mapfile(map_name)
 
@@ -840,7 +862,7 @@ class layergroups(object):
 
         mf.save()
 
-        webapp.Created("%s/maps/%s/layergroups/%s%s" % (web.ctx.home, map_name, lg.name, format or ""))
+        webapp.Created("%s/maps/%s/layergroups/%s%s" % (web.ctx.home, map_name, lg.name, (".%s" % format) if format else ""))
 
 
 class layergroup(object):
@@ -873,6 +895,7 @@ class layergroup(object):
                     })
                 }
 
+    @HTTPCompatible()
     def PUT(self, map_name, lg_name, format):
         mf = get_mapfile(map_name)
 
@@ -892,6 +915,7 @@ class layergroup(object):
 
         mf.save()
 
+    @HTTPCompatible()
     def DELETE(self, map_name, lg_name, format):
 
         mf = get_mapfile(map_name)

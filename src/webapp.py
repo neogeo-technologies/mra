@@ -293,7 +293,7 @@ class HTTPCompatible(object):
         }
 
     def __init__(self, authorize=set(), forbid=set(), authorized=set(["xml", "json", "html"]),
-                 default="html", renderer=default_renderer, render=None,
+                 allow_all=False, default="html", renderer=default_renderer, render=None,
                  parse_format=True, trim_nones=True,
                  name_hint="MapServerRESTAPI_Response"):
         """Decorator factory used to transform the output of a backend function
@@ -302,6 +302,7 @@ class HTTPCompatible(object):
         authorize and forbid are filters that allow for easy modification of
         authorized, which is used to check if the request format is OK.
 
+        If allow_all is True it cancels the whole authorization process for formats.
         default indicates which format should be used if not specified by the client.
         renderer is the function called for formating. render can be set to True or
         False to prevent HTTPCompatible from guessing if we want output or not
@@ -329,6 +330,7 @@ class HTTPCompatible(object):
 
         # Computes authorized formats, makes sure default is one of them.
         self.authorized = authorize | (authorized - forbid)
+        self.allow_all = allow_all
 
         # Should we trim trailing Nones ?
         self.trim_nones = trim_nones
@@ -346,6 +348,8 @@ class HTTPCompatible(object):
 
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
+
+            print "This is handled by HTTPCompatible."
 
             args = list(args)
 
@@ -373,7 +377,7 @@ class HTTPCompatible(object):
                     del args[-1]
 
             # Check format against authorized.
-            if page_format not in self.authorized:
+            if not self.allow_all and page_format not in self.authorized:
                 raise NotFound()
 
             # Insert the format in the argument list where it is expected by f.
