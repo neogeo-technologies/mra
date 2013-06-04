@@ -952,9 +952,9 @@ urlmap(layergroup, "maps", (), "layergroups", ())
 
 urls = tuple(urlmap)
 
-web.config.debug = get_config("debug")["web_debug"]
-webapp.exceptionManager.raise_all = get_config("debug")["raise_all"]
-HTTPCompatible.return_logs = get_config("logging")["web_logs"]
+web.config.debug = get_config("debug").get("web_debug", False)
+webapp.exceptionManager.raise_all = get_config("debug").get("raise_all", False)
+HTTPCompatible.return_logs = get_config("logging").get("web_logs", False)
 
 app = web.application(urls, globals())
 
