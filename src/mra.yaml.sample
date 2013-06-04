@@ -21,3 +21,9 @@ logging:
     level: "DEBUG"
     # Add the logs to the generated output of the webapp by setting web_logs.
     web_logs: False
+
+testing:
+    # Aditions to the API for testing, should ne deactivated in production.
+    active: False
+    # Which map file to use to create new test files.
+    model: model
