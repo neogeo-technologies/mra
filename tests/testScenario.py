@@ -302,24 +302,58 @@ def _test_layers(target, map_name):
     _, r = APIRequest("POST", target + "/maps/" + map_name + "/layers",
                       {"layer":{"name":name, "resource":{"href":c_link}}},
                       get_response=True)
-    ctl_link = r.getheader("Location").rsplit(".", 1)[0]
+    cl_link = r.getheader("Location").rsplit(".", 1)[0]
 
     # Check GET.
-    ctl = APIRequest("GET", ctl_link)["layer"]
-    assert ctl["name"] == name
-    assert ctl["type"] == "RASTER"
+    cl = APIRequest("GET", cl_link)["layer"]
+    assert cl["name"] == name
+    assert cl["type"] == "RASTER"
 
     # Check GET.
     layers = APIRequest("GET", target + "/maps/" + map_name + "/layers")["layers"]
     assert len(layers) == 2
 
     # check GET fields
-    fields = APIRequest("GET", ctl_link + "/fields")["fields"]
+    fields = APIRequest("GET", cl_link + "/fields")["fields"]
     assert len(fields) == 0
 
     # check GET layerstyles
-    fields = APIRequest("GET", ctl_link + "/styles")["styles"]
+    fields = APIRequest("GET", cl_link + "/styles")["styles"]
     assert len(fields) == 0
+
+
+    # Now lets try layer groups.
+
+    layers = APIRequest("GET", target + "/maps/" + map_name + "/layergroups")["layerGroups"]
+    assert len(layers) == 0
+
+    # POST an empty group
+    name = "test_group"
+    _, r = APIRequest("POST", target + "/maps/" + map_name + "/layergroups", {"layerGroup":{"name":name}}, get_response=True)
+    g_link = r.getheader("Location").rsplit(".", 1)[0]
+
+    # GET it.
+    group = APIRequest("GET", g_link)["layerGroup"]
+    assert group["name"] == name
+    assert len(group["layers"]) == 0
+
+    # PUT some new layers in it.
+    group["layers"] = [x["name"] for x in group["layers"]] + [ftl["name"]]
+    del group["bounds"]
+    APIRequest("PUT", g_link, {"layerGroup":group})
+
+    # GET it.
+    group = APIRequest("GET", g_link)["layerGroup"]
+    assert len(group["layers"]) == 1
+
+    # PUT some new layers in it.
+    group["layers"] = [x["name"] for x in group["layers"]] + [cl["name"]]
+    del group["bounds"]
+    APIRequest("PUT", g_link, {"layerGroup":group})
+
+    # GET it.
+    group = APIRequest("GET", g_link)["layerGroup"]
+    assert len(group["layers"]) == 2
 
 
 def test_scenario():

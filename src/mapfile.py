@@ -128,8 +128,6 @@ class Layer(MetadataMixin):
         # we need to rename it to something we are sure is not used.
         sld_layer_name = "__mra_tmp_template"
 
-        print new_sld
-
         # This is realy ugly but etree has trouble with namespaces...
         # TODO: Do this again in an other way.
         fixedxml = re.sub(' [a-zzA-Z0-9]+:([a-zA-Z0-9]+=")', ' \\1', new_sld)
@@ -231,8 +229,8 @@ class LayerGroup(object):
         extent = layers[0].get_extent()
         for layer in layers[1:]:
             e = layer.get_extent()
-            extent.addX(e.minX, e.maxX)
-            extent.addY(e.minY, e.maxY)
+            extent.addX(e.minX(), e.maxX())
+            extent.addY(e.minY(), e.maxY())
 
         return extent
 

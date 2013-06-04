@@ -860,6 +860,9 @@ class layergroup(object):
             raise webapp.Forbidden("Can't change the name of a layergroup.")
 
         layers = data.pop("layers", [])
+        if not isinstance(layers, list) or any(not isinstance(x, basestring) for x in layers):
+            raise webapp.BadRequest("layers must be a list of layer names.")
+
         lg.clear()
         lg.add(*layers)
 
