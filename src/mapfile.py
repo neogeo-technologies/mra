@@ -260,34 +260,31 @@ class LayerModel(MetadataMixin):
         mapfile.add_layer(layer)
 
         metadata["wms_name"] = l_name
-
         metadata.setdefault("wms_title", l_name)
         metadata.setdefault("wms_abstract", l_name)
-
-        #TODO: "wms_keywordlist": "",
-        #TODO: "wms_keywordlist_vocabulary": "vocabularies[]",
-        #TODO: "wms_keywordlist_<vocabulary>_items": "items[]",
-        #TODO: "wms_dataurl_format": "",
-        #TODO: "wms_dataurl_href": "",
-        #TODO: "wms_srs": "",
-        #TODO: "wms_extent": "",
-        #TODO: "wms_bbox_extended": "true",
-        #TODO: "wms_getmap_formatlist": "",
-        #TODO: "wms_getfeatureinfo_formatlist": "",
-        #TODO: "wms_getlegendgraphic_formatlist": "",
-        #TODO: "wms_attribution_title": "",
-        #TODO: "wms_attribution_onlineresource": "",
-        #TODO: "wms_attribution_logourl_href": "",
-        #TODO: "wms_attribution_logourl_format": "",
-        #TODO: "wms_attribution_logourl_height": "",
-        #TODO: "wms_attribution_logourl_width": "",
-        #TODO: "wms_identifier_authority": "",
-        #TODO: "wms_identifier_value": "",
-        #TODO: "wms_authorityurl_name": "",
-        #TODO: "wms_authorityurl_href": "",
-        #TODO: "wms_metadataurl_type": "",
-        #TODO: "wms_metadataurl_href": "",
-        #TODO: "wms_metadataurl_format": "",
+        #TODO: "wms_keywordlist"
+        #TODO: "wms_keywordlist_vocabulary"
+        #TODO: "wms_keywordlist_<vocabulary>_items"
+        #TODO: "wms_srs"
+        metadata["wms_bbox_extended"] = "true"
+        #TODO: "wms_dataurl_format"
+        #TODO: "wms_dataurl_href"
+        #TODO: "wms_getmap_formatlist"
+        #TODO: "wms_getfeatureinfo_formatlist"
+        #TODO: "wms_getlegendgraphic_formatlist"
+        #TODO: "wms_attribution_title"
+        #TODO: "wms_attribution_onlineresource": ""
+        #TODO: "wms_attribution_logourl_href"
+        #TODO: "wms_attribution_logourl_format"
+        #TODO: "wms_attribution_logourl_height"
+        #TODO: "wms_attribution_logourl_width"
+        #TODO: "wms_identifier_authority"
+        #TODO: "wms_identifier_value"
+        #TODO: "wms_authorityurl_name"
+        #TODO: "wms_authorityurl_href"
+        #TODO: "wms_metadataurl_type"
+        #TODO: "wms_metadataurl_href"
+        #TODO: "wms_metadataurl_format"
 
         layer.set_metadatas(metadata)
 
@@ -321,6 +318,10 @@ class FeatureType(LayerModel):
             self.ms.connection = "dbname=%s port=%s host=%s user=%s password=%s" % (
                 cparam["database"], cparam["port"], cparam["host"], cparam["user"], cparam["password"])
             self.ms.data = "%s FROM %s" % (ds[ft_name].get_geometry_column(), ft_name)
+            self.set_metadata("wms_extent", "%s %s %s %s" % 
+                (ft.get_extent().minX(), ft.get_extent().minY(),
+                ft.get_extent().maxX(), ft.get_extent().maxY())
+                )
         #elif cpram["dbtype"] in ["shp", "shapefile"]:
         else:
             self.ms.connectiontype = mapscript.MS_SHAPEFILE
