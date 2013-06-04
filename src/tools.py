@@ -67,6 +67,15 @@ def get_mapfile_workspace(mf_name, ws_name):
         ws = mf.get_workspace(ws_name)
     return mf, ws
 
+def assert_is_empty(generator, tname, iname):
+    try:
+        next(generator)
+    except StopIteration:
+        pass # Everything is ok.
+    else:
+        raise webapp.Forbidden(message="Can't remove '%s' because it is an non-empty %s." % (iname, tname))
+
+
 def href(url):
     return pyxml.Entries({'href': url})
 
@@ -146,6 +155,5 @@ def is_hidden(path):
     # TODO Add a lot of checks, recursive option (to check folders)
     # MacOSX has at least four ways to hide files...
     return os.path.basename(path).startswith(".")
-
 
 

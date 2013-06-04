@@ -188,6 +188,9 @@ class datastore(object):
     def DELETE(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
+        # We need to check if this datatore is empty.
+        assert_is_empty(ws.iter_featuretypes(ds_name=ds_name), "datastore", ds_name)
+
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             ws.delete_datastore(ds_name)
         ws.save()
@@ -292,6 +295,10 @@ class featuretype(object):
     def DELETE(self, map_name, ws_name, ds_name, ft_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
+        # We need to check if there are any layers using this.
+        assert_is_empty(mg.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name, "type":"featuretype"}),
+                        "featuretype", ft_name)
+
         with webapp.mightNotFound("featureType", datastore=ds_name):
             ws.delete_featuretype(ft_name, ds_name)
         ws.save()
@@ -348,6 +355,10 @@ class coveragestore(object):
 
     def DELETE(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
+
+
+        # We need to check if this datatore is empty.
+        assert_is_empty(ws.iter_coverages(cs_name=cs_name), "coveragestore", ds_name)
 
         with webapp.mightNotFound("coverageStore", workspace=ws_name):
             ws.delete_coveragestore(cs_name)
@@ -441,6 +452,10 @@ class coverage(object):
 
     def DELETE(self, map_name, ws_name, cs_name, c_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
+
+        # We need to check if there are any layers using this.
+        assert_is_empty(mg.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name, "type":"coverage"}),
+                        "coverage", ft_name)
 
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
             ws.delete_coverage(c_name, cs_name)
@@ -582,6 +597,15 @@ class style(object):
 
 
     def DELETE(self, map_name, s_name, format):
+        mf = get_mapfile(map_name)
+
+        # OK check any(class.group == s_name for class in layer.iter_classes)
+        layers_using = [layer.ms.name for layer in mf.iter_layers()
+                        if any(clazz.ms.group == s_name for clazz in layer.iter_classes())]
+
+        if layers_using:
+            raise webapp.Forbidden(message="Can't remove style '%s' because it is beeing used by the folowing layers: %s."
+                                   % (s_name, layers_using))
 
         path = tools.get_style_path(s_name)
         try:
