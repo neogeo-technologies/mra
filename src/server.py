@@ -56,7 +56,7 @@ class tests(object):
         tpath = tools.safe_path_join(get_config('storage')['mapfiles'], "%s.map" % name)
         open(tpath, "w").write(open(spath).read())
 
-        webapp.Created("%s/maps/%s%s" % (web.ctx.home, name, format))
+        webapp.Created("%s/maps/%s%s" % (web.ctx.home, name, format or ""))
 
 class mapfiles(object):
     @HTTPCompatible()
@@ -91,7 +91,7 @@ class mapfiles(object):
 
         # TODO: Create mapfile
         raise NotImplemented()
-        webapp.Created("%s/maps/%s%s" % (web.ctx.home, map_name, format))
+        webapp.Created("%s/maps/%s%s" % (web.ctx.home, map_name, format or ""))
 
 
 class named_mapfile(object):
@@ -158,7 +158,7 @@ class datastores(object):
         ws.save()
 
         webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s%s" % (
-                web.ctx.home, map_name, ws_name, ds_name, format))
+                web.ctx.home, map_name, ws_name, ds_name, format or ""))
 
 
 class datastore(object):
@@ -214,7 +214,7 @@ class featuretypes(object):
         ws.save()
 
         webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s/featuretypes/%s%s" % (
-                web.ctx.home, map_name, ws.name, ds_name, data["name"], format))
+                web.ctx.home, map_name, ws.name, ds_name, data["name"], format or ""))
 
 
 class featuretype(object):
@@ -320,7 +320,7 @@ class coveragestores(object):
         ws.save()
 
         webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s%s" % (
-                web.ctx.home, map_name, ws_name, cs_name, format))
+                web.ctx.home, map_name, ws_name, cs_name, format or ""))
 
 
 class coveragestore(object):
@@ -375,7 +375,7 @@ class coverages(object):
         ws.save()
 
         webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s/coverages/%s%s" % (
-                web.ctx.home, map_name, ws.name, cs_name, data["name"], format))
+                web.ctx.home, map_name, ws.name, cs_name, data["name"], format or ""))
 
 
 class coverage(object):
@@ -641,7 +641,7 @@ class layers(object):
             model.create_layer(ws, mf, l_name, l_enabled)
         mf.save()
 
-        webapp.Created("%s/maps/%s/layers/%s%s" % (web.ctx.home, map_name, l_name, format))
+        webapp.Created("%s/maps/%s/layers/%s%s" % (web.ctx.home, map_name, l_name, format or ""))
 
 
 class layer(object):
@@ -765,7 +765,7 @@ class layerstyles(object):
         layer.add_style_sld(mf, s_name, style)
         mf.save()
 
-        webapp.Created("%s/maps/%s/layers/%s/layerstyles/%s%s" % (web.ctx.home, map_name, l_name, s_name, format))
+        webapp.Created("%s/maps/%s/layers/%s/layerstyles/%s%s" % (web.ctx.home, map_name, l_name, s_name, format or ""))
 
 
 class layerstyle(object):
@@ -816,7 +816,7 @@ class layergroups(object):
 
         mf.save()
 
-        webapp.Created("%s/maps/%s/layergroups/%s%s" % (web.ctx.home, map_name, lg.name, format))
+        webapp.Created("%s/maps/%s/layergroups/%s%s" % (web.ctx.home, map_name, lg.name, format or ""))
 
 
 class layergroup(object):
