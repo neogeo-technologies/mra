@@ -15,9 +15,12 @@ Prerequisites
 
 	*	pyyaml
 
+	*	nosetests (Not mandatory but required to run tests)
+
 *	GDAL/OGR (>= 1.9.x with Python support)
 
 *	MapServer (>= 6.x with MapScript-Python support)
+
 
 Download
 ========
@@ -92,7 +95,6 @@ That way, your own configuration won't be discarded by a further update.
 
 		web_debug allows for easy debuging in the the browser, should be deactivated in production.
 
-
 	*	**raise_all** [True | False]
 
 		Exceptions are transformed into web errors.
@@ -119,6 +121,16 @@ That way, your own configuration won't be discarded by a further update.
 	*	**web_logs** [False | True]
 		
 		To add the logs to the generated output of the webapp.
+
+*	**testing**
+	
+    *	**active** [True | False]
+
+    	Additions to the API for testing, should be deactivated in production.
+    
+    *	**model**
+
+    	Mapfile to use to create new test files.
 
 Finally check MapServer Rest API is working correctly: 
 
