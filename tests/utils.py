@@ -31,6 +31,8 @@ import json
 
 import sys
 
+default_encoding = "json"
+
 def deduce_content_type(type):
     if type == "json":
         return "application/json"
@@ -38,7 +40,7 @@ def deduce_content_type(type):
         return "application/xml"
 
 
-def APIRequest(method, url, data=None, encode="json", decode="json", content_type=None, expected_type=None,
+def APIRequest(method, url, data=None, encode=default_encoding, decode=default_encoding, content_type=None, expected_type=None,
                get_response=False):
 
     if encode == "json":

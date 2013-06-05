@@ -24,6 +24,7 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+import utils
 from utils import APIRequest
 
 import sys
@@ -357,6 +358,8 @@ def _test_layers(target, map_name):
 
 
 def test_scenario():
+
+    # utils.default_encoding = "xml"
 
     target = "http://localhost:8080"
     map_name = "tests"
