@@ -291,6 +291,16 @@ class LayerModel(MetadataMixin):
         self.configure_layer(layer, ws)
         return layer
 
+    def get_extent(self):
+        extent = self.ms.getExtent()
+        return stores.Extent(extent.minx, extent.miny, extent.maxx, extent.maxy)
+
+    def get_latlon_extent(self):
+        rect = mapscript.rectObj(*self.get_extent())
+        res = rect.project(mapscript.projectionObj(self.ms.getProjection()),
+                           mapscript.projectionObj('+init=epsg:4326'))
+        return stores.Extent(rect.minx, rect.miny, rect.maxx, rect.maxy)
+
 
 class FeatureTypeModel(LayerModel):
     """
@@ -318,7 +328,7 @@ class FeatureTypeModel(LayerModel):
             self.ms.connection = "dbname=%s port=%s host=%s user=%s password=%s" % (
                 cparam["database"], cparam["port"], cparam["host"], cparam["user"], cparam["password"])
             self.ms.data = "%s FROM %s" % (ds[ft_name].get_geometry_column(), ft_name)
-            self.set_metadata("wms_extent", "%s %s %s %s" % 
+            self.set_metadata("ows_extent", "%s %s %s %s" % 
                 (ft.get_extent().minX(), ft.get_extent().minY(),
                 ft.get_extent().maxX(), ft.get_extent().maxY())
                 )
@@ -359,7 +369,6 @@ class FeatureTypeModel(LayerModel):
         layer.ms.setMetaData("wfs_getfeature_formatlist", "OGRGML,SHAPEZIP")
         layer.ms.setMetaData("gml_types", "auto")
 
-        # TODO: layer.ms.setMetaData("wfs_extent", "")
         # TODO: layer.ms.setMetaData("wfs_metadataurl_format", "")
         # TODO: layer.ms.setMetaData("wfs_metadataurl_href", "")
         # TODO: layer.ms.setMetaData("wfs_metadataurl_type", "")
@@ -453,7 +462,6 @@ class CoverageModel(LayerModel):
             layer.ms.setMetaData("wcs_enable_request", "GetCapabilities GetCoverage DescribeCoverage")
 
         # TODO: layer.set_metadata("wcs_srs", "")
-        # TODO: layer.set_metadata("wcs_extent", "")
         # TODO: layer.set_metadata("wcs_getfeature_formatlist", "")
         # TODO: layer.set_metadata("wcs_metadataurl_format", "")
         # TODO: layer.set_metadata("wcs_metadataurl_href", "")

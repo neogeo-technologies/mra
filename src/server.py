@@ -224,15 +224,16 @@ class featuretype(object):
     @HTTPCompatible()
     def GET(self, map_name, ws_name, ds_name, ft_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
-        with webapp.mightNotFound("featureType", datastore=ds_name):
-            ft = ws.get_featuretypemodel(ft_name, ds_name)
 
         ds = ws.get_datastore(ds_name)
         with webapp.mightNotFound("dataStore", datastore=ds_name):
             dsft = ds[ft_name]
 
-        extent = dsft.get_extent()
-        latlon_extent = dsft.get_latlon_extent()
+        with webapp.mightNotFound("featureType", datastore=ds_name):
+            ft = ws.get_featuretypemodel(ft_name, ds_name)
+
+        extent = ft.get_extent()
+        latlon_extent = ft.get_latlon_extent()
 
         return {"featureType": ({
                     "name": ft.name,
@@ -399,7 +400,7 @@ class coverage(object):
         with webapp.mightNotFound("coveragestore", workspace=ws_name):
             cs = ws.get_coveragestore(cs_name)
 
-        extent = cs.get_extent()
+        extent = c.get_extent()
         latlon_extent = cs.get_latlon_extent()
 
         return {"coverage": ({
