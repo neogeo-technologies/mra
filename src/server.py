@@ -189,7 +189,7 @@ class datastore(object):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
         # We need to check if this datatore is empty.
-        assert_is_empty(ws.iter_featuretypes(ds_name=ds_name), "datastore", ds_name)
+        assert_is_empty(ws.iter_featuretypemodels(ds_name=ds_name), "datastore", ds_name)
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             ws.delete_datastore(ds_name)
@@ -204,7 +204,7 @@ class featuretypes(object):
                     "name": ft.name,
                     "href": "%s/maps/%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
                         web.ctx.home, map_name, ws.name, ds_name, ft.name, format)
-                    } for ft in ws.iter_featuretypes(ds_name)]
+                    } for ft in ws.iter_featuretypemodels(ds_name)]
                 }
 
     def POST(self, map_name, ws_name, ds_name, format):
@@ -213,7 +213,7 @@ class featuretypes(object):
         data = get_data(name="featureType", mandatory=["name"])
         with webapp.mightConflict("featureType", datastore=ds_name):
             with webapp.mightNotFound("featureType", datastore=ds_name):
-                ws.create_featuretype(data["name"], ds_name, data)
+                ws.create_featuretypemodel(data["name"], ds_name, data)
         ws.save()
 
         webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s/featuretypes/%s%s" % (
@@ -225,7 +225,7 @@ class featuretype(object):
     def GET(self, map_name, ws_name, ds_name, ft_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
         with webapp.mightNotFound("featureType", datastore=ds_name):
-            ft = ws.get_featuretype(ft_name, ds_name)
+            ft = ws.get_featuretypemodel(ft_name, ds_name)
 
         ds = ws.get_datastore(ds_name)
         with webapp.mightNotFound("dataStore", datastore=ds_name):
@@ -289,7 +289,7 @@ class featuretype(object):
         metadata = dict((k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
-            ws.update_featuretype(ft_name, ds_name, metadata)
+            ws.update_featuretypemodel(ft_name, ds_name, metadata)
         ws.save()
 
     def DELETE(self, map_name, ws_name, ds_name, ft_name, format):
@@ -300,7 +300,7 @@ class featuretype(object):
                         "featuretype", ft_name)
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
-            ws.delete_featuretype(ft_name, ds_name)
+            ws.delete_featuretypemodel(ft_name, ds_name)
         ws.save()
 
 
@@ -373,7 +373,7 @@ class coverages(object):
                     "name": c.name,
                     "href": "%s/maps/%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
                         web.ctx.home, map_name, ws.name, cs_name, c.name, format)
-                    } for c in ws.iter_coverages(cs_name)]
+                    } for c in ws.iter_coveragemodels(cs_name)]
                 }
 
     def POST(self, map_name, ws_name, cs_name, format):
@@ -382,7 +382,7 @@ class coverages(object):
         data = get_data(name="coverage", mandatory=["name"])
 
         with webapp.mightConflict("coverage", coveragestore=cs_name):
-            ws.create_coverage(data["name"], cs_name, data)
+            ws.create_coveragemodel(data["name"], cs_name, data)
         ws.save()
 
         webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s/coverages/%s%s" % (
@@ -394,7 +394,7 @@ class coverage(object):
     def GET(self, map_name, ws_name, cs_name, c_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
-            c = ws.get_coverage(c_name, cs_name)
+            c = ws.get_coveragemodel(c_name, cs_name)
 
         with webapp.mightNotFound("coveragestore", workspace=ws_name):
             cs = ws.get_coveragestore(cs_name)
@@ -447,7 +447,7 @@ class coverage(object):
         metadata = dict((k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
 
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
-            ws.update_coverage(c_name, cs_name, metadata)
+            ws.update_coveragemodel(c_name, cs_name, metadata)
         ws.save()
 
     def DELETE(self, map_name, ws_name, cs_name, c_name, format):
@@ -458,7 +458,7 @@ class coverage(object):
                         "coverage", ft_name)
 
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
-            ws.delete_coverage(c_name, cs_name)
+            ws.delete_coveragemodel(c_name, cs_name)
         ws.save()
 
 

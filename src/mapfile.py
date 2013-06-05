@@ -292,7 +292,7 @@ class LayerModel(MetadataMixin):
         return layer
 
 
-class FeatureType(LayerModel):
+class FeatureTypeModel(LayerModel):
     """
     """
 
@@ -398,7 +398,7 @@ class FeatureType(LayerModel):
 
 
 
-class Coverage(LayerModel):
+class CoverageModel(LayerModel):
     """
     """
 
@@ -585,42 +585,42 @@ class MapfileWorkspace(Workspace):
 
     # Feature types
 
-    def iter_featuretypes(self, ds_name=None, **kwargs):
+    def iter_featuretypemodels(self, ds_name=None, **kwargs):
         kwargs.setdefault("mra", {}).update({"type":"featuretype", "is_model":True})
         if ds_name != None:
             kwargs["mra"].update({"storage":ds_name, "workspace":self.name})
         for ms_layer in self.mapfile.iter_ms_layers(**kwargs):
-            yield FeatureType(ms_layer)
+            yield FeatureTypeModel(ms_layer)
 
-    def get_featuretype(self, ft_name, ds_name):
+    def get_featuretypemodel(self, ft_name, ds_name):
         # Improvement: Use get by name combined with a coverage-specific naming.
         try:
-            return next(self.iter_featuretypes(ds_name, mra={"name":ft_name}))
+            return next(self.iter_featuretypemodels(ds_name, mra={"name":ft_name}))
         except StopIteration:
             raise KeyError((ds_name, ft_name))
 
-    def has_featuretype(self, ft_name, ds_name):
-        # Improvement: See get_featuretype
+    def has_featuretypemodel(self, ft_name, ds_name):
+        # Improvement: See get_featuretypemodel
         try:
-            self.get_featuretype(ft_name, ds_name)
+            self.get_featuretypemodel(ft_name, ds_name)
         except KeyError:
             return False
         else:
             return True
 
-    def create_featuretype(self, ft_name, ds_name, metadata={}):
-        if self.has_featuretype(ft_name, ds_name):
+    def create_featuretypemodel(self, ft_name, ds_name, metadata={}):
+        if self.has_featuretypemodel(ft_name, ds_name):
             raise KeyExists(ft_name)
 
-        ft = FeatureType(mapscript.layerObj(self.mapfile.ms))
+        ft = FeatureTypeModel(mapscript.layerObj(self.mapfile.ms))
         ft.update(self, ft_name, ds_name, metadata)
         return ft
 
-    def update_featuretype(self, ft_name, ds_name, metadata={}):
-        ft = self.get_featuretype(ft_name, ds_name)
+    def update_featuretypemodel(self, ft_name, ds_name, metadata={}):
+        ft = self.get_featuretypemodel(ft_name, ds_name)
         ft.update(self, ft_name, ds_name, metadata)
 
-    def delete_featuretype(self, ft_name, ds_name):
+    def delete_featuretypemodel(self, ft_name, ds_name):
         try:
             next(self.mapfile.iter_layers(mra={"workspace":self.name, "type":"featuretype",
                                                "storage":ds_name, "name":ft_name}))
@@ -629,48 +629,48 @@ class MapfileWorkspace(Workspace):
         else:
             raise ValueError("The featuretype '%s' can't be delete because it is used." % ft_name)
 
-        ft = self.get_featuretype(ft_name, ds_name)
+        ft = self.get_featuretypemodel(ft_name, ds_name)
         self.mapfile.ms.removeLayer(ft.ms.index)
 
 
     # Coverages
 
-    def iter_coverages(self, cs_name=None, **kwargs):
+    def iter_coveragemodels(self, cs_name=None, **kwargs):
         kwargs.setdefault("mra", {}).update({"type":"coverage", "is_model":True})
         if cs_name != None:
             kwargs["mra"].update({"storage":cs_name, "workspace":self.name})
         for ms_layer in self.mapfile.iter_ms_layers(**kwargs):
-            yield Coverage(ms_layer)
+            yield CoverageModel(ms_layer)
 
-    def get_coverage(self, c_name, cs_name):
+    def get_coveragemodel(self, c_name, cs_name):
         # Improvement: Use get by name combined with a coverage-specific naming.
         try:
-            return next(self.iter_coverages(cs_name, mra={"name":c_name}))
+            return next(self.iter_coveragemodels(cs_name, mra={"name":c_name}))
         except StopIteration:
             raise KeyError((cs_name, c_name))
 
-    def has_coverage(self, c_name, cs_name):
-        # Improvement: See get_coverage
+    def has_coveragemodel(self, c_name, cs_name):
+        # Improvement: See get_coveragemodel
         try:
-            self.get_coverage(c_name, cs_name)
+            self.get_coveragemodel(c_name, cs_name)
         except KeyError:
             return False
         else:
             return True
 
-    def create_coverage(self, c_name, cs_name, metadata={}):
-        if self.has_coverage(c_name, cs_name):
+    def create_coveragemodel(self, c_name, cs_name, metadata={}):
+        if self.has_coveragemodel(c_name, cs_name):
             raise KeyExists(c_name)
 
-        c = Coverage(mapscript.layerObj(self.mapfile.ms))
+        c = CoverageModel(mapscript.layerObj(self.mapfile.ms))
         c.update(self, c_name, cs_name, metadata)
         return c
 
-    def update_coverage(self, c_name, cs_name, metadata={}):
-        c = self.get_coverage(c_name, cs_name)
+    def update_coveragemodel(self, c_name, cs_name, metadata={}):
+        c = self.get_coveragemodel(c_name, cs_name)
         c.update(self, c_name, cs_name, metadata)
 
-    def delete_coverage(self, c_name, cs_name):
+    def delete_coveragemodel(self, c_name, cs_name):
         try:
             next(self.mapfile.iter_layers(mra={"workspace":self.name, "type":"coverage",
                                                "storage":cs_name, "name":c_name}))
@@ -679,7 +679,7 @@ class MapfileWorkspace(Workspace):
         else:
             raise ValueError("The coverage '%s' can't be delete because it is used." % c_name)
 
-        c = self.get_coverage(c_name, cs_name)
+        c = self.get_coveragemodel(c_name, cs_name)
         self.mapfile.ms.removeLayer(c.ms.index)
 
     # All the above :)
@@ -687,9 +687,9 @@ class MapfileWorkspace(Workspace):
     def get_model(self, m_name, s_type, s_name):
 
         if s_type == "coverage":
-            return self.get_coverage(m_name, s_name)
+            return self.get_coveragemodel(m_name, s_name)
         elif s_type == "featuretype":
-            return self.get_featuretype(m_name, s_name)
+            return self.get_featuretypemodel(m_name, s_name)
         else:
             raise ValueError("Bad storage type '%s'." % s_type)
 
