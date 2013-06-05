@@ -404,8 +404,9 @@ class Coveragestore(object):
         return self.backend.GetProjection()
 
     def get_proj4(self):
-        # TODO compute this.
-        return "+proj=longlat +datum=WGS84 +no_defs"
+        proj = osr.SpatialReference()
+        proj.ImportFromWkt(self.get_projection())
+        return proj.ExportToProj4()
 
     def nbbands(self):
         return self.backend.RasterCount
