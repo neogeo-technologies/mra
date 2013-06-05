@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -24,69 +24,38 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-import httplib
-
-import pyxml
-import json
-
 import sys
+from distutils.core import setup
 
-default_encoding = "json"
-
-def deduce_content_type(type):
-    if type == "json":
-        return "application/json"
-    elif type == "xml":
-        return "application/xml"
-
-
-def APIRequest(method, url, data=None, encode=default_encoding, decode=default_encoding, content_type=None, expected_type=None,
-               get_response=False):
-
-    if encode == "json":
-        data = json.dumps(data)
-    elif encode == "xml":
-        data = pyxml.dumps(data)
-
-    if content_type == None:
-        content_type = deduce_content_type(encode)
-
-    surl = httplib.urlsplit(url)
-
-    if encode and not url.endswith("." + encode):
-        url = surl.path + "." + encode
-    else:
-        url = surl.path
-
-    if surl.query:
-        url += "?" + surl.query
-
-    print >>sys.stderr, method, surl.geturl().replace(surl.path, url)
-    conn = httplib.HTTPConnection(surl.hostname, surl.port)
-    conn.request(method, url, body=data, headers={"Content-Type":content_type})
-
-    r = conn.getresponse()
-
-    if expected_type == None:
-        expected_type = deduce_content_type(decode)
-
-    # TODO: enable this test once it is suported.
-    # assert expected_type in r.getheader("Content-Type"), "received %s instead of %s" % (
-    #     r.getheader("Content-Type"), expected_type)
-
-    recv = r.read()
-
-    try:
-        if decode == "json":
-            recv = json.loads(recv)
-        elif decode == "xml":
-            recv = pyxml.loads(recv)
-    except:
-        pass
-
-    print >>sys.stderr, r.status, r.reason
-    assert 200 <= r.status < 300, recv
-
-    return (recv, r) if get_response else recv
-
-
+setup(
+    name='MapServer Rest API',
+    version='0.1.0',
+    author='Neogeo Technologies',
+    author_email='contact@neogeo-online.net',
+    description='A RESTFul interface for MapServer',
+    long_description=file('README.rst','rb').read(),
+    keywords='neogeo mapserver rest restful',
+    license="GPLv3",
+    #url='',
+    classifiers=[
+        'Development Status :: Beta',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: GPLv3',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Natural Language :: English',
+        'Topic :: Scientific/Engineering :: GIS',
+        ],
+    #packages=,
+    #package_dir={'':'src'},
+    #namespace_packages=['mra'],
+    requires=[
+        'web.py',
+        'pyyaml',
+        'osgeo',
+        ],
+    scripts=[
+        'src/server.py',
+        ]
+    )
