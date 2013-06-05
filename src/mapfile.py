@@ -171,6 +171,9 @@ class Layer(MetadataMixin):
         else:
             raise KeyError(s_name)
 
+    def update(self, metadata):
+        self.update_metadatas(metadata)
+
 
 class LayerGroup(object):
     """
@@ -240,56 +243,7 @@ class LayerModel(MetadataMixin):
 
     def __init__(self, backend):
         self.ms = backend
-        self.name = metadata.get_mra_metadata(backend, "name", None)
-
-    def create_layer(self, ws, mapfile, l_name, enabled=True, metadata={}):
-        """
-        """
-
-        layer = Layer(self.ms.clone())
-
-        with layer.mra_metadata() as mra_metadata:
-            mra_metadata["is_model"] = False
-
-        layer.ms.status = mapscript.MS_ON
-        layer.ms.name = l_name
-        layer.ms.dump = mapscript.MS_TRUE
-        layer.ms.template = "foo.html"
-
-        layer.enable(enabled)
-        mapfile.add_layer(layer)
-
-        metadata["wms_name"] = l_name
-        metadata.setdefault("wms_title", l_name)
-        metadata.setdefault("wms_abstract", l_name)
-        #TODO: "wms_keywordlist"
-        #TODO: "wms_keywordlist_vocabulary"
-        #TODO: "wms_keywordlist_<vocabulary>_items"
-        #TODO: "wms_srs"
-        metadata["wms_bbox_extended"] = "true"
-        #TODO: "wms_dataurl_format"
-        #TODO: "wms_dataurl_href"
-        #TODO: "wms_getmap_formatlist"
-        #TODO: "wms_getfeatureinfo_formatlist"
-        #TODO: "wms_getlegendgraphic_formatlist"
-        #TODO: "wms_attribution_title"
-        #TODO: "wms_attribution_onlineresource": ""
-        #TODO: "wms_attribution_logourl_href"
-        #TODO: "wms_attribution_logourl_format"
-        #TODO: "wms_attribution_logourl_height"
-        #TODO: "wms_attribution_logourl_width"
-        #TODO: "wms_identifier_authority"
-        #TODO: "wms_identifier_value"
-        #TODO: "wms_authorityurl_name"
-        #TODO: "wms_authorityurl_href"
-        #TODO: "wms_metadataurl_type"
-        #TODO: "wms_metadataurl_href"
-        #TODO: "wms_metadataurl_format"
-
-        layer.set_metadatas(metadata)
-
-        self.configure_layer(layer, ws)
-        return layer
+        self.name = self.get_mra_metadata("name", None)
 
     def get_extent(self):
         extent = self.ms.getExtent()
@@ -313,7 +267,7 @@ class FeatureTypeModel(LayerModel):
         self.name = ft_name
 
         # Set basic attributes.
-        self.ms.name = "ft:%s:%s" % (ds_name, ft_name)
+        self.ms.name = "ft:%s:%s:%s" % (ws.name, ds_name, ft_name)
         self.ms.status = mapscript.MS_OFF
         self.ms.type = ft.get_geomtype_mapscript()
         self.ms.setProjection(ft.get_proj4())
@@ -328,7 +282,7 @@ class FeatureTypeModel(LayerModel):
             self.ms.connection = "dbname=%s port=%s host=%s user=%s password=%s" % (
                 cparam["database"], cparam["port"], cparam["host"], cparam["user"], cparam["password"])
             self.ms.data = "%s FROM %s" % (ds[ft_name].get_geometry_column(), ft_name)
-            self.set_metadata("ows_extent", "%s %s %s %s" % 
+            self.set_metadata("ows_extent", "%s %s %s %s" %
                 (ft.get_extent().minX(), ft.get_extent().minY(),
                 ft.get_extent().maxX(), ft.get_extent().maxY())
                 )
@@ -351,12 +305,28 @@ class FeatureTypeModel(LayerModel):
         self.update_mra_metadatas({"name": ft_name, "type": "featuretype", "storage": ds_name,
                                    "workspace": ws.name, "is_model": True})
 
-    def configure_layer(self, layer, ws, enabled=True):
+    def configure_layer(self, ws, layer, enabled=True):
 
-        # TODO: We must also update all our personal attributes (type, ...)
+        # We must also update all our personal attributes (type, ...)
         # because we might not have been cloned.
 
-        layer.set_metadatas({
+        layer.ms.type = self.ms.type
+        layer.ms.setProjection(self.ms.getProjection())
+        layer.ms.setExtent(self.ms.extent.minx, self.ms.extent.miny,
+                           self.ms.extent.maxx, self.ms.extent.maxy)
+        layer.ms.data = self.ms.data
+        layer.ms.connectiontype = self.ms.connectiontype
+        layer.ms.connection = self.ms.connection
+
+        layer.update_mra_metadatas({
+                "name": self.get_mra_metadata("name"),
+                "type": self.get_mra_metadata("type"),
+                "storage": self.get_mra_metadata("storage"),
+                "workspace": self.get_mra_metadata("workspace"),
+                "is_model": False,
+                })
+
+        layer.update_metadatas({
                 "wfs_name": layer.get_metadata("wms_name"),
                 "wfs_title": layer.get_metadata("wms_title"),
                 "wfs_abstract": layer.get_metadata("wms_abstract"),
@@ -446,10 +416,27 @@ class CoverageModel(LayerModel):
         self.update_mra_metadatas({"name": c_name, "type": "coverage", "storage": cs_name,
                                    "workspace": ws.name, "is_model": True})
 
-    def configure_layer(self, layer, ws, enabled=True):
+    def configure_layer(self, ws, layer, enabled=True):
 
-        # TODO: We must also update all our personal attributes (type, ...)
+        # We must also update all our personal attributes (type, ...)
         # because we might not have been cloned.
+
+        layer.ms.type = self.ms.type
+        layer.ms.setProjection(self.ms.getProjection())
+        layer.ms.setExtent(self.ms.extent.minx, self.ms.extent.miny,
+                           self.ms.extent.maxx, self.ms.extent.maxy)
+        layer.ms.setProcessingKey("RESAMPLE","AVERAGE")
+        layer.ms.data = self.ms.data
+        layer.ms.connectiontype = self.ms.connectiontype
+        layer.ms.connection = self.ms.connection
+
+        layer.update_mra_metadatas({
+                "name": self.get_mra_metadata("name"),
+                "type": self.get_mra_metadata("type"),
+                "storage": self.get_mra_metadata("storage"),
+                "workspace": self.get_mra_metadata("workspace"),
+                "is_model": False,
+                })
 
         layer.set_metadatas({
                 "wfs_name": layer.get_metadata("wms_name"),
@@ -777,10 +764,59 @@ class Mapfile(MetadataMixin):
                              s_name=layer.get_mra_metadata("storage"))
         return layer, ws, model
 
-    def add_layer(self, layer):
-        if self.has_layer(layer.ms.name):
-            raise KeyExists(layer.ms.name)
+    def create_layer(self, ws, model, l_name, l_enabled, l_metadata={}):
+        # First create the layer, then configure it.
+
+        if self.has_layer(l_name):
+            raise KeyExists(l_name)
+
+        # We still clone, because we have to start from something,
+        # but everything should be configured() anyway.
+        layer = Layer(model.ms.clone())
+        layer.ms.name = l_name
+        layer.ms.status = mapscript.MS_ON
+        layer.ms.dump = mapscript.MS_TRUE
+        layer.ms.tolerance = 6
+        layer.ms.toleranceunits = mapscript.MS_PIXELS
+        layer.ms.template = "foo.html"
+
+        layer.enable(l_enabled)
         self.ms.insertLayer(layer.ms)
+
+        l_metadata["wms_name"] = l_name
+        l_metadata.setdefault("wms_title", l_name)
+        l_metadata.setdefault("wms_abstract", l_name)
+        l_metadata.setdefault("wms_bbox_extended", "true")
+
+        # TODO: Add other default values as above:
+        # "wms_keywordlist"
+        # "wms_keywordlist_vocabulary"
+        # "wms_keywordlist_<vocabulary>_items"
+        # "wms_srs"
+        # "wms_dataurl_format"
+        # "wms_dataurl_href"
+        # "wms_getmap_formatlist"
+        # "wms_getfeatureinfo_formatlist"
+        # "wms_getlegendgraphic_formatlist"
+        # "wms_attribution_title"
+        # "wms_attribution_onlineresource": ""
+        # "wms_attribution_logourl_href"
+        # "wms_attribution_logourl_format"
+        # "wms_attribution_logourl_height"
+        # "wms_attribution_logourl_width"
+        # "wms_identifier_authority"
+        # "wms_identifier_value"
+        # "wms_authorityurl_name"
+        # "wms_authorityurl_href"
+        # "wms_metadataurl_type"
+        # "wms_metadataurl_href"
+        # "wms_metadataurl_format"
+
+        # TODO: pass correct data (title, abstract, ...) to layer.update()
+        layer.update(l_metadata)
+        model.configure_layer(ws, layer, l_enabled)
+
+        return layer
 
     def delete_layer(self, l_name):
         layer = self.get_layer(l_name)

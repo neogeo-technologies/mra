@@ -682,7 +682,7 @@ class layers(object):
                 webapp.NotFound("Invalid layer model '%s'" % r_type[:-1])
 
         with webapp.mightConflict("layer", mapfile=map_name):
-            model.create_layer(ws, mf, l_name, l_enabled)
+            mf.create_layer(ws, model, l_name, l_enabled)
         mf.save()
 
         webapp.Created("%s/maps/%s/layers/%s%s" % (web.ctx.home, map_name, l_name, (".%s" % format) if format else ""))
@@ -753,7 +753,12 @@ class layer(object):
 
         with webapp.mightNotFound("layer", mapfile=map_name):
             layer = mf.get_layer(l_name)
-            model.configure_layer(layer, ws, l_enabled)
+
+            if layer.get_mra_metadata("type") != r_type:
+                raise webapp.BadRequest("Can't change a '%s' layer into a '%s'." % (
+                        layer.get_mra_metadata("type"), r_type))
+
+            model.configure_layer(ws, layer, l_enabled)
         mf.save()
 
     @HTTPCompatible()
