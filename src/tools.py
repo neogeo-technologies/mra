@@ -34,6 +34,7 @@ import pyxml
 import webapp
 
 import xml.etree.ElementTree as etree
+from osgeo import osr
 
 __config = None
 
@@ -156,4 +157,26 @@ def is_hidden(path):
     # MacOSX has at least four ways to hide files...
     return os.path.basename(path).startswith(".")
 
+def wkt_to_proj4(wkt):
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(wkt)
+    return srs.ExportToProj4()
+
+def proj4_to_wkt(proj4):
+    srs = osr.SpatialReference()
+    srs.ImportFromProj4(proj4)
+    return srs.ExportToWkt()
+
+def wkt_to_authority(wkt):
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(wkt)
+    
+    # Are there really no other with osgeo? Oo
+    
+    if srs.GetAuthorityCode('PROJCS') == None and srs.GetAuthorityCode('GEOGCS') != None :
+        return srs.GetAuthorityName('GEOGCS'), srs.GetAuthorityCode('GEOGCS')
+    if srs.GetAuthorityCode('PROJCS') != None:
+        return srs.GetAuthorityName('PROJCS'), srs.GetAuthorityCode('PROJCS')
+    else:
+        raise KeyError("Unable to get authority from %s" % wkt)
 

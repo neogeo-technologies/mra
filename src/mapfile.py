@@ -255,6 +255,15 @@ class LayerModel(MetadataMixin):
                            mapscript.projectionObj('+init=epsg:4326'))
         return stores.Extent(rect.minx, rect.miny, rect.maxx, rect.maxy)
 
+    def get_proj4(self):
+        return self.ms.getProjection()
+
+    def get_wkt(self):
+        return tools.proj4_to_wkt(self.ms.getProjection())
+
+    def get_authority(self):
+        return tools.wkt_to_authority(self.get_wkt())
+
 
 class FeatureTypeModel(LayerModel):
     """

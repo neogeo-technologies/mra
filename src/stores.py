@@ -26,6 +26,7 @@
 
 from osgeo import ogr, osr, gdal
 import mapscript
+import tools
 
 class Extent(list):
 
@@ -404,9 +405,7 @@ class Coveragestore(object):
         return self.backend.GetProjection()
 
     def get_proj4(self):
-        proj = osr.SpatialReference()
-        proj.ImportFromWkt(self.get_projection())
-        return proj.ExportToProj4()
+        return tools.wkt_to_proj4(self.get_projection())
 
     def nbbands(self):
         return self.backend.RasterCount
