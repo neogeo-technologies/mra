@@ -250,8 +250,8 @@ class featuretype(object):
                     "title": ft.get_mra_metadata("title", ft.name),
                     "abstract": ft.get_mra_metadata("abstract", None),
                     "keywords": ft.get_mra_metadata("keywords", []),
-                    "srs": dsft.get_projection(),
-                    "nativeCRS": dsft.get_native(),
+                    "srs": "%s:%s" % (ft.get_authority()[0], ft.get_authority()[1]),
+                    "nativeCRS": ft.get_wkt(),
                     "attributes": [{
                             "name": f.get_name(),
                             "minOccurs": 0 if f.is_nullable() else 1,
@@ -405,14 +405,15 @@ class coverage(object):
     @HTTPCompatible()
     def GET(self, map_name, ws_name, cs_name, c_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
+
+        # with webapp.mightNotFound("coveragestore", workspace=ws_name):
+        #     cs = ws.get_coveragestore(cs_name)
+
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
             c = ws.get_coveragemodel(c_name, cs_name)
 
-        with webapp.mightNotFound("coveragestore", workspace=ws_name):
-            cs = ws.get_coveragestore(cs_name)
-
         extent = c.get_extent()
-        latlon_extent = cs.get_latlon_extent()
+        latlon_extent = c.get_latlon_extent()
 
         return {"coverage": ({
                     "name": c.name,
@@ -424,7 +425,8 @@ class coverage(object):
                     "title": c.get_mra_metadata("title", c.name),
                     "abstract": c.get_mra_metadata("abstract", None),
                     "keywords": c.get_mra_metadata("keywords", []),
-                    "srs": cs.get_projection(),
+                    "srs": "%s:%s" % (c.get_authority()[0], c.get_authority()[1]),
+                    "nativeCRS": c.get_wkt(),
                     "nativeBoundingBox": {
                         "minx": extent.minX(),
                         "miny": extent.minY(),
