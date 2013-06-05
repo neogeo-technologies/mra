@@ -172,11 +172,10 @@ def wkt_to_authority(wkt):
     srs.ImportFromWkt(wkt)
     
     # Are there really no other with osgeo? Oo
-    
-    if srs.GetAuthorityCode('PROJCS') == None and srs.GetAuthorityCode('GEOGCS') != None :
-        return srs.GetAuthorityName('GEOGCS'), srs.GetAuthorityCode('GEOGCS')
+
     if srs.GetAuthorityCode('PROJCS') != None:
         return srs.GetAuthorityName('PROJCS'), srs.GetAuthorityCode('PROJCS')
+    elif srs.GetAuthorityCode('GEOGCS') != None :
+        return srs.GetAuthorityName('GEOGCS'), srs.GetAuthorityCode('GEOGCS')
     else:
         raise KeyError("Unable to get authority from %s" % wkt)
-
