@@ -349,8 +349,6 @@ class HTTPCompatible(object):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
 
-            print "This is handled by HTTPCompatible."
-
             args = list(args)
 
             # If the last argument is a string starting with "." we use it as format
@@ -434,7 +432,7 @@ class HTTPCompatible(object):
         return wrapper
 
 
-def get_data(name=None, mandatory=[], forbidden=[]):
+def get_data(name=None, mandatory=[], authorized=[], forbidden=[]):
     data = web.data()
 
     if not 'CONTENT_TYPE' in web.ctx.env:
@@ -461,5 +459,7 @@ def get_data(name=None, mandatory=[], forbidden=[]):
         raise web.badrequest('The following elements are missing, %s' % [x for x in mandatory if x not in data])
     if any(x in data for x in forbidden):
         raise web.badrequest('You are not allowed to send any of %s' % [x for x in forbidden if x in data])
+    if authorized and any(x not in authorized for x in data):
+        raise web.badrequest('You are not allowed to send any of %s' % ([x for x in data if x not in authorized]))
 
     return data

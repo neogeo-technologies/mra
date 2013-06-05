@@ -152,7 +152,7 @@ class datastores(object):
     def POST(self, map_name, ws_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="dataStore", mandatory=["name"])
+        data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract"])
         ds_name = data.pop("name")
 
         with webapp.mightConflict("dataStore", workspace=ws_name):
@@ -180,7 +180,7 @@ class datastore(object):
     def PUT(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="dataStore", mandatory=["name"], forbidden=["href"])
+        data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract"])
         if ds_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a data store.")
 
@@ -215,7 +215,7 @@ class featuretypes(object):
     def POST(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="featureType", mandatory=["name"])
+        data = get_data(name="featureType", mandatory=["name"], authorized=["name", "title", "abstract"])
         with webapp.mightConflict("featureType", datastore=ds_name):
             with webapp.mightNotFound("featureType", datastore=ds_name):
                 ws.create_featuretypemodel(data["name"], ds_name, data)
@@ -289,7 +289,7 @@ class featuretype(object):
     def PUT(self, map_name, ws_name, ds_name, ft_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="featureType", mandatory=["name"])
+        data = get_data(name="featureType", mandatory=["name"], authorized=["name", "title", "abstract"])
         if ft_name != data["name"]:
             raise webapp.Forbidden("Can't change the name of a feature type.")
 
@@ -328,7 +328,7 @@ class coveragestores(object):
     def POST(self, map_name, ws_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="coverageStore", mandatory=["name"])
+        data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract"])
         cs_name = data.pop("name")
 
         with webapp.mightConflict("coverageStore", workspace=ws_name):
@@ -355,7 +355,7 @@ class coveragestore(object):
     def PUT(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="coverageStore", mandatory=["name"], forbidden=["href"])
+        data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract"])
         if cs_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a coverage store.")
 
@@ -391,7 +391,7 @@ class coverages(object):
     def POST(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="coverage", mandatory=["name"])
+        data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
 
         with webapp.mightConflict("coverage", coveragestore=cs_name):
             ws.create_coveragemodel(data["name"], cs_name, data)
@@ -452,7 +452,7 @@ class coverage(object):
     def PUT(self, map_name, ws_name, cs_name, c_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="coverage", mandatory=["name"])
+        data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
         if c_name != data["name"]:
             raise webapp.Forbidden("Can't change the name of a coverage.")
 
@@ -653,7 +653,8 @@ class layers(object):
 
     @HTTPCompatible()
     def POST(self, map_name, format):
-        data = get_data(name="layer", mandatory=["name", "resource"])
+        data = get_data(name="layer", mandatory=["name", "resource"],
+                        authorized=["name", "title", "abstract", "resource"])
 
         l_name = data.pop("name")
         l_enabled = data.pop("enabled", True)
@@ -726,7 +727,8 @@ class layer(object):
     def PUT(self, map_name, l_name, format):
         mf = get_mapfile(map_name)
 
-        data = get_data(name="layer", mandatory=["name", "resource"])
+        data = get_data(name="layer", mandatory=["name", "resource"],
+                        authorized=["name", "title", "abstract", "resource"])
         if l_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a layer.")
 
@@ -780,7 +782,8 @@ class layerstyles(object):
 
     @HTTPCompatible()
     def POST(self, map_name, l_name, format):
-        data = get_data(name="style", mandatory=["resource"])
+        data = get_data(name="style", mandatory=["resource"],
+                        authorized=["name", "title", "abstract", "resource"])
 
         url = urlparse.urlparse(data["resource"]["href"])
         if url.path.startswith(web.ctx.homepath):
@@ -853,7 +856,7 @@ class layergroups(object):
     def POST(self, map_name, format):
         mf = get_mapfile(map_name)
 
-        data = get_data(name="layerGroup", mandatory=["name"])
+        data = get_data(name="layerGroup", mandatory=["name"], authorized=["name", "title", "abstract", "layers"])
         lg_name = data.pop("name")
         layers = [mf.get_layer(l_name) for l_name in data.pop("layers", [])]
 
@@ -903,7 +906,7 @@ class layergroup(object):
         with webapp.mightNotFound("layerGroup", mapfile=map_name):
             lg = mf.get_layergroup(lg_name)
 
-        data = get_data(name="layerGroup", mandatory=["name"])
+        data = get_data(name="layerGroup", mandatory=["name"], authorized=["name", "title", "abstract", "layers"])
         if lg_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a layergroup.")
 
