@@ -72,12 +72,6 @@ See `Mapfile specification`_ for more information about the Mapfile.
 Operations
 ----------
 
-For current version of MapServer Rest API, manipulate a ``mapfile`` is not implemented.
-And so, you can't create, modify or delete a mapfile.
-Please use the `mapfile model`_ and just give us some time to implement this operations.
-
-.. _Mapfile model: https://github.com/neogeo-technologies/mra/blob/develop/docs/model.map
-
 ``/maps.<format>``
 ^^^^^^^^^^^^^^^^^^
 
@@ -88,7 +82,9 @@ Please use the `mapfile model`_ and just give us some time to implement this ope
 +========+=================================+=============+====================+
 | GET    | List all mapfiles               | 200         | XML, JSON, HTML    |
 +--------+---------------------------------+-------------+--------------------+
-| POST   | *TODO: Create a new mapfile*    |             |                    |
+| POST   | Create a new mapfile            | 201 with    | XML, JSON          |
+|        |                                 | ``location``|                    |
+|        |                                 | header      |                    |
 +--------+---------------------------------+-------------+--------------------+
 | PUT    |                                 | 405         |                    |
 +--------+---------------------------------+-------------+--------------------+
@@ -98,7 +94,7 @@ Please use the `mapfile model`_ and just give us some time to implement this ope
 
 *Exceptions:*
 
-*	*TODO: POST for a mapfile already exist: 409 Conflict*
+*	POST for a mapfile already exist: 409 Conflict
 
 
 ``/maps/<map>.<format>``
@@ -116,7 +112,7 @@ Please use the `mapfile model`_ and just give us some time to implement this ope
 +--------+---------------------------------+-------------+--------------------+
 | PUT    | *TODO: Modify mapfile <map>*    |             |                    |
 +--------+---------------------------------+-------------+--------------------+
-| DELETE | *TODO: Delete mapfile <map>*    |             |                    |
+| DELETE | Delete mapfile <map>            |             |                    |
 +--------+---------------------------------+-------------+--------------------+
 
 *Exceptions:*

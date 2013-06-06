@@ -721,14 +721,21 @@ class Mapfile(MetadataMixin):
         # We have one workspace that represents the file.
         self.__default_workspace = MapfileWorkspace(self)
 
-
     def save(self, path=None):
         if path is None:
             path = self.path
         self.ms.save(path)
 
+    def delete(self, path=None):
+        if path is None:
+            path = self.path
+        os.remove(path)
+
     def rawtext(self):
         open(self.path, "r").read()
+
+    def update(self, configuration):
+        raise NotImplemented()
 
     # Layers:
 

@@ -37,6 +37,7 @@ import webapp
 from webapp import HTTPCompatible, urlmap, get_data
 
 import tools
+import maptools
 from tools import get_mapfile, get_mapfile_workspace, get_config, href
 
 from pyxml import Entries
@@ -87,11 +88,15 @@ class mapfiles(object):
         return {"mapfiles": mapfiles}
 
     @HTTPCompatible()
-    def POST(self, map_name, format):
-        data = get_data()
+    def POST(self, format):
+        data = get_data(name="mapfile", mandatory=["name"], authorized=["name", "title", "abstract"])
 
-        # TODO: Create mapfile
-        raise NotImplemented()
+        map_name = data.pop("name")
+        path = tools.mk_mapfile_path(map_name)
+
+        with webapp.mightConflict("Mapfile", mapfile=map_name):
+            maptools.create_mapfile(path, map_name, data)
+
         webapp.Created("%s/maps/%s%s" % (web.ctx.home, map_name, (".%s" % format) if format else ""))
 
 
@@ -107,6 +112,30 @@ class named_mapfile(object):
                     "name": map_name,
                     "content": data})
             } if format != "map" else data
+
+    @HTTPCompatible()
+    def PUT(self, map_name, format):
+        mf = get_mapfile(map_name)
+        path = tools.mk_mapfile_path(map_name)
+
+        data = get_data(name="mapfile", mandatory=["name"], authorized=["name", "title", "abstract"])
+        if map_name != data.pop("name"):
+            raise webapp.Forbidden("Can't change the name of a mapfile.")
+        
+        with webapp.mightConflict("Mapfile", mapfile=map_name):
+            mf.update(data)
+
+        mf.save()
+
+    @HTTPCompatible()
+    def DELETE(self, map_name, format):
+        mf = get_mapfile(map_name)
+        path = tools.mk_mapfile_path(map_name)
+
+        # TODO: We need to check if this mapfile is empty.
+
+        with webapp.mightConflict("Mapfile", mapfile=map_name):
+            mf.delete()
 
 
 class workspaces(object):

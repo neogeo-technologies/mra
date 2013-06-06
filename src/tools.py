@@ -49,6 +49,7 @@ def get_config(key=None, mode='r'):
             exit('Error in configuration file: %s' % exc)
     return __config if key == None else __config[key] if key in __config else {}
 
+
 def get_mapfile_paths():
     """Generates a list of mapfile paths managed by Mapserver REST API."""
 
@@ -86,6 +87,9 @@ def safe_path_join(root, *args):
         raise webapp.Forbidden(message="path '%s' outside root directory." % (args))
     return full_path
 
+def get_mapfile_path(*args):
+    return safe_path_join(get_config('storage')['mapfiles'], *args)
+
 def get_resource_path(*args):
     return safe_path_join(get_config('storage')['resources'], *args)
 
@@ -118,14 +122,18 @@ def iter_styles(mapfile=None):
             if f not in used_styles:
                 yield f
 
-
 def mk_path(path):
     dirs = os.path.dirname(path)
     if not os.path.isdir(dirs):
         os.makedirs(dirs)
 
+def mk_mapfile_path(name, *args):
+    path = get_mapfile_path(name, *args)
+    mk_path(path)
+    return path
+
 def mk_ds_data_path(ws_name, name, *args):
-    path = get_dws_data_path(name, *args)
+    path = get_ds_data_path(name, *args)
     mk_path(path)
     return path
 
