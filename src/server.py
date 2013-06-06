@@ -51,14 +51,6 @@ class index(object):
     def GET(self, format):
         return "This is MRA."
 
-class tests(object):
-    def PUT(self, name, format):
-        spath = tools.safe_path_join(get_config('storage')['mapfiles'], "%s.map" % get_config("testing")["model"])
-        tpath = tools.safe_path_join(get_config('storage')['mapfiles'], "%s.map" % name)
-        open(tpath, "w").write(open(spath).read())
-
-        webapp.Created("%s/maps/%s%s" % (web.ctx.home, name, format or ""))
-
 class mapfiles(object):
     @HTTPCompatible()
     def GET(self, format):
