@@ -955,13 +955,6 @@ class layergroup(object):
 # Index:
 urlmap(index, "")
 
-# Tests
-if get_config("testing")["active"]:
-    urlmap(tests, "tests", ())
-
-# Styler: TODO
-#urlmap(styler, format = False)
-
 # Mapfiles:
 urlmap(mapfiles, "maps")
 urlmap(named_mapfile, "maps", ())
