@@ -726,11 +726,6 @@ class Mapfile(MetadataMixin):
             path = self.path
         self.ms.save(path)
 
-    def delete(self, path=None):
-        if path is None:
-            path = self.path
-        os.remove(path)
-
     def rawtext(self):
         open(self.path, "r").read()
 

@@ -94,7 +94,7 @@ class mapfiles(object):
         map_name = data.pop("name")
         path = tools.mk_mapfile_path(map_name)
 
-        with webapp.mightConflict("Mapfile", mapfile=map_name):
+        with webapp.mightConflict(message="Mapfile '{exception}' already exists."):
             maptools.create_mapfile(path, map_name, data)
 
         webapp.Created("%s/maps/%s%s" % (web.ctx.home, map_name, (".%s" % format) if format else ""))
@@ -121,21 +121,17 @@ class named_mapfile(object):
         data = get_data(name="mapfile", mandatory=["name"], authorized=["name", "title", "abstract"])
         if map_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a mapfile.")
-        
-        with webapp.mightConflict("Mapfile", mapfile=map_name):
-            mf.update(data)
 
+        mf.update(data)
         mf.save()
 
     @HTTPCompatible()
     def DELETE(self, map_name, format):
         mf = get_mapfile(map_name)
-        path = tools.mk_mapfile_path(map_name)
 
         # TODO: We need to check if this mapfile is empty.
-
-        with webapp.mightConflict("Mapfile", mapfile=map_name):
-            mf.delete()
+        with webapp.mightNotFound("Mapfile", mapfile=map_name):
+            os.remove(mf.path)
 
 
 class workspaces(object):

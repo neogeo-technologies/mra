@@ -365,8 +365,9 @@ def test_scenario():
     map_name = "tests"
 
     # Clean the test file, now we are sure it is empty.
-    APIRequest("PUT", target + "/tests/" + map_name)
-
+    # APIRequest("PUT", target + "/tests/" + map_name)
+    APIRequest("DELETE", target + "/maps/" + map_name)
+    APIRequest("POST", target + "/maps", {"mapfile":{"name":map_name}})
 
     # _test_workspaces(target, map_name)
     # _test_styles(target, map_name)
