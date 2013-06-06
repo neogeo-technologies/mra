@@ -24,6 +24,8 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+import os.path
+
 import web
 import json
 import urlparse
@@ -42,7 +44,8 @@ from tools import get_mapfile, get_mapfile_workspace, get_config, href
 
 from pyxml import Entries
 
-import os.path
+
+from extensions import plugins
 
 mralogs.setup(get_config("logging")["level"], get_config("logging")["file"],
               get_config("logging")["format"])
@@ -999,6 +1002,9 @@ urls = tuple(urlmap)
 web.config.debug = get_config("debug").get("web_debug", False)
 webapp.exceptionManager.raise_all = get_config("debug").get("raise_all", False)
 HTTPCompatible.return_logs = get_config("logging").get("web_logs", False)
+
+for pdir in get_config("plugins").get("loadpaths", []):
+    plugins.load_plugins_dir(pdir)
 
 app = web.application(urls, globals())
 

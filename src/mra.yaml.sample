@@ -27,3 +27,13 @@ testing:
     active: False
     # Which map file to use to create new test files.
     model: model
+
+plugins:
+    # The paths in this lists will be loaded as plugins.
+    # A plugin can be a python package, if that is the case it
+    # should define the __all__ attribute to indicate which modules
+    # should be handled as plugins. (An example can be found in /plugins)
+
+    loadpaths: [
+#       "/path/to/your/plugins"
+    ]
