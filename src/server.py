@@ -54,14 +54,6 @@ class index(object):
     def GET(self, format):
         return "This is MRA."
 
-class tests(object):
-    def PUT(self, name, format):
-        spath = tools.safe_path_join(get_config('storage')['mapfiles'], "%s.map" % get_config("testing")["model"])
-        tpath = tools.safe_path_join(get_config('storage')['mapfiles'], "%s.map" % name)
-        open(tpath, "w").write(open(spath).read())
-
-        webapp.Created("%s/maps/%s%s" % (web.ctx.home, name, format or ""))
-
 class mapfiles(object):
     @HTTPCompatible()
     def GET(self, format):
@@ -74,18 +66,7 @@ class mapfiles(object):
             filename = mf.filename.replace(".map", "")
             mapfiles.append({
                 "name": filename,
-                "map_full_path": mf.path,
-                "href": "%s/maps/%s.%s" % (web.ctx.home, filename, format),
-                "workspaces": href("%s/maps/%s/workspaces.%s" % (web.ctx.home, filename, format)),
-                "layers": href("%s/maps/%s/layers.%s" % (web.ctx.home, filename, format)),
-                "layergroups": href("%s/maps/%s/layergroups.%s" % (web.ctx.home, filename, format)),
-                "styles": href("%s/maps/%s/styles.%s" % (web.ctx.home, filename, format)),
-                "wms_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WMS" % (
-                            get_config("mapserver")["url"], mf.path, get_config("mapserver")["wms_version"])),
-                "wfs_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WFS" % (
-                            get_config("mapserver")["url"], mf.path, get_config("mapserver")["wfs_version"])),
-                "wcs_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WCS" % (
-                            get_config("mapserver")["url"], mf.path, get_config("mapserver")["wcs_version"])),
+                "href": "%s/maps/%s.%s" % (web.ctx.home, filename, format)
               })
 
         return {"mapfiles": mapfiles}
@@ -110,10 +91,20 @@ class named_mapfile(object):
         mf = get_mapfile(map_name)
         with open(mf.path, "r") as f:
             data = f.read()
-        return {"mapfile":
-                ({
-                    "name": map_name,
-                    "content": data})
+        return {"mapfile": ({
+                "name": map_name,
+                "href": "%s/maps/%s.map" % (web.ctx.home, map_name),
+                "workspaces": href("%s/maps/%s/workspaces.%s" % (web.ctx.home, map_name, format)),
+                "layers": href("%s/maps/%s/layers.%s" % (web.ctx.home, map_name, format)),
+                "layergroups": href("%s/maps/%s/layergroups.%s" % (web.ctx.home, map_name, format)),
+                "styles": href("%s/maps/%s/styles.%s" % (web.ctx.home, map_name, format)),
+                "wms_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WMS" % (
+                            get_config("mapserver")["url"], mf.path, get_config("mapserver")["wms_version"])),
+                "wfs_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WFS" % (
+                            get_config("mapserver")["url"], mf.path, get_config("mapserver")["wfs_version"])),
+                "wcs_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WCS" % (
+                            get_config("mapserver")["url"], mf.path, get_config("mapserver")["wcs_version"])),
+                    })
             } if format != "map" else data
 
     @HTTPCompatible()
@@ -965,13 +956,6 @@ class layergroup(object):
 
 # Index:
 urlmap(index, "")
-
-# Tests
-if get_config("testing")["active"]:
-    urlmap(tests, "tests", ())
-
-# Styler: TODO
-#urlmap(styler, format = False)
 
 # Mapfiles:
 urlmap(mapfiles, "maps")
