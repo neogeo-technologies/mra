@@ -24,6 +24,7 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+import sys
 import string
 import inspect
 import logging
@@ -31,7 +32,14 @@ import functools
 
 def setup(log_level, log_file=None, format="%(asctime)s %(levelname)7s: %(message)s"):
     log_level = getattr(logging, log_level.upper())
-    logging.basicConfig(filename=log_file, format=format, level=log_level)
+
+    if log_file:
+        logging.basicConfig(filename=log_file, format=format, level=log_level)
+
+    sh = logging.StreamHandler(sys.stderr)
+    sh.setLevel(log_level)
+    sh.setFormatter(logging.Formatter(format))
+    logging.getLogger().addHandler(sh)
 
 class Reccord(logging.Handler):
     """A logging.Handler class which stores the records.
