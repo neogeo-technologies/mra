@@ -317,7 +317,7 @@ class FeatureTypeModel(LayerModel):
 
     def configure_layer(self, ws, layer, enabled=True):
 
-        plugins.extend("pre_configure_feature", self, ws, layer)
+        plugins.extend("pre_configure_vector_layer", self, ws, layer)
 
         # We must also update all our personal attributes (type, ...)
         # because we might not have been cloned.
@@ -372,8 +372,8 @@ class FeatureTypeModel(LayerModel):
         layer.set_metadata("wfs_include_items", ",".join(field_names))
         layer.set_metadata("gml_include_items", ",".join(field_names))
 
-        # TODO: layer.set_metadata("wfs_featureid", "")
-        # TODO: layer.set_metadata("gml_featureid", "")
+        layer.set_metadata("wfs_featureid", ft.get_fid_column())
+        layer.set_metadata("gml_featureid", ft.get_fid_column())
         layer.set_metadata("gml_geometries", ft.get_geometry_column())
         layer.set_metadata("gml_%s_type" % ft.get_geometry_column(), ft.get_geomtype_gml())
         # TODO: layer.set_metadata("gml_%s_occurances" ft.get_geometry_column(), "")
@@ -387,6 +387,7 @@ class FeatureTypeModel(LayerModel):
         elif layer.ms.type == mapscript.MS_LAYER_POLYGON:
             maptools.create_def_polygon_class(layer.ms)
 
+        plugins.extend("post_configure_vector_layer", self, ws, ds, ft, layer)
 
 
 class CoverageModel(LayerModel):
@@ -430,7 +431,7 @@ class CoverageModel(LayerModel):
 
     def configure_layer(self, ws, layer, enabled=True):
 
-        plugins.extend("pre_configure_coverage", self, ws, layer)
+        plugins.extend("pre_configure_raster_layer", self, ws, layer)
 
         # We must also update all our personal attributes (type, ...)
         # because we might not have been cloned.
@@ -468,6 +469,9 @@ class CoverageModel(LayerModel):
         # TODO: layer.set_metadata("wcs_metadataurl_href", "")
         # TODO: layer.set_metadata("wcs_metadataurl_type", "")
         # ...
+
+        plugins.extend("post_configure_raster_layer", self, ws, layer)
+
 
 
 class Workspace(object):
