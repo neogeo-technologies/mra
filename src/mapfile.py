@@ -38,6 +38,7 @@ import maptools
 from webapp import KeyExists
 
 import tools
+from extensions import plugins
 
 class MetadataMixin(object):
 
@@ -316,6 +317,8 @@ class FeatureTypeModel(LayerModel):
 
     def configure_layer(self, ws, layer, enabled=True):
 
+        plugins.extend("pre_configure_feature", self, ws, layer)
+
         # We must also update all our personal attributes (type, ...)
         # because we might not have been cloned.
 
@@ -426,6 +429,8 @@ class CoverageModel(LayerModel):
                                    "workspace": ws.name, "is_model": True})
 
     def configure_layer(self, ws, layer, enabled=True):
+
+        plugins.extend("pre_configure_coverage", self, ws, layer)
 
         # We must also update all our personal attributes (type, ...)
         # because we might not have been cloned.

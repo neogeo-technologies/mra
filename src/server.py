@@ -40,7 +40,7 @@ from webapp import HTTPCompatible, urlmap, get_data
 
 import tools
 import maptools
-from tools import get_mapfile, get_mapfile_workspace, get_config, href
+from tools import get_mapfile, get_mapfile_workspace, get_config, href, assert_is_empty
 
 from pyxml import Entries
 
@@ -323,8 +323,7 @@ class featuretype(object):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
         # We need to check if there are any layers using this.
-        assert_is_empty(mg.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name, "type":"featuretype"}),
-                        "featuretype", ft_name)
+        assert_is_empty(mf.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name, "type":"featuretype"}),"featuretype", ft_name)
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
             ws.delete_featuretypemodel(ft_name, ds_name)
@@ -385,7 +384,6 @@ class coveragestore(object):
     @HTTPCompatible()
     def DELETE(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
-
 
         # We need to check if this datatore is empty.
         assert_is_empty(ws.iter_coverages(cs_name=cs_name), "coveragestore", ds_name)
@@ -489,7 +487,7 @@ class coverage(object):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
         # We need to check if there are any layers using this.
-        assert_is_empty(mg.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name, "type":"coverage"}),
+        assert_is_empty(mf.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name, "type":"coverage"}),
                         "coverage", ft_name)
 
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
