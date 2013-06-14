@@ -166,6 +166,9 @@ class Featuretype(object):
     def get_name(self):
         return self.backend.GetName()
 
+    def get_fid_column(self):
+        return self.backend.GetFIDColumn()
+
     def get_geometry_column(self):
         return self.backend.GetGeometryColumn()
 
