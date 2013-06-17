@@ -115,33 +115,3 @@ def create_mapfile(path, map_name, data):
 
     mf.save("%s.map" % path)
 
-def create_def_polygon_class(layer, s_name='default_polygon'):
-    layer.classgroup = s_name
-    class0 = mapscript.classObj(layer)
-    class0.name = 'Class given in default'
-    class0.group = s_name
-    style0 = mapscript.styleObj(class0)
-    style0.width = 1
-    style0.color = mapscript.colorObj(220, 220, 220)
-    style0.outlinecolor = mapscript.colorObj(96, 96, 96)
-
-
-def create_def_line_class(layer, s_name='default_line'):
-    layer.classgroup = s_name
-    class0 = mapscript.classObj(layer)
-    class0.name = 'Class given in default'
-    class0.group = s_name
-    style0 = mapscript.styleObj(class0)
-    style0.width = 2
-    style0.color = mapscript.colorObj(96, 96, 96)
-
-
-def create_def_point_class(layer, s_name='default_point'):
-    layer.classgroup = s_name
-    class0 = mapscript.classObj(layer)
-    class0.name = 'Class given in default'
-    class0.group = s_name
-    style0 = mapscript.styleObj(class0)
-    style0.size = 8
-    style0.color = mapscript.colorObj(96, 96, 96)
-
