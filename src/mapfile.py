@@ -147,8 +147,10 @@ class Layer(MetadataMixin):
         else:
             raise ValueError("Bad sld (No NamedLayer/Name)")
 
-
-        etree.register_namespace("", "http://www.opengis.net/sld")
+        try:
+            etree.register_namespace("", "http://www.opengis.net/sld")
+        except:
+            pass
         new_sld = etree.tostring(xmlsld)
 
         ms_template_layer = self.ms.clone()
@@ -380,12 +382,12 @@ class FeatureTypeModel(LayerModel):
 
         # TODO: Check if class already exists.
         # If no class exists we add a new class by default
-        if layer.ms.type == mapscript.MS_LAYER_POINT:
-            maptools.create_def_point_class(layer.ms)
-        elif layer.ms.type == mapscript.MS_LAYER_LINE:
-            maptools.create_def_line_class(layer.ms)
-        elif layer.ms.type == mapscript.MS_LAYER_POLYGON:
-            maptools.create_def_polygon_class(layer.ms)
+#        if layer.ms.type == mapscript.MS_LAYER_POINT:
+#            maptools.create_def_point_class(layer.ms)
+#        elif layer.ms.type == mapscript.MS_LAYER_LINE:
+#            maptools.create_def_line_class(layer.ms)
+#        elif layer.ms.type == mapscript.MS_LAYER_POLYGON:
+#            maptools.create_def_polygon_class(layer.ms)
 
         plugins.extend("post_configure_vector_layer", self, ws, ds, ft, layer)
 
@@ -836,6 +838,89 @@ class Mapfile(MetadataMixin):
         layer.update(l_metadata)
         model.configure_layer(ws, layer, l_enabled)
 
+        # TODO: Check if class already exists.
+        # If no class exists we add a new class by default
+        if layer.ms.type == mapscript.MS_LAYER_POINT:
+            # TODO: move this sld in external files
+            s_name = 'default_point'
+            style = '<StyledLayerDescriptor version="1.0.0" \
+                      xsi:schemaLocation="http://www.opengis.net/sld \
+                      http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd"> \
+                      <NamedLayer> \
+                        <Name>foo</Name> \
+                        <UserStyle> \
+                          <FeatureTypeStyle> \
+                            <Rule> \
+                              <Name>Class given in default</Name> \
+                              <PointSymbolizer> \
+                                <Graphic> \
+                                  <Size>6.0</Size> \
+                                  <Mark> \
+                                    <WellKnownName>cross</WellKnownName> \
+                                    <Fill> \
+                                      <CssParameter name="fill">#000000</CssParameter> \
+                                    </Fill> \
+                                  </Mark> \
+                                </Graphic> \
+                              </PointSymbolizer> \
+                            </Rule> \
+                          </FeatureTypeStyle> \
+                        </UserStyle> \
+                      </NamedLayer> \
+                    </StyledLayerDescriptor>'
+
+        elif layer.ms.type == mapscript.MS_LAYER_LINE:
+            # TODO: move this sld in external files
+            s_name = 'default_line'
+            style = '<StyledLayerDescriptor version="1.0.0" \
+                      xsi:schemaLocation="http://www.opengis.net/sld \
+                      http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd"> \
+                      <NamedLayer> \
+                        <Name>foo</Name> \
+                        <UserStyle> \
+                          <FeatureTypeStyle> \
+                            <Rule> \
+                              <Name>Class given in default</Name> \
+                              <LineSymbolizer> \
+                                <Stroke> \
+                                  <CssParameter name="stroke">#000000</CssParameter> \
+                                  <CssParameter name="stroke-width">1.5</CssParameter> \
+                                </Stroke> \
+                              </LineSymbolizer> \
+                            </Rule> \
+                          </FeatureTypeStyle> \
+                        </UserStyle> \
+                      </NamedLayer> \
+                    </StyledLayerDescriptor>'
+
+        elif layer.ms.type == mapscript.MS_LAYER_POLYGON:
+            # TODO: move this sld in external files
+            s_name = 'default_polygon'
+            style = '<StyledLayerDescriptor version="1.0.0" \
+                      xsi:schemaLocation="http://www.opengis.net/sld \
+                      http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd"> \
+                      <NamedLayer> \
+                        <Name>foo</Name> \
+                        <UserStyle> \
+                          <FeatureTypeStyle> \
+                            <Rule> \
+                              <Name>Class given in default</Name> \
+                              <PolygonSymbolizer> \
+                                <Fill> \
+                                  <CssParameter name="fill">#C0C0C0</CssParameter> \
+                                </Fill> \
+                                <Stroke> \
+                                  <CssParameter name="stroke">#000000</CssParameter> \
+                                  <CssParameter name="stroke-width">1.25</CssParameter> \
+                                </Stroke> \
+                              </PolygonSymbolizer> \
+                            </Rule> \
+                          </FeatureTypeStyle> \
+                        </UserStyle> \
+                      </NamedLayer> \
+                    </StyledLayerDescriptor>'
+
+        layer.add_style_sld(self, s_name, style)
         return layer
 
     def delete_layer(self, l_name):
