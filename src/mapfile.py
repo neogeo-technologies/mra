@@ -366,8 +366,8 @@ class FeatureTypeModel(LayerModel):
             field_names.append(field.get_name())
 
         layer.set_metadatas({
-            "wfs_include_items", ",".join(field_names),
-            "gml_include_items", ",".join(field_names),
+            "wfs_include_items": ",".join(field_names),
+            "gml_include_items": ",".join(field_names),
             "wfs_featureid": ft.get_fid_column(),
             "gml_featureid": ft.get_fid_column(),
             "gml_geometries": ft.get_geometry_column(),
@@ -414,7 +414,7 @@ class CoverageModel(LayerModel):
         self.set_metadatas({
             "wms_enable_request": "!GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic",
             "wcs_enable_request": "!GetCapabilities !DescribeCoverage !GetCoverage",
-            )}
+            })
 
         # Update mra metadatas, and make sure the mandatory ones are left untouched.
         self.update_mra_metadatas(metadata)
