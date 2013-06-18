@@ -702,12 +702,6 @@ class layers(object):
 
         with webapp.mightConflict("layer", mapfile=map_name):
             mf.create_layer(ws, model, l_name, l_enabled)
-
-        with webapp.mightNotFound("layer", mapfile=map_name):
-            layer = mf.get_layer(l_name)
-        
-        layer.ms.dump = mapscript.MS_TRUE
-
         mf.save()
 
         webapp.Created("%s/maps/%s/layers/%s%s" % (web.ctx.home, map_name, l_name, (".%s" % format) if format else ""))
