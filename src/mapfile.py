@@ -81,7 +81,7 @@ class Layer(MetadataMixin):
     def enable(self, enabled=True):
         requests = ["GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic"]
         self.ms.status = mapscript.MS_ON if enabled else mapscript.MS_OFF
-        self.ms.setMetaData("wms_enable_request",  " ".join(('%s' if enabled else "!%s") % c for c in requests))
+        self.set_metadata("wms_enable_request",  " ".join(('%s' if enabled else "!%s") % c for c in requests))
 
     def get_type_name(self):
         return {
@@ -297,8 +297,7 @@ class FeatureTypeModel(LayerModel):
             self.ms.data = "%s FROM %s" % (ds[ft_name].get_geometry_column(), ft_name)
             self.set_metadata("ows_extent", "%s %s %s %s" %
                 (ft.get_extent().minX(), ft.get_extent().minY(),
-                ft.get_extent().maxX(), ft.get_extent().maxY())
-                )
+                ft.get_extent().maxX(), ft.get_extent().maxY()))
         #elif cpram["dbtype"] in ["shp", "shapefile"]:
         else:
             self.ms.connectiontype = mapscript.MS_SHAPEFILE
@@ -310,8 +309,10 @@ class FeatureTypeModel(LayerModel):
         #    raise ValueError("Unhandled type '%s'" % info["dbtype"])
 
         # Deactivate wms and wfs requests, because we are a virtual layer.
-        self.set_metadata("wms_enable_request", "!GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic")
-        self.set_metadata("wfs_enable_request", "!GetCapabilities !DescribeFeatureType !GetFeature")
+        self.set_metadatas({
+            "wms_enable_request": "!GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic",
+            "wfs_enable_request": "!GetCapabilities !DescribeFeatureType !GetFeature",
+            })
 
         # Update mra metadatas, and make sure the mandatory ones are left untouched.
         self.update_mra_metadatas(metadata)
@@ -348,16 +349,7 @@ class FeatureTypeModel(LayerModel):
                 })
 
         if enabled:
-            layer.ms.setMetaData("wfs_enable_request", "GetCapabilities GetFeature DescribeFeatureType")
-
-        layer.set_metadata("wfs_srs", "EPSG:4326")
-        layer.ms.setMetaData("wfs_getfeature_formatlist", "OGRGML,SHAPEZIP")
-        layer.ms.setMetaData("gml_types", "auto")
-
-        # TODO: layer.ms.setMetaData("wfs_metadataurl_format", "")
-        # TODO: layer.ms.setMetaData("wfs_metadataurl_href", "")
-        # TODO: layer.ms.setMetaData("wfs_metadataurl_type", "")
-        # TODO: layer.ms.setMetaData("gml_xml_items", "")
+            layer.set_metadata("wfs_enable_request", "GetCapabilities GetFeature DescribeFeatureType")
 
         # Configure the layer based on information from the store.
         ds = ws.get_datastore(self.get_mra_metadata("storage"))
@@ -366,29 +358,24 @@ class FeatureTypeModel(LayerModel):
         # Configure the different fields.
         field_names = []
         for field in ft.iterfields():
-            layer.set_metadata("gml_%s_alias" % field.get_name(), field.get_name())
-            layer.set_metadata("gml_%s_type" % field.get_name(), field.get_type_gml())
-            #TODO: layer.set_metadata("gml_%s_precision" field.get_name(), "")
-            #TODO: layer.set_metadata("gml_%s_width" field.get_name(), "")
-            #TODO: layer.set_metadata("gml_%s_value" field.get_name(), "")
+            layer.set_metadatas({
+                "gml_%s_alias" % field.get_name(): field.get_name(),
+                "gml_%s_type" % field.get_name(): field.get_type_gml(),
+                # TODO: Add gml_<field name>_precision, gml_<field name>_width
+                })
             field_names.append(field.get_name())
-        layer.set_metadata("wfs_include_items", ",".join(field_names))
-        layer.set_metadata("gml_include_items", ",".join(field_names))
 
-        layer.set_metadata("wfs_featureid", ft.get_fid_column())
-        layer.set_metadata("gml_featureid", ft.get_fid_column())
-        layer.set_metadata("gml_geometries", ft.get_geometry_column())
-        layer.set_metadata("gml_%s_type" % ft.get_geometry_column(), ft.get_geomtype_gml())
-        # TODO: layer.set_metadata("gml_%s_occurances" ft.get_geometry_column(), "")
-
-        # TODO: Check if class already exists.
-        # If no class exists we add a new class by default
-#        if layer.ms.type == mapscript.MS_LAYER_POINT:
-#            maptools.create_def_point_class(layer.ms)
-#        elif layer.ms.type == mapscript.MS_LAYER_LINE:
-#            maptools.create_def_line_class(layer.ms)
-#        elif layer.ms.type == mapscript.MS_LAYER_POLYGON:
-#            maptools.create_def_polygon_class(layer.ms)
+        layer.set_metadatas({
+            "wfs_include_items", ",".join(field_names),
+            "gml_include_items", ",".join(field_names),
+            "wfs_featureid": ft.get_fid_column(),
+            "gml_featureid": ft.get_fid_column(),
+            "gml_geometries": ft.get_geometry_column(),
+            "gml_%s_type" % ft.get_geometry_column(): ft.get_geomtype_gml(),
+            # TODO: Add gml_<geometry name>_occurances,
+            "wfs_srs": "EPSG:4326",
+            "wfs_getfeature_formatlist": "OGRGML,SHAPEZIP",
+            })
 
         plugins.extend("post_configure_vector_layer", self, ws, ds, ft, layer)
 
@@ -424,8 +411,10 @@ class CoverageModel(LayerModel):
         #    raise ValueError("Unhandled type '%s'" % cparam["dbtype"])
 
         # Deactivate wms and wcs requests, because we are a virtual layer.
-        self.set_metadata("wms_enable_request", "!GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic")
-        self.set_metadata("wcs_enable_request", "!GetCapabilities !DescribeCoverage !GetCoverage")
+        self.set_metadatas({
+            "wms_enable_request": "!GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic",
+            "wcs_enable_request": "!GetCapabilities !DescribeCoverage !GetCoverage",
+            )}
 
         # Update mra metadatas, and make sure the mandatory ones are left untouched.
         self.update_mra_metadatas(metadata)
@@ -460,24 +449,17 @@ class CoverageModel(LayerModel):
                 "wfs_name": layer.get_metadata("wms_name"),
                 "wfs_title": layer.get_metadata("wms_title"),
                 "wfs_abstract": layer.get_metadata("wms_abstract"),
-                #"wfs_keywordlist": layer.get_metadata("wms_keywordlist"),
+                # TODO: wfs_keywordlist, wcs_srs, wcs_getfeature_formatlist...
                 })
 
         if enabled:
-            layer.ms.setMetaData("wcs_enable_request", "GetCapabilities GetCoverage DescribeCoverage")
-
-        # TODO: layer.set_metadata("wcs_srs", "")
-        # TODO: layer.set_metadata("wcs_getfeature_formatlist", "")
-        # TODO: layer.set_metadata("wcs_metadataurl_format", "")
-        # TODO: layer.set_metadata("wcs_metadataurl_href", "")
-        # TODO: layer.set_metadata("wcs_metadataurl_type", "")
-        # ...
+            layer.set_metadata("wcs_enable_request", "GetCapabilities GetCoverage DescribeCoverage")
 
         plugins.extend("post_configure_raster_layer", self, ws, layer)
 
 
-
 class Workspace(object):
+    # TODO
     pass
 
 class MapfileWorkspace(Workspace):
@@ -537,7 +519,6 @@ class MapfileWorkspace(Workspace):
         st_type = st_type if st_type.endswith("s") else st_type + "s"
         with self.mapfile.mra_metadata(st_type, {}) as stores:
             del stores[name]
-
 
     # Datastores:
 
@@ -647,7 +628,6 @@ class MapfileWorkspace(Workspace):
 
         ft = self.get_featuretypemodel(ft_name, ds_name)
         self.mapfile.ms.removeLayer(ft.ms.index)
-
 
     # Coverages
 
@@ -820,19 +800,19 @@ class Mapfile(MetadataMixin):
         # "wms_getmap_formatlist"
         # "wms_getfeatureinfo_formatlist"
         # "wms_getlegendgraphic_formatlist"
-        # "wms_attribution_title"
-        # "wms_attribution_onlineresource": ""
-        # "wms_attribution_logourl_href"
-        # "wms_attribution_logourl_format"
-        # "wms_attribution_logourl_height"
-        # "wms_attribution_logourl_width"
-        # "wms_identifier_authority"
-        # "wms_identifier_value"
-        # "wms_authorityurl_name"
-        # "wms_authorityurl_href"
-        # "wms_metadataurl_type"
-        # "wms_metadataurl_href"
-        # "wms_metadataurl_format"
+        # "ows_attribution_title"
+        # "ows_attribution_onlineresource": ""
+        # "ows_attribution_logourl_href"
+        # "ows_attribution_logourl_format"
+        # "ows_attribution_logourl_height"
+        # "ows_attribution_logourl_width"
+        # "ows_identifier_authority"
+        # "ows_identifier_value"
+        # "ows_authorityurl_name"
+        # "ows_authorityurl_href"
+        # "ows_metadataurl_type"
+        # "ows_metadataurl_href"
+        # "ows_metadataurl_format"
 
         # TODO: pass correct data (title, abstract, ...) to layer.update()
         layer.update(l_metadata)
@@ -993,7 +973,6 @@ class Mapfile(MetadataMixin):
         # This is a ugly hack. We clone the layer and remove all the other styles.
         # Then we ask mapscript to generate the sld, but aprently for that the
         # cloned style needs to be in the mapfile... so be it.
-
         clone = layer.ms.clone()
         for c_index in reversed(xrange(clone.numclasses)):
             c = clone.getClass(c_index)
