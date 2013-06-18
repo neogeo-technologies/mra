@@ -77,7 +77,6 @@ def set_metadatas(obj, metadatas):
         set_metadata(obj, key, value)
 
 def update_metadatas(obj, metadatas):
-    print metadatas
     for key, value in metadatas.iteritems():
         set_metadata(obj, key, value)
 
