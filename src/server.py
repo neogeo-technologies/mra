@@ -672,8 +672,9 @@ class layers(object):
 
     @HTTPCompatible()
     def POST(self, map_name, format):
-        data = get_data(name="layer", mandatory=["name", "resource"],
-                        authorized=["name", "title", "abstract", "resource"])
+        data = get_data(name="layer",
+                        mandatory=["name", "resource"],
+                        authorized=["name", "title", "abstract", "resource", "enabled"])
 
         l_name = data.pop("name")
         l_enabled = data.pop("enabled", True)

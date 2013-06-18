@@ -80,6 +80,7 @@ class Layer(MetadataMixin):
 
     def enable(self, enabled=True):
         requests = ["GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic"]
+        self.ms.status = mapscript.MS_ON if enabled else mapscript.MS_OFF
         self.ms.setMetaData("wms_enable_request",  " ".join(('%s' if enabled else "!%s") % c for c in requests))
 
     def get_type_name(self):
@@ -796,7 +797,6 @@ class Mapfile(MetadataMixin):
         # but everything should be configured() anyway.
         layer = Layer(model.ms.clone())
         layer.ms.name = l_name
-        layer.ms.status = mapscript.MS_ON
         layer.ms.dump = mapscript.MS_TRUE
         layer.ms.tolerance = 6
         layer.ms.toleranceunits = mapscript.MS_PIXELS
