@@ -748,7 +748,7 @@ class layer(object):
         mf = get_mapfile(map_name)
 
         data = get_data(name="layer", mandatory=["name", "resource"],
-                        authorized=["name", "title", "abstract", "resource"])
+                        authorized=["name", "title", "abstract", "resource", "enabled"])
         if l_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a layer.")
 
