@@ -171,7 +171,7 @@ class datastores(object):
     def POST(self, map_name, ws_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract"])
+        data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         ds_name = data.pop("name")
 
         with webapp.mightConflict("dataStore", workspace=ws_name):
@@ -199,7 +199,7 @@ class datastore(object):
     def PUT(self, map_name, ws_name, ds_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract"])
+        data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         if ds_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a data store.")
 
@@ -346,7 +346,7 @@ class coveragestores(object):
     def POST(self, map_name, ws_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract"])
+        data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         cs_name = data.pop("name")
 
         with webapp.mightConflict("coverageStore", workspace=ws_name):
@@ -373,7 +373,7 @@ class coveragestore(object):
     def PUT(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract"])
+        data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         if cs_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a coverage store.")
 
@@ -702,6 +702,12 @@ class layers(object):
 
         with webapp.mightConflict("layer", mapfile=map_name):
             mf.create_layer(ws, model, l_name, l_enabled)
+
+        with webapp.mightNotFound("layer", mapfile=map_name):
+            layer = mf.get_layer(l_name)
+        
+        layer.ms.dump = mapscript.MS_TRUE
+
         mf.save()
 
         webapp.Created("%s/maps/%s/layers/%s%s" % (web.ctx.home, map_name, l_name, (".%s" % format) if format else ""))
