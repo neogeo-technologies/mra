@@ -165,6 +165,9 @@ class Layer(MetadataMixin):
 
         mf.ms.removeLayer(ms_template_layer.index)
 
+    def set_default_style(self, mf, s_name):
+        self.ms.classgroup = s_name
+
     def remove_style(self, s_name):
         for c_index in reversed(xrange(self.ms.numclasses)):
             c = self.ms.getClass(c_index)
@@ -905,8 +908,7 @@ class Mapfile(MetadataMixin):
         
         model.configure_layer(ws, layer, l_enabled)
 
-        # TODO: Check if class already exists.
-        # If no class exists we add a new class by default
+        # Add a new class by default:
         if layer.ms.type == mapscript.MS_LAYER_POINT:
             # TODO: move this sld in external files
             s_name = 'default_point'
@@ -985,6 +987,7 @@ class Mapfile(MetadataMixin):
                       </NamedLayer> \
                     </StyledLayerDescriptor>'
         layer.add_style_sld(self, s_name, style)
+        layer.set_default_style(self, s_name)
 
     def delete_layer(self, l_name):
         layer = self.get_layer(l_name)
@@ -1033,7 +1036,7 @@ class Mapfile(MetadataMixin):
         return iter(self.get_styles())
 
     def get_styles(self):
-        # The group name is the style"s name.
+        # The group name is the style's name.
 
         styles = set()
         for layer in self.iter_layers():
