@@ -34,7 +34,6 @@ import metadata
 
 import functools
 
-import maptools
 from webapp import KeyExists
 
 import tools

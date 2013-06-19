@@ -39,7 +39,6 @@ import webapp
 from webapp import HTTPCompatible, urlmap, get_data
 
 import tools
-import maptools
 from tools import get_mapfile, get_mapfile_workspace, get_config, href, assert_is_empty
 
 from pyxml import Entries
