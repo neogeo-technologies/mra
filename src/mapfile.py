@@ -206,6 +206,7 @@ class LayerGroup(object):
         layer.set_metadata("wms_group_name", self.name)
         for k, v in self.mapfile.get_mra_metadata("layergroups")[self.name]:
             layer.set_metadata("wms_group_%s" % k, v)
+        self.mapfile.move_layer_down(layer.ms.name)
 
     def add(self, *args):
         for layer in args:
@@ -855,6 +856,10 @@ class Mapfile(MetadataMixin):
         except StopIteration:
             raise KeyError(l_name)
 
+    def move_layer_down(self, l_name):
+        layer = self.get_layer(l_name)
+        self.ms.moveLayerDown(layer.ms.index)
+
     def has_layer(self, l_name):
         try:
             self.get_layer(l_name)
@@ -961,13 +966,11 @@ class Mapfile(MetadataMixin):
         lg.remove(*args)
 
     def delete_layergroup(self, lg_name):
-
         layer_group = self.get_layergroup(lg_name)
         # Remove all the layers from this group.
         for layer in self.iter_layers(attr={"group": layer_group.name}):
             layer_group.remove(layer)
-
-        # Remove the group from mra metadats.
+        # Remove the group from mra metadata.
         with self.mra_metadata("layergroups", {}) as layergroups:
             del layergroups[lg_name]
 
