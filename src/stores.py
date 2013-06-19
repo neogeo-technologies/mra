@@ -167,9 +167,13 @@ class Featuretype(object):
         return self.backend.GetName()
 
     def get_fid_column(self):
+        if self.backend.GetFIDColumn() == "":
+            return None
         return self.backend.GetFIDColumn()
 
     def get_geometry_column(self):
+        if self.backend.GetGeometryColumn() == "":
+            return None
         return self.backend.GetGeometryColumn()
 
     def get_extent(self):

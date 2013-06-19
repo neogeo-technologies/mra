@@ -58,39 +58,47 @@ def create_mapfile(path, map_name, data):
     mf.web.metadata.set("wms_bbox_extended", "true")
     # mf.web.metadata.set("wms_resx", "")
     # mf.web.metadata.set("wms_resy", "")
-    mf.web.metadata.set("wms_enable_request", "GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic")
-    mf.web.metadata.set("wfs_enable_request", "GetCapabilities !DescribeFeatureType !GetFeature")
-    mf.web.metadata.set("ows_sld_enabled", "true")
-    # mf.web.metadata.set("ows_schemas_location", "")
-    # mf.web.metadata.set("ows_updatesequence", "")
-    # mf.web.metadata.set("ows_addresstype", "")
-    # mf.web.metadata.set("ows_address", "")
-    # mf.web.metadata.set("ows_city", "")
-    # mf.web.metadata.set("ows_stateorprovince", "")
-    # mf.web.metadata.set("ows_postcode", "")    
-    # mf.web.metadata.set("ows_contactperson", "")
-    # mf.web.metadata.set("ows_contactposition", "")
-    # mf.web.metadata.set("ows_contactorganization", "")
-    # mf.web.metadata.set("ows_contactelectronicmailaddress", "")
-    # mf.web.metadata.set("ows_contactfacsimiletelephone", "")
-    # mf.web.metadata.set("ows_contactvoicetelephone, "")"
-    # mf.web.metadata.set("wms_fees", "")
-    # mf.web.metadata.set("wfs_fees", "")
-    # mf.web.metadata.set("wms_accessconstraints", "")
-    # mf.web.metadata.set("wfs_accessconstraints", "")
+
+    mf.web.metadata.set("ows_schemas_location", 
+                        "http://schemas.opengeospatial.net")
+    mf.web.metadata.set("ows_updatesequence", "foo")
+    mf.web.metadata.set("ows_addresstype", "foo")
+    mf.web.metadata.set("ows_address", "foo")
+    mf.web.metadata.set("ows_city", "foo")
+    mf.web.metadata.set("ows_stateorprovince", "foo")
+    mf.web.metadata.set("ows_postcode", "foo")
+    mf.web.metadata.set("ows_contactperson", "foo")
+    mf.web.metadata.set("ows_contactposition", "foo")
+    mf.web.metadata.set("ows_contactorganization", "foo")
+    mf.web.metadata.set("ows_contactelectronicmailaddress", "foo")
+    mf.web.metadata.set("ows_contactfacsimiletelephone", "foo")
+    mf.web.metadata.set("ows_contactvoicetelephone", "foo")
+    mf.web.metadata.set("wms_fees", "none")
+    mf.web.metadata.set("wfs_fees", "none")
+    mf.web.metadata.set("wms_accessconstraints", "none")
+    mf.web.metadata.set("wfs_accessconstraints", "none")
     # mf.web.metadata.set("ows_attribution_logourl_format", "")
     # mf.web.metadata.set("ows_attribution_logourl_height", "")
     # mf.web.metadata.set("ows_attribution_logourl_href", "")
     # mf.web.metadata.set("ows_attribution_logourl_width", "")
     # mf.web.metadata.set("ows_attribution_onlineresource", "")
     # mf.web.metadata.set("ows_attribution_title", "")
-    mf.web.metadata.set("wms_encoding", "UTF-8")
-    mf.web.metadata.set("wfs_encoding", "UTF-8")
-    # mf.web.metadata.set("wms_getcapabilities_version", "")
-    # mf.web.metadata.set("wfs_getcapabilities_version", "")
+
+    mf.web.metadata.set("wms_enable_request", 
+                        "GetCapabilities GetMap GetFeatureInfo GetLegendGraphic")
+    mf.web.metadata.set("wfs_enable_request", 
+                        "GetCapabilities DescribeFeatureType GetFeature")
+    mf.web.metadata.set("ows_sld_enabled", "true")
+    mf.web.metadata.set("wms_getcapabilities_version", "1.3.0")
+    mf.web.metadata.set("wfs_getcapabilities_version", "1.0.0")
     # mf.web.metadata.set("wms_getmap_formatlist", "")
     # mf.web.metadata.set("wms_getlegendgraphic_formatlist", "")
-    # mf.web.metadata.set("wms_feature_info_mime_type", "")
+    mf.web.metadata.set("wms_feature_info_mime_type",
+                        "application/vnd.ogc.gml,text/plain")
+                        # TODO: text/html
+    mf.web.metadata.set("wms_encoding", "UTF-8")
+    mf.web.metadata.set("wfs_encoding", "UTF-8")
+
     # mf.web.metadata.set("wms_timeformat", "")
     # mf.web.metadata.set("wms_languages", "")
     # mf.web.metadata.set("wms_layerlimit", "")
@@ -101,7 +109,6 @@ def create_mapfile(path, map_name, data):
     # mf.web.metadata.set("wfs_feature_collection", "")
     # mf.web.metadata.set("wfs_namespace_uri", "")
     # mf.web.metadata.set("wfs_namespace_prefix", "")
-    # ...
 
     mf.status = mapscript.MS_ON
     mf.setSize(256,256)
@@ -114,4 +121,3 @@ def create_mapfile(path, map_name, data):
     mf.units = mapscript.MS_DD
 
     mf.save("%s.map" % path)
-
