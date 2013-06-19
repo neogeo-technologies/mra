@@ -81,7 +81,7 @@ class Layer(MetadataMixin):
     def enable(self, enabled=True):
         requests = ["GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic"]
         self.ms.status = mapscript.MS_ON if enabled else mapscript.MS_OFF
-        self.set_metadata("wms_enable_request",  " ".join(('%s' if enabled else "!%s") % c for c in requests))
+        self.set_metadata("wms_enable_request", " ".join(('%s' if enabled else "!%s") % c for c in requests))
 
     def get_type_name(self):
         return {
@@ -349,7 +349,8 @@ class FeatureTypeModel(LayerModel):
                 })
 
         if enabled:
-            layer.set_metadata("wfs_enable_request", "GetCapabilities GetFeature DescribeFeatureType")
+            layer.set_metadata("wfs_enable_request", 
+                               "GetCapabilities GetFeature DescribeFeatureType")
 
         # Configure the layer based on information from the store.
         ds = ws.get_datastore(self.get_mra_metadata("storage"))
@@ -365,17 +366,24 @@ class FeatureTypeModel(LayerModel):
                 })
             field_names.append(field.get_name())
 
+        geometry_column = ft.get_geometry_column()
+        if geometry_column == None:
+            geometry_column = "geometry"
         layer.set_metadatas({
-            "wfs_include_items": ",".join(field_names),
+            "ows_include_items": ",".join(field_names),
             "gml_include_items": ",".join(field_names),
-            "wfs_featureid": ft.get_fid_column(),
-            "gml_featureid": ft.get_fid_column(),
-            "gml_geometries": ft.get_geometry_column(),
-            "gml_%s_type" % ft.get_geometry_column(): ft.get_geomtype_gml(),
+            "gml_geometries": geometry_column,
+            "gml_%s_type" % geometry_column: ft.get_geomtype_gml(),
             # TODO: Add gml_<geometry name>_occurances,
             "wfs_srs": "EPSG:4326",
             "wfs_getfeature_formatlist": "OGRGML,SHAPEZIP",
             })
+        
+        if ft.get_fid_column() != None:
+            layer.set_metadatas({
+                "wfs_featureid": ft.get_fid_column(),
+                "gml_featureid": ft.get_fid_column(),
+                })
 
         plugins.extend("post_configure_vector_layer", self, ws, ds, ft, layer)
 
@@ -776,46 +784,33 @@ class Mapfile(MetadataMixin):
         # We still clone, because we have to start from something,
         # but everything should be configured() anyway.
         layer = Layer(model.ms.clone())
-        layer.ms.name = l_name
-        layer.ms.dump = mapscript.MS_TRUE
-        layer.ms.tolerance = 6
-        layer.ms.toleranceunits = mapscript.MS_PIXELS
-        layer.ms.template = "foo.html"
-
-        layer.enable(l_enabled)
         self.ms.insertLayer(layer.ms)
 
+        layer.ms.name = l_name      
+        layer.enable(l_enabled)
+
+        # is queryable (by default):
+        layer.ms.template = "foo.html" # TODO: Support html format response
+
         l_metadata["wms_name"] = l_name
+
         l_metadata.setdefault("wms_title", l_name)
         l_metadata.setdefault("wms_abstract", l_name)
         l_metadata.setdefault("wms_bbox_extended", "true")
-
         # TODO: Add other default values as above:
-        # "wms_keywordlist"
-        # "wms_keywordlist_vocabulary"
-        # "wms_keywordlist_<vocabulary>_items"
-        # "wms_srs"
-        # "wms_dataurl_format"
-        # "wms_dataurl_href"
-        # "wms_getmap_formatlist"
-        # "wms_getfeatureinfo_formatlist"
-        # "wms_getlegendgraphic_formatlist"
-        # "ows_attribution_title"
-        # "ows_attribution_onlineresource": ""
-        # "ows_attribution_logourl_href"
-        # "ows_attribution_logourl_format"
-        # "ows_attribution_logourl_height"
-        # "ows_attribution_logourl_width"
-        # "ows_identifier_authority"
-        # "ows_identifier_value"
-        # "ows_authorityurl_name"
-        # "ows_authorityurl_href"
-        # "ows_metadataurl_type"
-        # "ows_metadataurl_href"
-        # "ows_metadataurl_format"
+        # wms_keywordlist, wms_keywordlist_vocabulary 
+        # wms_keywordlist_<vocabulary>_items
+        # wms_srs
+        # wms_dataurl_(format|href)
+        # ows_attribution_(title|onlineresource)
+        # ows_attribution_logourl_(href|format|height|width)
+        # ows_identifier_(authority|value)
+        # ows_authorityurl_(name|href)
+        # ows_metadataurl_(type|href|format)
 
         # TODO: pass correct data (title, abstract, ...) to layer.update()
         layer.update(l_metadata)
+        
         model.configure_layer(ws, layer, l_enabled)
 
         # TODO: Check if class already exists.
@@ -848,7 +843,6 @@ class Mapfile(MetadataMixin):
                         </UserStyle> \
                       </NamedLayer> \
                     </StyledLayerDescriptor>'
-
         elif layer.ms.type == mapscript.MS_LAYER_LINE:
             # TODO: move this sld in external files
             s_name = 'default_line'
@@ -872,7 +866,6 @@ class Mapfile(MetadataMixin):
                         </UserStyle> \
                       </NamedLayer> \
                     </StyledLayerDescriptor>'
-
         elif layer.ms.type == mapscript.MS_LAYER_POLYGON:
             # TODO: move this sld in external files
             s_name = 'default_polygon'
@@ -899,9 +892,7 @@ class Mapfile(MetadataMixin):
                         </UserStyle> \
                       </NamedLayer> \
                     </StyledLayerDescriptor>'
-
         layer.add_style_sld(self, s_name, style)
-        return layer
 
     def delete_layer(self, l_name):
         layer = self.get_layer(l_name)
@@ -943,7 +934,6 @@ class Mapfile(MetadataMixin):
         # Remove the group from mra metadats.
         with self.mra_metadata("layergroups", {}) as layergroups:
             del layergroups[lg_name]
-
 
     # Styles:
 
