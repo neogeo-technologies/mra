@@ -31,6 +31,7 @@ import mapscript
 import urlparse
 import stores
 import metadata
+import webapp
 
 import functools
 
@@ -908,84 +909,24 @@ class Mapfile(MetadataMixin):
         
         model.configure_layer(ws, layer, l_enabled)
 
-        # Add a new class by default:
         if layer.ms.type == mapscript.MS_LAYER_POINT:
-            # TODO: move this sld in external files
+            layer.ms.tolerance = 8
+            layer.ms.toleranceunits = 6
             s_name = 'default_point'
-            style = '<StyledLayerDescriptor version="1.0.0" \
-                      xsi:schemaLocation="http://www.opengis.net/sld \
-                      http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd"> \
-                      <NamedLayer> \
-                        <Name>foo</Name> \
-                        <UserStyle> \
-                          <FeatureTypeStyle> \
-                            <Rule> \
-                              <Name>Class given in default</Name> \
-                              <PointSymbolizer> \
-                                <Graphic> \
-                                  <Size>6.0</Size> \
-                                  <Mark> \
-                                    <WellKnownName>cross</WellKnownName> \
-                                    <Fill> \
-                                      <CssParameter name="fill">#000000</CssParameter> \
-                                    </Fill> \
-                                  </Mark> \
-                                </Graphic> \
-                              </PointSymbolizer> \
-                            </Rule> \
-                          </FeatureTypeStyle> \
-                        </UserStyle> \
-                      </NamedLayer> \
-                    </StyledLayerDescriptor>'
         elif layer.ms.type == mapscript.MS_LAYER_LINE:
-            # TODO: move this sld in external files
+            layer.ms.tolerance = 8
+            layer.ms.toleranceunits = 6
             s_name = 'default_line'
-            style = '<StyledLayerDescriptor version="1.0.0" \
-                      xsi:schemaLocation="http://www.opengis.net/sld \
-                      http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd"> \
-                      <NamedLayer> \
-                        <Name>foo</Name> \
-                        <UserStyle> \
-                          <FeatureTypeStyle> \
-                            <Rule> \
-                              <Name>Class given in default</Name> \
-                              <LineSymbolizer> \
-                                <Stroke> \
-                                  <CssParameter name="stroke">#000000</CssParameter> \
-                                  <CssParameter name="stroke-width">1.5</CssParameter> \
-                                </Stroke> \
-                              </LineSymbolizer> \
-                            </Rule> \
-                          </FeatureTypeStyle> \
-                        </UserStyle> \
-                      </NamedLayer> \
-                    </StyledLayerDescriptor>'
         elif layer.ms.type == mapscript.MS_LAYER_POLYGON:
-            # TODO: move this sld in external files
+            layer.ms.tolerance = 0
+            layer.ms.toleranceunits = 6
             s_name = 'default_polygon'
-            style = '<StyledLayerDescriptor version="1.0.0" \
-                      xsi:schemaLocation="http://www.opengis.net/sld \
-                      http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd"> \
-                      <NamedLayer> \
-                        <Name>foo</Name> \
-                        <UserStyle> \
-                          <FeatureTypeStyle> \
-                            <Rule> \
-                              <Name>Class given in default</Name> \
-                              <PolygonSymbolizer> \
-                                <Fill> \
-                                  <CssParameter name="fill">#C0C0C0</CssParameter> \
-                                </Fill> \
-                                <Stroke> \
-                                  <CssParameter name="stroke">#000000</CssParameter> \
-                                  <CssParameter name="stroke-width">1.25</CssParameter> \
-                                </Stroke> \
-                              </PolygonSymbolizer> \
-                            </Rule> \
-                          </FeatureTypeStyle> \
-                        </UserStyle> \
-                      </NamedLayer> \
-                    </StyledLayerDescriptor>'
+
+        try:
+            style = open(os.path.join(os.path.dirname(__file__), "%s.sld" % s_name)).read()
+        except IOError, OSError:
+            raise IOError, OSError
+
         layer.add_style_sld(self, s_name, style)
         layer.set_default_style(self, s_name)
 
