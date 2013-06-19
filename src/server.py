@@ -79,7 +79,7 @@ class mapfiles(object):
         path = tools.mk_mapfile_path(map_name)
 
         with webapp.mightConflict(message="Mapfile '{exception}' already exists."):
-            maptools.create_mapfile(path, map_name, data)
+            mapfile.create_mapfile(path, map_name, data)
 
         webapp.Created("%s/maps/%s%s" % (web.ctx.home, map_name, (".%s" % format) if format else ""))
 
