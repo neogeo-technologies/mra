@@ -39,7 +39,6 @@ import webapp
 from webapp import HTTPCompatible, urlmap, get_data
 
 import tools
-import maptools
 from tools import get_mapfile, get_mapfile_workspace, get_config, href, assert_is_empty
 
 from pyxml import Entries
@@ -79,7 +78,7 @@ class mapfiles(object):
         path = tools.mk_mapfile_path(map_name)
 
         with webapp.mightConflict(message="Mapfile '{exception}' already exists."):
-            maptools.create_mapfile(path, map_name, data)
+            mapfile.create_mapfile(path, map_name, data)
 
         webapp.Created("%s/maps/%s%s" % (web.ctx.home, map_name, (".%s" % format) if format else ""))
 

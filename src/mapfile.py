@@ -31,10 +31,10 @@ import mapscript
 import urlparse
 import stores
 import metadata
+import webapp
 
 import functools
 
-import maptools
 from webapp import KeyExists
 
 import tools
@@ -166,6 +166,9 @@ class Layer(MetadataMixin):
 
         mf.ms.removeLayer(ms_template_layer.index)
 
+    def set_default_style(self, mf, s_name):
+        self.ms.classgroup = s_name
+
     def remove_style(self, s_name):
         for c_index in reversed(xrange(self.ms.numclasses)):
             c = self.ms.getClass(c_index)
@@ -203,6 +206,7 @@ class LayerGroup(object):
         layer.set_metadata("wms_group_name", self.name)
         for k, v in self.mapfile.get_mra_metadata("layergroups")[self.name]:
             layer.set_metadata("wms_group_%s" % k, v)
+        self.mapfile.move_layer_down(layer.ms.name)
 
     def add(self, *args):
         for layer in args:
@@ -698,6 +702,99 @@ class MapfileWorkspace(Workspace):
             raise ValueError("Bad storage type '%s'." % s_type)
 
 
+def create_mapfile(path, map_name, data):
+    if os.path.exists("%s.map" % path):
+        raise KeyExists(map_name)
+
+    mf = mapscript.mapObj()
+    mf.name = map_name
+    
+    # The following could be defined in <mapfile.py>:
+
+    mf.web.metadata.set("ows_name", map_name)
+    mf.web.metadata.set("ows_title", data.get("title", map_name))
+    mf.web.metadata.set("ows_abstract", data.get("abstract", ""))
+
+    # Set default values:
+    # It should be configurable to the future.
+
+    # mf.web.metadata.set("ows_keywordlist", "")
+    # mf.web.metadata.set("ows_keywordlist_vocabulary", "")
+    # + ows_keywordlist_[vocabulary’s name]_items
+    # mf.web.metadata.set("wms_onlineresource", "")
+    # mf.web.metadata.set("wfs_onlineresource", "")
+    # mf.web.metadata.set("wms_service_onlineresource", "")
+    # mf.web.metadata.set("wfs_service_onlineresource", "")
+    mf.web.metadata.set("wms_srs", "EPSG:4326")
+    mf.web.metadata.set("wfs_srs", "EPSG:4326")
+    mf.web.metadata.set("wms_bbox_extended", "true")
+    # mf.web.metadata.set("wms_resx", "")
+    # mf.web.metadata.set("wms_resy", "")
+
+    mf.web.metadata.set("ows_schemas_location", 
+                        "http://schemas.opengeospatial.net")
+    mf.web.metadata.set("ows_updatesequence", "foo")
+    mf.web.metadata.set("ows_addresstype", "foo")
+    mf.web.metadata.set("ows_address", "foo")
+    mf.web.metadata.set("ows_city", "foo")
+    mf.web.metadata.set("ows_stateorprovince", "foo")
+    mf.web.metadata.set("ows_postcode", "foo")
+    mf.web.metadata.set("ows_contactperson", "foo")
+    mf.web.metadata.set("ows_contactposition", "foo")
+    mf.web.metadata.set("ows_contactorganization", "foo")
+    mf.web.metadata.set("ows_contactelectronicmailaddress", "foo")
+    mf.web.metadata.set("ows_contactfacsimiletelephone", "foo")
+    mf.web.metadata.set("ows_contactvoicetelephone", "foo")
+    mf.web.metadata.set("wms_fees", "none")
+    mf.web.metadata.set("wfs_fees", "none")
+    mf.web.metadata.set("wms_accessconstraints", "none")
+    mf.web.metadata.set("wfs_accessconstraints", "none")
+    # mf.web.metadata.set("ows_attribution_logourl_format", "")
+    # mf.web.metadata.set("ows_attribution_logourl_height", "")
+    # mf.web.metadata.set("ows_attribution_logourl_href", "")
+    # mf.web.metadata.set("ows_attribution_logourl_width", "")
+    # mf.web.metadata.set("ows_attribution_onlineresource", "")
+    # mf.web.metadata.set("ows_attribution_title", "")
+
+    mf.web.metadata.set("wms_enable_request", 
+                        "GetCapabilities GetMap GetFeatureInfo GetLegendGraphic")
+    mf.web.metadata.set("wfs_enable_request", 
+                        "GetCapabilities DescribeFeatureType GetFeature")
+    mf.web.metadata.set("ows_sld_enabled", "true")
+    mf.web.metadata.set("wms_getcapabilities_version", "1.3.0")
+    mf.web.metadata.set("wfs_getcapabilities_version", "1.0.0")
+    # mf.web.metadata.set("wms_getmap_formatlist", "")
+    # mf.web.metadata.set("wms_getlegendgraphic_formatlist", "")
+    mf.web.metadata.set("wms_feature_info_mime_type",
+                        "application/vnd.ogc.gml,text/plain")
+                        # TODO: text/html
+    mf.web.metadata.set("wms_encoding", "UTF-8")
+    mf.web.metadata.set("wfs_encoding", "UTF-8")
+
+    # mf.web.metadata.set("wms_timeformat", "")
+    # mf.web.metadata.set("wms_languages", "")
+    # mf.web.metadata.set("wms_layerlimit", "")
+    # mf.web.metadata.set("wms_rootlayer_abstract", "")
+    # mf.web.metadata.set("wms_rootlayer_keywordlist", "")
+    # mf.web.metadata.set("wms_rootlayer_title", "")
+    # mf.web.metadata.set("wfs_maxfeatures", "")
+    # mf.web.metadata.set("wfs_feature_collection", "")
+    # mf.web.metadata.set("wfs_namespace_uri", "")
+    # mf.web.metadata.set("wfs_namespace_prefix", "")
+
+    mf.status = mapscript.MS_ON
+    mf.setSize(256,256)
+    mf.maxsize = 4096
+    mf.resolution = 96
+    mf.imagetype = 'png'
+    mf.imagecolor.setRGB(255,255,255)
+    mf.setProjection("init=epsg:4326")
+    mf.setExtent(-180,-90,180,90)
+    mf.units = mapscript.MS_DD
+
+    mf.save("%s.map" % path)
+
+
 class Mapfile(MetadataMixin):
     """
     """
@@ -759,6 +856,10 @@ class Mapfile(MetadataMixin):
         except StopIteration:
             raise KeyError(l_name)
 
+    def move_layer_down(self, l_name):
+        layer = self.get_layer(l_name)
+        self.ms.moveLayerDown(layer.ms.index)
+
     def has_layer(self, l_name):
         try:
             self.get_layer(l_name)
@@ -813,86 +914,26 @@ class Mapfile(MetadataMixin):
         
         model.configure_layer(ws, layer, l_enabled)
 
-        # TODO: Check if class already exists.
-        # If no class exists we add a new class by default
         if layer.ms.type == mapscript.MS_LAYER_POINT:
-            # TODO: move this sld in external files
+            layer.ms.tolerance = 8
+            layer.ms.toleranceunits = 6
             s_name = 'default_point'
-            style = '<StyledLayerDescriptor version="1.0.0" \
-                      xsi:schemaLocation="http://www.opengis.net/sld \
-                      http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd"> \
-                      <NamedLayer> \
-                        <Name>foo</Name> \
-                        <UserStyle> \
-                          <FeatureTypeStyle> \
-                            <Rule> \
-                              <Name>Class given in default</Name> \
-                              <PointSymbolizer> \
-                                <Graphic> \
-                                  <Size>6.0</Size> \
-                                  <Mark> \
-                                    <WellKnownName>cross</WellKnownName> \
-                                    <Fill> \
-                                      <CssParameter name="fill">#000000</CssParameter> \
-                                    </Fill> \
-                                  </Mark> \
-                                </Graphic> \
-                              </PointSymbolizer> \
-                            </Rule> \
-                          </FeatureTypeStyle> \
-                        </UserStyle> \
-                      </NamedLayer> \
-                    </StyledLayerDescriptor>'
         elif layer.ms.type == mapscript.MS_LAYER_LINE:
-            # TODO: move this sld in external files
+            layer.ms.tolerance = 8
+            layer.ms.toleranceunits = 6
             s_name = 'default_line'
-            style = '<StyledLayerDescriptor version="1.0.0" \
-                      xsi:schemaLocation="http://www.opengis.net/sld \
-                      http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd"> \
-                      <NamedLayer> \
-                        <Name>foo</Name> \
-                        <UserStyle> \
-                          <FeatureTypeStyle> \
-                            <Rule> \
-                              <Name>Class given in default</Name> \
-                              <LineSymbolizer> \
-                                <Stroke> \
-                                  <CssParameter name="stroke">#000000</CssParameter> \
-                                  <CssParameter name="stroke-width">1.5</CssParameter> \
-                                </Stroke> \
-                              </LineSymbolizer> \
-                            </Rule> \
-                          </FeatureTypeStyle> \
-                        </UserStyle> \
-                      </NamedLayer> \
-                    </StyledLayerDescriptor>'
         elif layer.ms.type == mapscript.MS_LAYER_POLYGON:
-            # TODO: move this sld in external files
+            layer.ms.tolerance = 0
+            layer.ms.toleranceunits = 6
             s_name = 'default_polygon'
-            style = '<StyledLayerDescriptor version="1.0.0" \
-                      xsi:schemaLocation="http://www.opengis.net/sld \
-                      http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd"> \
-                      <NamedLayer> \
-                        <Name>foo</Name> \
-                        <UserStyle> \
-                          <FeatureTypeStyle> \
-                            <Rule> \
-                              <Name>Class given in default</Name> \
-                              <PolygonSymbolizer> \
-                                <Fill> \
-                                  <CssParameter name="fill">#C0C0C0</CssParameter> \
-                                </Fill> \
-                                <Stroke> \
-                                  <CssParameter name="stroke">#000000</CssParameter> \
-                                  <CssParameter name="stroke-width">1.25</CssParameter> \
-                                </Stroke> \
-                              </PolygonSymbolizer> \
-                            </Rule> \
-                          </FeatureTypeStyle> \
-                        </UserStyle> \
-                      </NamedLayer> \
-                    </StyledLayerDescriptor>'
+
+        try:
+            style = open(os.path.join(os.path.dirname(__file__), "%s.sld" % s_name)).read()
+        except IOError, OSError:
+            raise IOError, OSError
+
         layer.add_style_sld(self, s_name, style)
+        layer.set_default_style(self, s_name)
 
     def delete_layer(self, l_name):
         layer = self.get_layer(l_name)
@@ -925,13 +966,11 @@ class Mapfile(MetadataMixin):
         lg.remove(*args)
 
     def delete_layergroup(self, lg_name):
-
         layer_group = self.get_layergroup(lg_name)
         # Remove all the layers from this group.
         for layer in self.iter_layers(attr={"group": layer_group.name}):
             layer_group.remove(layer)
-
-        # Remove the group from mra metadats.
+        # Remove the group from mra metadata.
         with self.mra_metadata("layergroups", {}) as layergroups:
             del layergroups[lg_name]
 
@@ -941,7 +980,7 @@ class Mapfile(MetadataMixin):
         return iter(self.get_styles())
 
     def get_styles(self):
-        # The group name is the style"s name.
+        # The group name is the style's name.
 
         styles = set()
         for layer in self.iter_layers():
