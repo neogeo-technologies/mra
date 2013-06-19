@@ -908,9 +908,6 @@ class layergroup(object):
                     "layers": [{
                             "name": layer.ms.name,
                             "href": "%s/maps/%s/layers/%s.%s" % (web.ctx.home, map_name, layer.ms.name, format),
-                            # Do we implement styler or not ?
-                            # "styler_href": "%s/styler/?namespace=%s&layer=%s" % (
-                            #     web.ctx.home, map_name, layer.name),
                             } for layer in lg.iter_layers()],
                     "bounds": {
                         "minx": extent.minX(),
@@ -918,8 +915,10 @@ class layergroup(object):
                         "maxx": extent.maxX(),
                         "maxy": extent.maxY(),
                         },
-                    # TODO: "metadata"
-                    # TODO: "styles"
+                    # "styles": [{
+                    #     "name": layer.ms.classgroup,
+                    #     "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, layer.ms.classgroup, format),
+                    #     } for layer in lg.iter_layers()],
                     })
                 }
 
