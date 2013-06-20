@@ -92,9 +92,18 @@ class Layer(MetadataMixin):
             4: "ANNOTATION",
             }[self.ms.type]
 
+    def get_proj4(self):
+        return self.ms.getProjection()
+
     def get_extent(self):
         extent = self.ms.getExtent()
         return stores.Extent(extent.minx, extent.miny, extent.maxx, extent.maxy)
+
+    def get_latlon_extent(self):
+        rect = mapscript.rectObj(*self.get_extent())
+        res = rect.project(mapscript.projectionObj(self.get_proj4()),
+                           mapscript.projectionObj('+init=epsg:4326'))
+        return stores.Extent(rect.minx, rect.miny, rect.maxx, rect.maxy)
 
     def get_fields(self):
         fields = self.get_metadata("gml_include_items", "")
@@ -232,14 +241,14 @@ class LayerGroup(object):
         for layer in self.mapfile.iter_layers(attr={"group": self.name}):
             self.remove_layer(layer)
 
-    def get_extent(self):
+    def get_latlon_extent(self):
         layers = self.get_layers()
         if not layers:
             return stores.Extent(0, 0, 0, 0)
 
-        extent = layers[0].get_extent()
+        extent = layers[0].get_latlon_extent()
         for layer in layers[1:]:
-            e = layer.get_extent()
+            e = layer.get_latlon_extent()
             extent.addX(e.minX(), e.maxX())
             extent.addY(e.minY(), e.maxY())
 
@@ -271,6 +280,12 @@ class LayerModel(MetadataMixin):
 
     def get_authority(self):
         return tools.wkt_to_authority(self.get_wkt())
+
+    def get_authority_name(self):
+        return self.get_authority()[0]
+
+    def get_authority_code(self):
+        return self.get_authority()[1]
 
 
 class FeatureTypeModel(LayerModel):
