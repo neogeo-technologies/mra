@@ -484,13 +484,13 @@ class coverage(object):
                         },
                     "enabled": True, # TODO
                     "metadata": None, # TODO
-                    "store": { # TODO: Add key class="coverageStore"
+                    "store": { # TODO: Add attr class="coverageStore"
                         "name": cs_name,
                         "href": "%s/maps/%s/workspaces/%s/coveragestores/%s.%s" % (
                             web.ctx.home, map_name, ws_name, cs_name, format)
                         },
                     "nativeFormat": None, # TODO
-                    "grid": { # TODO: Add key dimension
+                    "grid": { # TODO: Add attr dimension
                         "range": {
                             "low": None, # TODO
                             "high": None, # TODO
@@ -768,11 +768,11 @@ class layer(object):
                         "name": layer.ms.classgroup,
                         "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, layer.ms.classgroup, format),
                         },
-                    "styles": [{ # TODO: Add key class="linked-hash-set"
+                    "styles": [{ # TODO: Add attr class="linked-hash-set"
                             "name": s_name,
                             "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, s_name, format),
                             } for s_name in layer.iter_styles()],
-                    "resource": { # TODO: Add key class="featureType|coverage"
+                    "resource": { # TODO: Add attr class="featureType|coverage"
                         "name": layer.get_mra_metadata("name"),
                         "href": "%s/maps/%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
                             web.ctx.home, map_name, layer.get_mra_metadata("workspace"),
