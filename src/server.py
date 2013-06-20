@@ -148,9 +148,7 @@ class workspace(object):
                         href("%s/maps/%s/workspaces/%s/datastores.%s" % (web.ctx.home, map_name, ws.name, format)),
                     "coverageStores":
                         href("%s/maps/%s/workspaces/%s/coveragestores.%s" % (web.ctx.home, map_name, ws.name, format)),
-                    # TODO
-                    # "wmsStores":
-                    #     href("%s/maps/%s/workspaces/%s/wmsstores.%s" % (web.ctx.home, map_name, ws.name, format))
+                    "wmsStores": "", # TODO
                     })
                 }
 
@@ -188,11 +186,25 @@ class datastore(object):
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             info = ws.get_datastore_info(ds_name)
-        info["href"] = "%s/maps/%s/workspaces/%s/datastores/%s/featuretypes.%s" % (
-            web.ctx.home, map_name, ws.name, ds_name, format)
-        if "connectionParameters" in info and isinstance(info["connectionParameters"], dict):
-            info["connectionParameters"] = Entries(info["connectionParameters"], tag_name="entry", key_name="key")
-        return {"dataStore": info}
+
+        return {"dataStore": {
+                    "name": info["name"],
+                    "enabled": True, # TODO
+                    "__default": False, # TODO
+                    "workspace": {
+                        "name": ws.name,
+                        "href": "%s/maps/%s/workspaces/%s.%s" % (
+                            web.ctx.home, map_name, ws.name, format),
+                        },
+                    "featureTypes": href("%s/maps/%s/workspaces/%s/datastores/%s/featuretypes.%s" % (
+                                        web.ctx.home, map_name, ws.name, ds_name, format)
+                        ),
+                    "connectionParameters": Entries({
+                        "url": info["connectionParameters"]["url"],
+                        "namespace": None, # TODO
+                        }, tag_name="entry")
+                    }
+                }
 
     @HTTPCompatible()
     def PUT(self, map_name, ws_name, ds_name, format):
@@ -261,10 +273,7 @@ class featuretype(object):
         return {"featureType": ({
                     "name": ft.name,
                     "nativeName": ft.name,
-                    "namespace": {
-                        "name": map_name,
-                        "href": "%s/maps/%s/namespaces/%s.%s" % (web.ctx.home, map_name, ws_name, format)
-                        },
+                    "namespace": None, # TODO
                     "title": ft.get_mra_metadata("title", ft.name),
                     "abstract": ft.get_mra_metadata("abstract", None),
                     "keywords": ft.get_mra_metadata("keywords", []),
@@ -283,6 +292,7 @@ class featuretype(object):
                         "miny": extent.minY(),
                         "maxx": extent.maxX(),
                         "maxy": extent.maxY(),
+                        "crs": "%s:%s" % (ft.get_authority_name(), ft.get_authority_code()),
                         },
                     "latLonBoundingBox": {
                         "minx": latlon_extent.minX(),
@@ -291,15 +301,15 @@ class featuretype(object):
                         "maxy": latlon_extent.maxY(),
                         "crs": "EPSG:4326",
                         },
-                    "projectionPolicy": None,
-                    "enabled": True,
-                    "store": {
+                    "projectionPolicy": None, # TODO
+                    "enabled": True, # TODO
+                    "store": { # TODO: add key: class="dataStore"
                         "name": ds_name,
                         "href": "%s/maps/%s/workspaces/%s/datastores/%s.%s" % (
                             web.ctx.home, map_name, ws_name, ds_name, format)
                         },
-                    "maxFeatures": 0,
-                    "numDecimals": 0,
+                    "maxFeatures": 0, # TODO
+                    "numDecimals": 0, # TODO
                     })
                 }
 
@@ -361,12 +371,30 @@ class coveragestore(object):
     def GET(self, map_name, ws_name, cs_name, format):
         mf, ws = get_mapfile_workspace(map_name, ws_name)
 
-        info = ws.get_coveragestore_info(cs_name)
-        info["href"] = "%s/maps/%s/workspaces/%s/coveragestores/%s/coverages.%s" % (
-            web.ctx.home, map_name, ws.name, cs_name, format)
-        if "connectionParameters" in info and isinstance(info["connectionParameters"], dict):
-            info["connectionParameters"] = Entries(info["connectionParameters"], tag_name="entry", key_name="key")
-        return {"coverageStore": info}
+        with webapp.mightNotFound("coverageStore", workspace=ws_name):
+            info = ws.get_coveragestore_info(cs_name)
+
+        return {"coverageStore": {
+                    "name": info["name"],
+                    "type": None, # TODO
+                    "enabled": True, # TODO
+                    "__default": False, # TODO
+                    "workspace": {
+                        "name": ws.name,
+                        "href": "%s/maps/%s/workspaces/%s.%s" % (
+                            web.ctx.home, map_name, ws.name, format),
+                        },
+                    "coverages": href("%s/maps/%s/workspaces/%s/coveragestores/%s/coverages.%s" % (
+                                    web.ctx.home, map_name, ws.name, cs_name, format)
+                        ),
+                    "connectionParameters": Entries({
+                        "url": info["connectionParameters"]["url"],
+                        "namespace": None, # TODO
+                        }, tag_name="entry")
+                    }
+                }
+
+
 
     @HTTPCompatible()
     def PUT(self, map_name, ws_name, cs_name, format):
@@ -434,20 +462,18 @@ class coverage(object):
         return {"coverage": ({
                     "name": c.name,
                     "nativeName": c.name,
-                    "namespace": {
-                        "name": map_name,
-                        "href": "%s/maps/%s/namespaces/%s.%s" % (web.ctx.home, map_name, ws_name, format)
-                        },
+                    "namespace": None, # TODO
                     "title": c.get_mra_metadata("title", c.name),
                     "abstract": c.get_mra_metadata("abstract", None),
                     "keywords": c.get_mra_metadata("keywords", []),
-                    "srs": "%s:%s" % (c.get_authority()[0], c.get_authority()[1]),
-                    "nativeCRS": c.get_wkt(),
+                    "nativeCRS": c.get_wkt(), # TODO: Add key class="projected" if projected...
+                    "srs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()),
                     "nativeBoundingBox": {
                         "minx": extent.minX(),
                         "miny": extent.minY(),
                         "maxx": extent.maxX(),
                         "maxy": extent.maxY(),
+                        "crs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()), # TODO: Add key class="projected" if projected...
                         },
                     "latLonBoundingBox":{
                         "minx": latlon_extent.minX(),
@@ -456,13 +482,36 @@ class coverage(object):
                         "maxy": latlon_extent.maxY(),
                         "crs": "EPSG:4326"
                         },
-                    "projectionPolicy": None,
-                    "enabled": True,
-                    "store": {
+                    "enabled": True, # TODO
+                    "metadata": None, # TODO
+                    "store": { # TODO: Add key class="coverageStore"
                         "name": cs_name,
                         "href": "%s/maps/%s/workspaces/%s/coveragestores/%s.%s" % (
                             web.ctx.home, map_name, ws_name, cs_name, format)
-                        }
+                        },
+                    "nativeFormat": None, # TODO
+                    "grid": { # TODO: Add key dimension
+                        "range": {
+                            "low": None, # TODO
+                            "high": None, # TODO
+                            },
+                        "transform": {
+                            "scaleX": None, # TODO
+                            "scaleY": None, # TODO
+                            "shearX": None, # TODO
+                            "shearY": None, # TODO
+                            "translateX": None, # TODO
+                            "translateY": None, # TODO
+                            },
+                        "crs": None,
+                        },
+                    "supportedFormats": [], # TODO
+                    "interpolationMethods": [], # TODO
+                    "defaultInterpolationMethod": None,
+                    "dimensions": [], # TODO
+                    "projectionPolicy": None, # TODO
+                    "requestSRS": None, # TODO
+                    "responseSRS": None, # TODO
                     })
                 }
 
@@ -604,15 +653,12 @@ class style(object):
             if not os.path.exists(tools.get_style_path(s_name)) and not s_name in mf.iter_styles():
                 raise KeyError(s_name)
 
-        return {
-            "name": s_name,
-            "sldVersion": Entries([
-                #TODO: Return the correct value...
-                "1.0.0"
-                ], tag_name="version"),
-            "filename": s_name + ".sld",
-            "href": "%s/maps/%s/styles/%s.sld" % (web.ctx.home, map_name, s_name)
-            }
+        return {"style": {
+                    "name": s_name,
+                    "sldVersion": Entries(["1.0.0"], tag_name="version"),
+                    "filename": s_name + ".sld",
+                    }
+                }
 
     @HTTPCompatible()
     def PUT(self, map_name, s_name, format):
@@ -659,13 +705,8 @@ class layers(object):
     def GET(self, map_name, format):
         mf = get_mapfile(map_name)
         return {"layers": [{
-                    "id": layer.ms.index,
                     "name": layer.ms.name,
-                    "type": layer.get_type_name(),
                     "href": "%s/maps/%s/layers/%s.%s" % (web.ctx.home, map_name, layer.ms.name, format),
-                    # Do we implement styler or not ?
-                    # "styler_href": "%s/styler/?namespace=%s&layer=%s" % (
-                    #     web.ctx.home, map_name, layer.name),
                     } for layer in mf.iter_layers()]
                 }
 
@@ -719,27 +760,30 @@ class layer(object):
             "coverage": ("coverage", "coveragestore")
             }[layer.get_mra_metadata("type")]
 
-        return {"layer" : ({
+        return {"layer" : {
                     "name": l_name,
-                    "path": "/",
+                    "path": "/", # TODO
                     "type": layer.get_type_name(),
                     "defaultStyle": {
                         "name": layer.ms.classgroup,
                         "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, layer.ms.classgroup, format),
                         },
-                    "styles": [{
+                    "styles": [{ # TODO: Add key class="linked-hash-set"
                             "name": s_name,
                             "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, s_name, format),
                             } for s_name in layer.iter_styles()],
-                    "resource": {
+                    "resource": { # TODO: Add key class="featureType|coverage"
                         "name": layer.get_mra_metadata("name"),
                         "href": "%s/maps/%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
                             web.ctx.home, map_name, layer.get_mra_metadata("workspace"),
                             store_type, layer.get_mra_metadata("storage"), data_type, layer.get_mra_metadata("name"), format),
                         },
                     "enabled": bool(layer.ms.status),
-                    "attribution": {"logoWidth": 0, "logoHeight": 0}
-                    })
+                    "attribution": { # TODO
+                        "logoWidth": 0, 
+                        "logoHeight": 0,
+                        },
+                    }
                 }
 
     @HTTPCompatible()
@@ -901,24 +945,23 @@ class layergroup(object):
         with webapp.mightNotFound("layerGroup", mapfile=map_name):
             lg = mf.get_layergroup(lg_name)
 
-        extent = lg.get_extent()
+        latlon_extent = lg.get_latlon_extent()
 
         return {"layerGroup": ({
                     "name": lg.name,
-                    "layers": [{
+                    "mode": None, # TODO
+                    "publishables": [{
                             "name": layer.ms.name,
                             "href": "%s/maps/%s/layers/%s.%s" % (web.ctx.home, map_name, layer.ms.name, format),
                             } for layer in lg.iter_layers()],
                     "bounds": {
-                        "minx": extent.minX(),
-                        "miny": extent.minY(),
-                        "maxx": extent.maxX(),
-                        "maxy": extent.maxY(),
+                        "minx": latlon_extent.minX(),
+                        "miny": latlon_extent.minY(),
+                        "maxx": latlon_extent.maxX(),
+                        "maxy": latlon_extent.maxY(),
+                        "crs": "EPSG:4326",
                         },
-                    # "styles": [{
-                    #     "name": layer.ms.classgroup,
-                    #     "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, layer.ms.classgroup, format),
-                    #     } for layer in lg.iter_layers()],
+                    "styles": [],
                     })
                 }
 
