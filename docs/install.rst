@@ -32,12 +32,13 @@ Then extract the archive in a directory of your choice. Or checkout the Git in s
 Installation
 ============
 There is nothing to do more.
-Just create a virtual directory and the following aliases: ::
+
+Configure your server, e.g. with Apache, just create a virtual directory and the following aliases: ::
 
 	WSGIPythonPath /path/to/mra/src/mra
 	WSGIScriptAlias /mra /path/to/mra/src/mra/server.py
-	Alias /static /path/to/mra/src/static
-	<Directory /home/mra/src/static>
+	Alias /static /path/to/mra/static
+	<Directory /home/mra/static>
 	    Order deny,allow
 	    Allow from all
 	</Directory>
@@ -123,14 +124,14 @@ That way, your own configuration won't be discarded by a further update.
 		To add the logs to the generated output of the webapp.
 
 *	**testing**
-	
-    *	**active** [True | False]
 
-    	Additions to the API for testing, should be deactivated in production.
-    
-    *	**model**
+	*	**active** [True | False]
 
-    	Mapfile to use to create new test files.
+		Additions to the API for testing, should be deactivated in production.
+
+	*	**model**
+
+		Mapfile to use to create new test files.
 
 Finally check MapServer Rest API is working correctly: 
 
