@@ -186,6 +186,21 @@ class datastore(object):
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             info = ws.get_datastore_info(ds_name)
+            connectionParameters = info["connectionParameters"]
+            
+        entries = {}
+        if "url" in connectionParameters:
+            entries["url"] = connectionParameters["url"]
+        elif "database" in connectionParameters:
+            entries["database"] = connectionParameters["database"]
+            entries["host"] = connectionParameters["host"]
+            entries["port"] = connectionParameters["port"]
+            entries["user"] = connectionParameters["user"]
+            entries["password"] = connectionParameters["password"]
+        else:
+            raise webapp.NotImplemented()
+
+        entries["namespace"] = None # TODO
 
         return {"dataStore": {
                     "name": info["name"],
@@ -199,10 +214,7 @@ class datastore(object):
                     "featureTypes": href("%s/maps/%s/workspaces/%s/datastores/%s/featuretypes.%s" % (
                                         web.ctx.home, map_name, ws.name, ds_name, format)
                         ),
-                    "connectionParameters": Entries({
-                        "url": info["connectionParameters"]["url"],
-                        "namespace": None, # TODO
-                        }, tag_name="entry")
+                    "connectionParameters": Entries(entries, tag_name="entry")
                     }
                 }
 
@@ -560,9 +572,9 @@ class files(object):
             # Check if zip or not...
             data = web.data()
         elif f_type == "url":
-            raise NotImplemented()
+            raise webapp.NotImplemented()
         elif f_type == "external":
-            raise NotImplemented()
+            raise webapp.NotImplemented()
 
         # Now we make sure the store exists.
         with webapp.mightNotFound(message="Store {exception} does not exist "
@@ -596,11 +608,11 @@ class files(object):
         # Finally we might have to configure it.
         params = web.input(configure="none")
         if params.configure == "first":
-            raise NotImplemented()
+            raise webapp.NotImplemented()
         elif params.configure == "none":
             pass
         elif params.configure == "all":
-            raise NotImplemented()
+            raise webapp.NotImplemented()
         else:
             raise webapp.BadRequest(message="configure must be one of first, none or all.")
 
