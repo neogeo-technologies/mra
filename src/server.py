@@ -187,11 +187,12 @@ class datastore(object):
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             info = ws.get_datastore_info(ds_name)
             connectionParameters = info["connectionParameters"]
-            
+
         entries = {}
         if "url" in connectionParameters:
             entries["url"] = connectionParameters["url"]
-        elif "database" in connectionParameters:
+        elif "dbtype" in connectionParameters:
+            entries["dbtype"] = connectionParameters["dbtype"]
             entries["database"] = connectionParameters["database"]
             entries["host"] = connectionParameters["host"]
             entries["port"] = connectionParameters["port"]
