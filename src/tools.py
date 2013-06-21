@@ -186,4 +186,4 @@ def wkt_to_authority(wkt):
     elif srs.GetAuthorityCode('GEOGCS') != None :
         return srs.GetAuthorityName('GEOGCS'), srs.GetAuthorityCode('GEOGCS')
     else:
-        raise KeyError("Unable to get authority from %s" % wkt)
+        return "Unknown", "Unknown"
