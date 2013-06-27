@@ -26,7 +26,6 @@
 
 import os
 import re
-from xml.etree import ElementTree as etree
 import mapscript
 import urlparse
 import stores
@@ -139,29 +138,20 @@ class Layer(MetadataMixin):
         # we need to rename it to something we are sure is not used.
         sld_layer_name = "__mra_tmp_template"
 
-        # This is realy ugly but etree has trouble with namespaces...
-        # TODO: Do this again in an other way.
-        fixedxml = re.sub(' [a-zzA-Z0-9]+:([a-zA-Z0-9]+=")', ' \\1', new_sld)
-        xmlsld = etree.fromstring(fixedxml)
+        # Most xml parsers will have trouble with the kind of mess we get as sld.
+        # Mostly because we haven't got the proper declarations, we fallback to
+        # an html parser, which luckily is much more forgiving.
+        from xml.dom.minidom import parseString
 
-        # Still problems with namespaces...
-        for child in xmlsld.getchildren():
-            if child.tag.endswith("NamedLayer"):
-                for gchild in child.getchildren():
-                    if gchild.tag.endswith("Name"):
-                        gchild.text = sld_layer_name
-                        break
-                else:
-                    continue
-            break
-        else:
-            raise ValueError("Bad sld (No NamedLayer/Name)")
+        xmlsld = parseString(new_sld)
 
         try:
-            etree.register_namespace("", "http://www.opengis.net/sld")
+            name = xmlsld.firstChild.getElementsByTagName("NamedLayer")[0].getElementsByTagName("Name")[0].firstChild.data
         except:
-            pass
-        new_sld = etree.tostring(xmlsld)
+            raise ValueError("Bad sld (No NamedLayer/Name)")
+
+        # Remove encoding.
+        _, new_sld = xmlsld.toprettyxml().split("\n", 1)
 
         ms_template_layer = self.ms.clone()
         ms_template_layer.name = sld_layer_name
@@ -368,7 +358,7 @@ class FeatureTypeModel(LayerModel):
                 })
 
         if enabled:
-            layer.set_metadata("wfs_enable_request", 
+            layer.set_metadata("wfs_enable_request",
                                "GetCapabilities GetFeature DescribeFeatureType")
 
         # Configure the layer based on information from the store.
@@ -397,7 +387,7 @@ class FeatureTypeModel(LayerModel):
             "wfs_srs": "EPSG:4326",
             "wfs_getfeature_formatlist": "OGRGML,SHAPEZIP",
             })
-        
+
         if ft.get_fid_column() != None:
             layer.set_metadatas({
                 "wfs_featureid": ft.get_fid_column(),
@@ -723,7 +713,7 @@ def create_mapfile(path, map_name, data):
 
     mf = mapscript.mapObj()
     mf.name = map_name
-    
+
     # The following could be defined in <mapfile.py>:
 
     mf.web.metadata.set("ows_name", map_name)
@@ -746,7 +736,7 @@ def create_mapfile(path, map_name, data):
     # mf.web.metadata.set("wms_resx", "")
     # mf.web.metadata.set("wms_resy", "")
 
-    mf.web.metadata.set("ows_schemas_location", 
+    mf.web.metadata.set("ows_schemas_location",
                         "http://schemas.opengeospatial.net")
     mf.web.metadata.set("ows_updatesequence", "foo")
     mf.web.metadata.set("ows_addresstype", "foo")
@@ -771,9 +761,9 @@ def create_mapfile(path, map_name, data):
     # mf.web.metadata.set("ows_attribution_onlineresource", "")
     # mf.web.metadata.set("ows_attribution_title", "")
 
-    mf.web.metadata.set("wms_enable_request", 
+    mf.web.metadata.set("wms_enable_request",
                         "GetCapabilities GetMap GetFeatureInfo GetLegendGraphic")
-    mf.web.metadata.set("wfs_enable_request", 
+    mf.web.metadata.set("wfs_enable_request",
                         "GetCapabilities DescribeFeatureType GetFeature")
     mf.web.metadata.set("ows_sld_enabled", "true")
     mf.web.metadata.set("wms_getcapabilities_version", "1.3.0")
@@ -902,7 +892,7 @@ class Mapfile(MetadataMixin):
         layer = Layer(model.ms.clone())
         self.ms.insertLayer(layer.ms)
 
-        layer.ms.name = l_name      
+        layer.ms.name = l_name
         layer.enable(l_enabled)
 
         # is queryable (by default):
@@ -914,7 +904,7 @@ class Mapfile(MetadataMixin):
         l_metadata.setdefault("wms_abstract", l_name)
         l_metadata.setdefault("wms_bbox_extended", "true")
         # TODO: Add other default values as above:
-        # wms_keywordlist, wms_keywordlist_vocabulary 
+        # wms_keywordlist, wms_keywordlist_vocabulary
         # wms_keywordlist_<vocabulary>_items
         # wms_srs
         # wms_dataurl_(format|href)
@@ -926,7 +916,7 @@ class Mapfile(MetadataMixin):
 
         # TODO: pass correct data (title, abstract, ...) to layer.update()
         layer.update(l_metadata)
-        
+
         model.configure_layer(ws, layer, l_enabled)
 
         if layer.ms.type == mapscript.MS_LAYER_POINT:
