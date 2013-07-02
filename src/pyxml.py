@@ -32,6 +32,7 @@ from xml.sax.saxutils import escape
 # Its not trivial because we want to inherit from a list or
 # from a dict, but we want both instances to inherit from Entries.
 # Also we want the factory to be Entries and not a function.
+# Ps: This is a metaclass.
 class Entries(object):
     def __new__(clazz, obj, *args, **kwargs):
         class _Entries(Entries, type(obj)):
