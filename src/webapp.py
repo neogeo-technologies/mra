@@ -54,7 +54,7 @@ class BadRequest(web.webapi.HTTPError):
     """`400 Bad Request` error."""
     def __init__(self, message="bad request"):
         self.message = message
-        status = '404 Bad Request'
+        status = '400 Bad Request'
         headers = {'Content-Type': 'text/html'}
         web.webapi.HTTPError.__init__(self, status, headers, message)
 
