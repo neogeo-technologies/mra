@@ -143,6 +143,7 @@ class Layer(MetadataMixin):
         # an html parser, which luckily is much more forgiving.
         from xml.dom.minidom import parseString
 
+        print "SLD:\n\n%s\n" % new_sld
         xmlsld = parseString(new_sld)
 
         try:

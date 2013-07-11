@@ -759,7 +759,7 @@ class layers(object):
             try:
                 model = ws.get_model(r_name, r_type[:-1], st_name)
             except ValueError:
-                webapp.NotFound("Invalid layer model '%s'" % r_type[:-1])
+                raise webapp.NotFound("Invalid layer model '%s'" % r_type[:-1])
 
         with webapp.mightConflict("layer", mapfile=map_name):
             mf.create_layer(ws, model, l_name, l_enabled)
