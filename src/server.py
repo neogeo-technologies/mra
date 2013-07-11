@@ -578,10 +578,17 @@ class files(object):
             raise webapp.NotImplemented()
 
         # Now we make sure the store exists.
-        with webapp.mightNotFound(message="Store {exception} does not exist "
-                                  "and automatic creation is not yet suported."):
+        try:
             ws.get_store_info(st_type, st_name)
-            # TODO: Create the store if it does not exist.
+        except KeyError:
+            # Create the store if it seems legit and it does not exist.
+            if st_type == "datastores" or st_type == "coveragestores":
+                with webapp.mightConflict("dataStore", workspace=ws_name):
+                    ws.create_store(st_type, st_name, {})
+            # Finaly check if its OK now.
+            with webapp.mightNotFound(message="Store {exception} does not exist "
+                                      "and it could not be created."):
+                ws.get_store_info(st_type, st_name)
 
         # Then we store the file.
         ext = web.ctx.env.get('CONTENT_TYPE', '').split("/")[-1]

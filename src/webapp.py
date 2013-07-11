@@ -435,6 +435,9 @@ class HTTPCompatible(object):
 def get_data(name=None, mandatory=[], authorized=[], forbidden=[]):
     data = web.data()
 
+    if not data:
+        raise web.badrequest('You must suply some data. (mandatory: %s, authorized: %s)' % (madatory, authorized))
+
     if not 'CONTENT_TYPE' in web.ctx.env:
         raise web.badrequest('You must specify a Content-Type.')
 
@@ -449,8 +452,8 @@ def get_data(name=None, mandatory=[], authorized=[], forbidden=[]):
             if name: data = data.get(name, None)
         else:
             raise web.badrequest('Content-type \'%s\' is not allowed.' % ctype)
-    except ValueError:
-        raise web.badrequest('Could not decode input data.' % mandatory)
+    except (AttributeError, ValueError):
+        raise web.badrequest('Could not decode input data (%s).' % data)
 
     if name and data == None:
         raise web.badrequest('The object you are sending does not contain a \'%s\' entry.' % name)
