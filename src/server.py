@@ -186,22 +186,8 @@ class datastore(object):
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             info = ws.get_datastore_info(ds_name)
+            print "DS info:", info
             connectionParameters = info["connectionParameters"]
-
-        entries = {}
-        if "url" in connectionParameters:
-            entries["url"] = connectionParameters["url"]
-        elif "dbtype" in connectionParameters:
-            entries["dbtype"] = connectionParameters["dbtype"]
-            entries["database"] = connectionParameters["database"]
-            entries["host"] = connectionParameters["host"]
-            entries["port"] = connectionParameters["port"]
-            entries["user"] = connectionParameters["user"]
-            entries["password"] = connectionParameters["password"]
-        else:
-            raise webapp.NotImplemented()
-
-        entries["namespace"] = None # TODO
 
         return {"dataStore": {
                     "name": info["name"],
@@ -215,7 +201,7 @@ class datastore(object):
                     "featureTypes": href("%s/maps/%s/workspaces/%s/datastores/%s/featuretypes.%s" % (
                                         web.ctx.home, map_name, ws.name, ds_name, format)
                         ),
-                    "connectionParameters": Entries(entries, tag_name="entry")
+                    "connectionParameters": Entries(connectionParameters, tag_name="entry")
                     }
                 }
 
@@ -226,6 +212,8 @@ class datastore(object):
         data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         if ds_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a data store.")
+
+        print "Updating with: %s" % data
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             ws.update_datastore(ds_name, data)

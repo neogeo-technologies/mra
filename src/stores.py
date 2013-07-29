@@ -308,7 +308,6 @@ class Datastore(object):
 
         The first argument to __init__ can also directly be a gdal/ogr object.
         """
-
         self.backend = path if isinstance(path, ogr.DataSource) else ogr.Open(path)
         if self.backend == None:
             raise ValueError("Datastore backend could not be opened using '%s'." % path)

@@ -51,8 +51,11 @@ class MetadataMixin(object):
 def get_store_connection_string(info):
     cparam = info["connectionParameters"]
     if cparam.get("dbtype", "") == "postgis":
-        return "PG:dbname=%s port=%s host=%s user=%s password=%s" % (
-            cparam["database"], cparam["port"], cparam["host"], cparam["user"], cparam["password"])
+        # First mandatory
+        url = "PG:dbname=%s port=%s host=%s " % (cparam["database"], cparam["port"], cparam["host"])
+        # Then optionals:
+        url += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
+        return url
     elif "url" in cparam:
         url = urlparse.urlparse(cparam["url"])
         if url.scheme != "file" or url.netloc:
@@ -142,8 +145,6 @@ class Layer(MetadataMixin):
         # Mostly because we haven't got the proper declarations, we fallback to
         # an html parser, which luckily is much more forgiving.
         from xml.dom.minidom import parseString
-
-        print "SLD:\n\n%s\n" % new_sld
         xmlsld = parseString(new_sld)
 
         try:
@@ -166,7 +167,29 @@ class Layer(MetadataMixin):
 
         mf.ms.removeLayer(ms_template_layer.index)
 
-    def set_default_style(self, mf, s_name):
+    def set_default_style(self, mf):
+
+        if self.ms.type == mapscript.MS_LAYER_POINT:
+            self.ms.tolerance = 8
+            self.ms.toleranceunits = 6
+            s_name = 'default_point'
+        elif self.ms.type == mapscript.MS_LAYER_LINE:
+            self.ms.tolerance = 8
+            self.ms.toleranceunits = 6
+            s_name = 'default_line'
+        elif self.ms.type == mapscript.MS_LAYER_POLYGON:
+            self.ms.tolerance = 0
+            self.ms.toleranceunits = 6
+            s_name = 'default_polygon'
+        else:
+            return
+
+        try:
+            style = open(os.path.join(os.path.dirname(__file__), "%s.sld" % s_name)).read()
+        except IOError, OSError:
+            return
+
+        self.add_style_sld(mf, s_name, style)
         self.ms.classgroup = s_name
 
     def remove_style(self, s_name):
@@ -302,8 +325,7 @@ class FeatureTypeModel(LayerModel):
         cparam = info["connectionParameters"]
         if cparam.get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
             self.ms.connectiontype = mapscript.MS_POSTGIS
-            self.ms.connection = "dbname=%s port=%s host=%s user=%s password=%s" % (
-                cparam["database"], cparam["port"], cparam["host"], cparam["user"], cparam["password"])
+            self.ms.connection = get_store_connection_string(info)
             self.ms.data = "%s FROM %s" % (ds[ft_name].get_geometry_column(), ft_name)
             self.set_metadata("ows_extent", "%s %s %s %s" %
                 (ft.get_extent().minX(), ft.get_extent().minY(),
@@ -920,29 +942,11 @@ class Mapfile(MetadataMixin):
 
         model.configure_layer(ws, layer, l_enabled)
 
-        if layer.ms.type == mapscript.MS_LAYER_POINT:
-            layer.ms.tolerance = 8
-            layer.ms.toleranceunits = 6
-            s_name = 'default_point'
-        elif layer.ms.type == mapscript.MS_LAYER_LINE:
-            layer.ms.tolerance = 8
-            layer.ms.toleranceunits = 6
-            s_name = 'default_line'
-        elif layer.ms.type == mapscript.MS_LAYER_POLYGON:
-            layer.ms.tolerance = 0
-            layer.ms.toleranceunits = 6
-            s_name = 'default_polygon'
-
-        try:
-            style = open(os.path.join(os.path.dirname(__file__), "%s.sld" % s_name)).read()
-        except IOError, OSError:
-            raise IOError, OSError
-
-        layer.add_style_sld(self, s_name, style)
-        layer.set_default_style(self, s_name)
+        layer.set_default_style(self)
 
     def delete_layer(self, l_name):
         layer = self.get_layer(l_name)
+
         self.ms.removeLayer(layer.ms.index)
 
     # Layergroups
