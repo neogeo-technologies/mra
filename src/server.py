@@ -878,7 +878,6 @@ class layerstyles(object):
         mf = get_mapfile(map_name)
 
         try:
-            print tools.get_style_path(s_name)
             style = open(tools.get_style_path(s_name)).read()
         except IOError, OSError:
             with webapp.mightNotFound("style", mapfile=map_name):
