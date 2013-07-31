@@ -166,6 +166,7 @@ class datastore(object):
     def DELETE(self, ws_name, ds_name, format):
         ws = mra.get_workspace(ws_name)
 
+        # TODO: check, this is not consistent between ds/cs.
         # We need to check if this datatore is empty.
         assert_is_empty(ws.iter_featuretypemodels(ds_name=ds_name), "datastore", ds_name)
 
@@ -196,8 +197,8 @@ class featuretypes(object):
                 ws.create_featuretypemodel(ds_name, data["name"], data)
         ws.save()
 
-        webapp.Created("%s/workspaces/%s/datastores/%s/featuretypes/%s%s" % (
-                web.ctx.home, ws.name, ds_name, data["name"], dotformat))
+        webapp.Created("%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
+                web.ctx.home, ws.name, ds_name, data["name"], format))
 
 
 class featuretype(object):
@@ -288,18 +289,18 @@ class featuretype(object):
 class coveragestores(object):
     @HTTPCompatible()
     def GET(self, ws_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         return {"coverageStores": [{
                     "name": cs_name,
-                    "href": "%s/maps/%s/workspaces/%s/coveragestores/%s.%s" % (
-                        web.ctx.home, map_name, ws.name, cs_name, format)
+                    "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
+                        web.ctx.home, ws.name, cs_name, format)
                     } for cs_name in ws.iter_coveragestore_names()]
                 }
 
     @HTTPCompatible()
     def POST(self, ws_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         cs_name = data.pop("name")
@@ -308,17 +309,18 @@ class coveragestores(object):
             ws.create_coveragestore(cs_name, data)
         ws.save()
 
-        webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s%s" % (
-                web.ctx.home, map_name, ws_name, cs_name, (".%s" % format) if format else ""))
+        webapp.Created("%s/workspaces/%s/coveragestores/%s.%s" % (
+                web.ctx.home, ws_name, cs_name, format))
 
 
 class coveragestore(object):
     @HTTPCompatible()
     def GET(self, ws_name, cs_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         with webapp.mightNotFound("coverageStore", workspace=ws_name):
             info = ws.get_coveragestore_info(cs_name)
+        connectionParameters = info.get("connectionParameters", {})
 
         return {"coverageStore": {
                     "name": info["name"],
@@ -327,13 +329,13 @@ class coveragestore(object):
                     "__default": False, # TODO
                     "workspace": {
                         "name": ws.name,
-                        "href": "%s/maps/%s/workspaces/%s.%s" % (
-                            web.ctx.home, map_name, ws.name, format),
+                        "href": "%s/workspaces/%s.%s" % (
+                            web.ctx.home, ws.name, format),
                         },
-                    "coverages": href("%s/maps/%s/workspaces/%s/coveragestores/%s/coverages.%s" % (
-                                    web.ctx.home, map_name, ws.name, cs_name, format)
+                    "coverages": href("%s/workspaces/%s/coveragestores/%s/coverages.%s" % (
+                                    web.ctx.home, ws.name, cs_name, format)
                         ),
-                    "connectionParameters": Entries({
+                    "connectionParameters": connectionParameters and Entries({
                         "url": info["connectionParameters"]["url"],
                         "namespace": None, # TODO
                         }, tag_name="entry")
@@ -341,10 +343,9 @@ class coveragestore(object):
                 }
 
 
-
     @HTTPCompatible()
     def PUT(self, ws_name, cs_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         if cs_name != data.pop("name"):
@@ -356,8 +357,9 @@ class coveragestore(object):
 
     @HTTPCompatible()
     def DELETE(self, ws_name, cs_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
+        # TODO: check, this is not consistent between ds/cs.
         # We need to check if this datatore is empty.
         assert_is_empty(ws.iter_coverages(cs_name=cs_name), "coveragestore", ds_name)
 
@@ -369,32 +371,34 @@ class coveragestore(object):
 class coverages(object):
     @HTTPCompatible()
     def GET(self, ws_name, cs_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
+
         return {"coverages": [{
                     "name": c.name,
-                    "href": "%s/maps/%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
-                        web.ctx.home, map_name, ws.name, cs_name, c.name, format)
+                    "href": "%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
+                        web.ctx.home, ws.name, cs_name, c.name, format)
                     } for c in ws.iter_coveragemodels(cs_name)]
                 }
 
     @HTTPCompatible()
     def POST(self, ws_name, cs_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
 
         with webapp.mightConflict("coverage", coveragestore=cs_name):
-            ws.create_coveragemodel(data["name"], cs_name, data)
+            with webapp.mightNotFound("coverage", coveragestore=cs_name):
+                ws.create_coveragemodel(data["name"], cs_name, data)
         ws.save()
 
-        webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s/coverages/%s%s" % (
-                web.ctx.home, map_name, ws.name, cs_name, data["name"], (".%s" % format) if format else ""))
+        webapp.Created("%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
+                web.ctx.home, ws.name, cs_name, data["name"], format))
 
 
 class coverage(object):
     @HTTPCompatible()
     def GET(self, ws_name, cs_name, c_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         # with webapp.mightNotFound("coveragestore", workspace=ws_name):
         #     cs = ws.get_coveragestore(cs_name)
@@ -432,8 +436,8 @@ class coverage(object):
                     "metadata": None, # TODO
                     "store": { # TODO: Add attr class="coverageStore"
                         "name": cs_name,
-                        "href": "%s/maps/%s/workspaces/%s/coveragestores/%s.%s" % (
-                            web.ctx.home, map_name, ws_name, cs_name, format)
+                        "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
+                            web.ctx.home, ws_name, cs_name, format)
                         },
                     "nativeFormat": None, # TODO
                     "grid": { # TODO: Add attr dimension
@@ -463,7 +467,7 @@ class coverage(object):
 
     @HTTPCompatible()
     def PUT(self, ws_name, cs_name, c_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
         if c_name != data["name"]:
@@ -478,11 +482,11 @@ class coverage(object):
 
     @HTTPCompatible()
     def DELETE(self, ws_name, cs_name, c_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         # We need to check if there are any layers using this.
-        assert_is_empty(mf.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name, "type":"coverage"}),
-                        "coverage", ft_name)
+        assert_is_empty(mf.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name,
+                                            "type":"coverage"}), "coverage", ft_name)
 
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
             ws.delete_coveragemodel(c_name, cs_name)
@@ -495,7 +499,7 @@ class files(object):
     def PUT(self, ws_name, st_type, st_name, f_type, format):
         import zipfile
 
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         # TODO: According to geoserv's examples we might have to handle
         # directories as well as files, in that case we want to upload
@@ -565,7 +569,7 @@ class styles(object):
 
         return {"styles": [{
                     "name": os.path.basename(os.path.basename(s_name)),
-                    "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, os.path.basename(s_name), format)
+                    "href": "%s/styles/%s.%s" % (web.ctx.home, os.path.basename(s_name), format)
                     } for s_name in tools.iter_styles(mf)]
                 }
 
@@ -659,7 +663,7 @@ class layers(object):
         mf = get_mapfile(map_name)
         return {"layers": [{
                     "name": layer.ms.name,
-                    "href": "%s/maps/%s/layers/%s.%s" % (web.ctx.home, map_name, layer.ms.name, format),
+                    "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
                     } for layer in mf.iter_layers()]
                 }
 
@@ -687,7 +691,7 @@ class layers(object):
 
         r_name = r_name.rsplit(".", 1)[0]
 
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
             try:
                 model = ws.get_model(r_name, r_type[:-1], st_name)
@@ -698,7 +702,7 @@ class layers(object):
             mf.create_layer(ws, model, l_name, l_enabled)
         mf.save()
 
-        webapp.Created("%s/maps/%s/layers/%s%s" % (web.ctx.home, map_name, l_name, (".%s" % format) if format else ""))
+        webapp.Created("%s/layers/%s.%s" % (web.ctx.home, l_name, format))
 
 
 class layer(object):
@@ -719,16 +723,16 @@ class layer(object):
                     "type": layer.get_type_name(),
                     "defaultStyle": {
                         "name": layer.ms.classgroup,
-                        "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, layer.ms.classgroup, format),
+                        "href": "%s/styles/%s.%s" % (web.ctx.home, layer.ms.classgroup, format),
                         },
                     "styles": [{ # TODO: Add attr class="linked-hash-set"
                             "name": s_name,
-                            "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, s_name, format),
+                            "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
                             } for s_name in layer.iter_styles()],
                     "resource": { # TODO: Add attr class="featureType|coverage"
                         "name": layer.get_mra_metadata("name"),
-                        "href": "%s/maps/%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
-                            web.ctx.home, map_name, layer.get_mra_metadata("workspace"),
+                        "href": "%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
+                            web.ctx.home, layer.get_mra_metadata("workspace"),
                             store_type, layer.get_mra_metadata("storage"), data_type, layer.get_mra_metadata("name"), format),
                         },
                     "enabled": bool(layer.ms.status),
@@ -797,7 +801,7 @@ class layerstyles(object):
 
         return {"styles": [{
                     "name": s_name,
-                    "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, s_name, format),
+                    "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
                     } for s_name in layer.iter_styles()],
                 }
 
@@ -834,7 +838,7 @@ class layerstyles(object):
         layer.add_style_sld(mf, s_name, style)
         mf.save()
 
-        webapp.Created("%s/maps/%s/layers/%s/layerstyles/%s%s" % (web.ctx.home, map_name, l_name, s_name, (".%s" % format) if format else ""))
+        webapp.Created("%s/layers/%s/layerstyles/%s.%s" % (web.ctx.home, l_name, s_name, format))
 
 
 class layerstyle(object):
@@ -869,7 +873,7 @@ class layergroups(object):
 
         return {"layerGroups" : [{
                     "name": lg.name,
-                    "href": "%s/maps/%s/layergroups/%s.%s" % (web.ctx.home, map_name, lg.name, format)
+                    "href": "%s/layergroups/%s.%s" % (web.ctx.home, lg.name, format)
                     } for lg in mf.iter_layergroups()]
                 }
 
@@ -887,7 +891,7 @@ class layergroups(object):
 
         mf.save()
 
-        webapp.Created("%s/maps/%s/layergroups/%s%s" % (web.ctx.home, map_name, lg.name, (".%s" % format) if format else ""))
+        webapp.Created("%s/layergroups/%s.%s" % (web.ctx.home, lg.name, format))
 
 
 class layergroup(object):
@@ -905,7 +909,7 @@ class layergroup(object):
                     "mode": None, # TODO
                     "publishables": [{
                             "name": layer.ms.name,
-                            "href": "%s/maps/%s/layers/%s.%s" % (web.ctx.home, map_name, layer.ms.name, format),
+                            "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
                             } for layer in lg.iter_layers()],
                     "bounds": {
                         "minx": latlon_extent.minX(),
