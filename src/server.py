@@ -530,16 +530,14 @@ class files(object):
 
         # Then we store the file.
         ext = web.ctx.env.get('CONTENT_TYPE', '').split("/")[-1]
-        path = tools.mk_st_data_path(ws_name, st_type, st_name, st_name + (".%s" % ext) if ext else "")
-        with open(path, "w") as f:
-            f.write(data)
+        mra.create_file(st_name + (".%s" % ext) if ext else "", data=data)
 
         # We also unzip it if its ziped.
         ctype = web.ctx.env.get('CONTENT_TYPE', None)
         if ctype == "application/zip":
             z = zipfile.ZipFile(path)
             for f in z.namelist():
-                fp = tools.mk_st_data_path(ws_name, st_type, st_name, f)
+                fp = mra.mk_path(mra.get_file_path(st_name, f))
 
                 # If the file has the correct target we might want it.
                 if format and fp.endswith(format) and not tools.is_hidden(fp):
@@ -548,7 +546,7 @@ class files(object):
                 z.extract(f, path=tools.get_st_data_path(ws_name, st_type, st_name))
 
         # Set new connection parameters:
-        ws.update_store(st_type, st_name, {"connectionParameters":{"url":"file:"+tools.no_res_root(path)}})
+        ws.update_store(st_type, st_name, {"connectionParameters":{"url":"file:"+mra.pub_file_path(path)}})
         ws.save()
 
         # Finally we might have to configure it.
@@ -560,7 +558,7 @@ class files(object):
         elif params.configure == "all":
             raise webapp.NotImplemented()
         else:
-            raise webapp.BadRequest(message="configure must be one of first, none or all.")
+            raise webapp.BadRequest(message="configure must be one of 'first', 'none' or 'all'.")
 
 
 class styles(object):

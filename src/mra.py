@@ -853,27 +853,49 @@ class MRA(object):
         root = self.config["storage"]["root"]
         return self.safe_path_join(root, *args)
 
-    def get_resouces_path(self, *args):
-        root = self.config["storage"].get("resources", "resources")
+    def pub_path(self, path):
+        return os.path.relpath(path, self.get_path())
+
+    def get_resources_path(self, *args):
+        root = self.config["storage"].get("resources", self.get_path("resources"))
         return self.get_path(root, *args)
+
+    def pub_resources_path(self, path):
+        return os.path.relpath(path, self.get_resource_path())
 
     # Styles:
 
     def get_style_path(self, *args):
-        root = self.config["storage"].get("styles", "styles")
+        root = self.config["storage"].get("styles", self.get_resource_path("styles"))
         return self.get_resouces_path(root, *args)
+
+    def pub_style_path(self, path):
+        return os.path.relpath(path, self.get_style_path())
 
     # Files:
 
     def get_file_path(self, *args):
-        root = self.config["storage"].get("data", "data")
+        root = self.config["storage"].get("data", self.get_resource_path("data"))
         return self.get_resouces_path(root, *args)
+
+    def pub_file_path(self, path):
+        return os.path.relpath(path, self.get_file_path())
+
+    def create_file(self, name, data=None):
+        fp = mra.mk_path(mra.get_file_path(name))
+        with open(fp, "w") as f:
+            if data:
+                f.write(data)
+        return fp
 
     # Available (get):
 
     def get_available_path(self, *args):
-        root = self.config["storage"].get("available", "available")
+        root = self.config["storage"].get("available", self.get_path("available"))
         return self.get_path(root, *args)
+
+    def pub_available_path(self, path):
+        return os.path.relpath(path, self.get_available_path())
 
     def get_available(self):
         path = self.get_available_path("layers.map")
@@ -903,8 +925,11 @@ class MRA(object):
     # Services:
 
     def get_service_path(self, *args):
-        root = self.config["storage"].get("services", "services")
+        root = self.config["storage"].get("services", self.get_path("available"))
         return self.get_path(root, *args)
+
+    def pub_service_path(self, path):
+        return os.path.relpath(path, self.get_service_path())
 
     def get_services(self):
         pass
