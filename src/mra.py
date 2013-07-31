@@ -42,6 +42,24 @@ from webapp import KeyExists
 import stores
 import metadata
 
+
+def get_store_connection_string(info):
+    cparam = info["connectionParameters"]
+    if cparam.get("dbtype", "") == "postgis":
+        # First mandatory
+        url = "PG:dbname=%s port=%s host=%s " % (cparam["database"], cparam["port"], cparam["host"])
+        # Then optionals:
+        url += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
+        return url
+    elif "url" in cparam:
+        url = urlparse.urlparse(cparam["url"])
+        if url.scheme != "file" or url.netloc:
+            raise ValueError("Only local files are suported.")
+        return url.path
+    else:
+        raise ValueError("Unhandled type '%s'" % cparam.get("dbtype", "<unknown>"))
+
+
 class MetadataMixin(object):
 
     def __getattr__(self, attr):
@@ -49,6 +67,7 @@ class MetadataMixin(object):
             return functools.partial(getattr(metadata, attr), self.ms)
         raise AttributeError("'%s' object has no attribute '%s'" %
                              (type(self).__name__, attr))
+
 
 class Layer(MetadataMixin):
     def __init__(self, backend):
