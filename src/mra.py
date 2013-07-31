@@ -743,6 +743,15 @@ class Workspace(Mapfile):
 
     # LayerModels:
 
+    def __model_name(self, st_type, store, name):
+        if st_type == "featuretype":
+            prefix = "ft"
+        elif st_type == "coverage":
+            prefix = "c"
+        else:
+            raise ValueError("Unknown layer model type '%s'." % st_type)
+        return "%s:%s:%s" % (prefix, store, name)
+
     def __ms2model(self, ms_layer, st_type=None):
         if st_type == "featuretype" or not st_type and ms_layer.name.startswith("ft:"):
             return FeatureTypeModel(self, ms_layer)
@@ -756,12 +765,12 @@ class Workspace(Mapfile):
             kwargs.setdefault("mra", {})["type"] = st_type
         if store != None:
             kwargs.setdefault("mra", {})["storage"] = store
-        for ms_layer in self.iter_ms_layers(*kwargs):
+        for ms_layer in self.iter_ms_layers(**kwargs):
             yield self.__ms2model(ms_layer)
 
     def get_layermodel(self, st_type, store, name):
         try:
-            return next(self.iter_layermodels(attr={"name":"%s:%s:%s" % (st_type, store, name)}))
+            return next(self.iter_layermodels(attr={"name":self.__model_name(st_type, store, name)}))
         except StopIteration:
             raise KeyError((st_type, store, name))
 
