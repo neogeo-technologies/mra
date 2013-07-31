@@ -714,10 +714,10 @@ class Workspace(Mapfile):
 
     # LayerModels:
 
-    def __ms2model(self, ms_layer):
-        if ms_layer.name.startswith("featuretype:"):
+    def __ms2model(self, ms_layer, st_type=None):
+        if st_type == "datatore" or ms_layer.name.startswith("ft:"):
             return FeatureTypeModel(self, ms_layer)
-        elif ms_layer.name.startswith("coverage:"):
+        elif st_type == "coveragestore" or ms_layer.name.startswith("c:"):
             return CoverageModel(self, ms_layer)
         else:
             raise ValueError("Badly named Layer Model '%s'." % ms_layer.name)
@@ -738,7 +738,7 @@ class Workspace(Mapfile):
 
     def has_layermodel(self, st_type, name, store):
         try:
-            self.get_getlayermodel(st_type, name, store)
+            self.get_layermodel(st_type, name, store)
         except KeyError:
             return False
         else:
@@ -747,7 +747,7 @@ class Workspace(Mapfile):
     def create_layermodel(self, st_type, store, name, metadata={}):
         if self.has_layermodel(st_type, store, name):
             raise KeyExists((st_type, store, name))
-        ft = self.__ms2model(mapscript.layerObj(self.ms))
+        ft = self.__ms2model(mapscript.layerObj(self.ms), st_type=st_type)
         ft.update(self, st_type, store, name, metadata)
         return ft
 

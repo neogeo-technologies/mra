@@ -499,8 +499,6 @@ class files(object):
     def PUT(self, ws_name, st_type, st_name, f_type, format):
         import zipfile
 
-        ws = mra.get_workspace(ws_name)
-
         # TODO: According to geoserv's examples we might have to handle
         # directories as well as files, in that case we want to upload
         # all the files from the directory.
@@ -513,6 +511,9 @@ class files(object):
             raise webapp.NotImplemented()
         elif f_type == "external":
             raise webapp.NotImplemented()
+
+
+        ws = mra.get_workspace(ws_name)
 
         # Now we make sure the store exists.
         try:
