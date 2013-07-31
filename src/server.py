@@ -572,8 +572,6 @@ class styles(object):
 
     @HTTPCompatible()
     def POST(self, format):
-        mf = get_mapfile(map_name)
-
         params = web.input(name=None)
         name = params.name
         if name == None:
@@ -586,7 +584,7 @@ class styles(object):
 class style(object):
     @HTTPCompatible(authorize=["sld"])
     def GET(self, s_name, format):
-        with webapp.mightNotFound("style", mapfile=map_name):
+        with webapp.mightNotFound():
             style = mra.get_style(s_name)
 
         if format == "sld":
@@ -602,7 +600,7 @@ class style(object):
     @HTTPCompatible()
     def PUT(self, s_name, format):
         #TODO: Also update layers using this style.
-        with webapp.mightNotFound("style", mapfile=map_name):
+        with webapp.mightNotFound():
             mra.delete_style(s_name)
         data = web.data()
         mra.create_style(s_name, data)
@@ -610,7 +608,7 @@ class style(object):
     @HTTPCompatible()
     def DELETE(self, s_name, format):
         #TODO: Maybe check for layers using this style?
-        with webapp.mightNotFound("style", mapfile=map_name):
+        with webapp.mightNotFound():
             mra.delete_style(s_name)
 
 
@@ -742,7 +740,7 @@ class layerstyles(object):
     @HTTPCompatible()
     def GET(self, l_name, format):
         mf = mra.get_available()
-        with webapp.mightNotFound("layer", mapfile=map_name):
+        with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
 
         if format == "sld":
@@ -765,10 +763,10 @@ class layerstyles(object):
         except ValueError:
             raise webapp.NotFound(message="style '%s' was not found." % href)
 
-        with webapp.mightNotFound("style", mapfile=map_name):
+        with webapp.mightNotFound():
             style = mra.get_style(s_name)
 
-        with webapp.mightNotFound("layer", mapfile=map_name):
+        with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
 
         layer.add_style_sld(mf, s_name, style)
@@ -781,7 +779,7 @@ class layerstyle(object):
     @HTTPCompatible()
     def DELETE(self, l_name, s_name, format):
         mf = mra.get_available()
-        with webapp.mightNotFound("layer", mapfile=map_name):
+        with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
         with webapp.mightNotFound("style", layer=l_name):
             layer.remove_style(s_name)
@@ -792,10 +790,10 @@ class layerfields(object):
     @HTTPCompatible()
     def GET(self, l_name, format):
         mf = mra.get_available()
-        with webapp.mightNotFound("layer", mapfile=map_name):
+        with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
 
-            return {"fields": [{
+        return {"fields": [{
                     "name": layer.get_metadata("gml_%s_alias" % field, None),
                     "fieldType": layer.get_metadata("gml_%s_type" % field, None),
                     } for field in layer.iter_fields()]
@@ -821,7 +819,7 @@ class layergroups(object):
         lg_name = data.pop("name")
         layers = [mf.get_layer(l_name) for l_name in data.pop("layers", [])]
 
-        with webapp.mightConflict("layerGroup", mapfile=map_name):
+        with webapp.mightConflict():
             lg = mf.create_layergroup(lg_name, data)
         lg.add(*layers)
 
@@ -835,7 +833,7 @@ class layergroup(object):
     @HTTPCompatible()
     def GET(self, lg_name, format):
         mf = mra.get_available()
-        with webapp.mightNotFound("layerGroup", mapfile=map_name):
+        with webapp.mightNotFound():
             lg = mf.get_layergroup(lg_name)
 
         latlon_extent = lg.get_latlon_extent()
@@ -862,7 +860,7 @@ class layergroup(object):
     def PUT(self, lg_name, format):
         mf = mra.get_available()
 
-        with webapp.mightNotFound("layerGroup", mapfile=map_name):
+        with webapp.mightNotFound():
             lg = mf.get_layergroup(lg_name)
 
         data = get_data(name="layerGroup", mandatory=["name"], authorized=["name", "title", "abstract", "layers"])
@@ -882,7 +880,7 @@ class layergroup(object):
     def DELETE(self, lg_name, format):
 
         mf = mra.get_available()
-        with webapp.mightNotFound("layerGroup", mapfile=map_name):
+        with webapp.mightNotFound():
             mf.delete_layergroup(lg_name)
         mf.save()
 
