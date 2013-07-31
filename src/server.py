@@ -633,11 +633,11 @@ class layers(object):
         l_name = data.pop("name")
         l_enabled = data.pop("enabled", True)
 
+        href = data["resource"]["href"]
         try:
-            href = data["resource"]["href"]
             ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
         except ValueError:
-            raise webapp.NotFound(message="ressource '%s' was not found." % path)
+            raise webapp.NotFound(message="ressource '%s' was not found." % href)
 
         st_type = st_type[:-1] # Remove trailing s.
 
@@ -706,11 +706,11 @@ class layer(object):
         l_enabled = data.pop("enabled", True)
 
 
+        href = data["resource"]["href"]
         try:
-            href = data["resource"]["href"]
             ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
         except ValueError:
-            raise webapp.NotFound(message="ressource '%s' was not found." % path)
+            raise webapp.NotFound(message="ressource '%s' was not found." % href)
 
         st_type = st_type[:-1] # Remove trailing s.
 
@@ -759,27 +759,14 @@ class layerstyles(object):
         data = get_data(name="style", mandatory=["resource"],
                         authorized=["name", "title", "abstract", "resource"])
 
-        url = urlparse.urlparse(data["resource"]["href"])
-        if url.path.startswith(web.ctx.homepath):
-            path = url.path[len(web.ctx.homepath):]
-        else:
-            raise webapp.BadRequest(message="Resource href (%s) is not handled by MRA." % url.path)
-
+        href = data["resource"]["href"]
         try:
-            _, map_name, _, s_name = path.rsplit("/", 3)
+            _, s_name = mra.href_parse(href, 2)
         except ValueError:
-            raise webapp.NotFound(message="ressource '%s' was not found." % path)
+            raise webapp.NotFound(message="style '%s' was not found." % href)
 
-        s_name = s_name.rsplit(".", 1)[0]
-
-        # Get the new style.
-        mf = mra.get_available()
-
-        try:
-            style = open(tools.get_style_path(s_name)).read()
-        except IOError, OSError:
-            with webapp.mightNotFound("style", mapfile=map_name):
-                style = mf.get_style_sld(s_name)
+        with webapp.mightNotFound("style", mapfile=map_name):
+            style = mra.get_style(s_name)
 
         with webapp.mightNotFound("layer", mapfile=map_name):
             layer = mf.get_layer(l_name)
