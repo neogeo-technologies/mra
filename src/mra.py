@@ -637,9 +637,9 @@ class Workspace(Mapfile):
     # Stores:
     def get_store(self, st_type, name):
         cparam = get_store_connection_string(self.get_store_info(st_type, name))
-        if st_type == "datastores":
+        if st_type == "datastore":
             return stores.Datastore(cparam)
-        elif st_type == "coveragestores":
+        elif st_type == "coveragestore":
             return stores.Coveragestore(cparam)
         else:
             raise AssertionError("Unknown st_type '%s'." % st_type)
