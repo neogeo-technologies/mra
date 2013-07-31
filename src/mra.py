@@ -24,6 +24,17 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+import os
+import os.path
+
+import functools
+import yaml
+
+import mapscript
+
+from webapp import KeyExists
+
+import metadata
 
 class MetadataMixin(object):
 
@@ -244,15 +255,21 @@ class Layergroup(object):
 
 class Mapfile(MetadataMixin):
 
-    def __init__(self, path):
-        self.ms = mapscript.mapObj(self.path)
+    def __init__(self, path, create=False):
         self.path = path
         self.filename = os.path.basename(self.path)
+        self.name = os.path.splitext(self.filename)[0]
+
+        if create and os.path.exists(self.path):
+            raise KeyExists(self.filename)
+
+        if create:
+            self.ms = mapscript.mapObj()
+        else:
+            self.ms = mapscript.mapObj(self.path)
 
     def save(self, path=None):
-        if path is None:
-            path = self.path
-        self.ms.save(path)
+        self.ms.save(path or self.path)
 
     def rawtext(self):
         open(self.path, "r").read()
@@ -501,12 +518,9 @@ class FeatureTypeModel(LayerModel):
         plugins.extend("post_configure_vector_layer", self, ws, ds, ft, layer)
 
 
-
 class CoverageModel(LayerModel):
-    """
-    """
 
-    def update(self, ws, cs_name, c_name metadata):
+    def update(self, ws, cs_name, c_name, metadata):
         ws = self.ws
 
         cs = ws.get_coveragestore(cs_name)
@@ -584,6 +598,11 @@ class CoverageModel(LayerModel):
 
 
 class Workspace(Mapfile):
+
+    def __init__(self, *args, **kwargs):
+        Mapfile.__init__(self, *args, **kwargs)
+        if self.name.endswith(".ws"):
+            self.name = self.name[:-3]
 
     # Stores:
     def get_store(self, st_type, name):
@@ -786,40 +805,49 @@ class Workspace(Mapfile):
 # Finaly the global context:
 
 class MRA(object):
-    def __init__(self):
-        pass
+    def __init__(self, config_path):
+        try:
+            self.config = yaml.load(open(config_path, "r"))
+        except yaml.YAMLError as e:
+            exit("Error in configuration file: %s" % e)
 
-
-    def safe_path_join(root, *args):
+    def safe_path_join(self, root, *args):
         full_path = os.path.realpath(os.path.join(root, *args))
         if not full_path.startswith(os.path.realpath(root)):
             raise webapp.Forbidden(message="path '%s' outside root directory." % (args))
         return full_path
 
+    def mk_path(self, path):
+        dirs = os.path.dirname(path)
+        if not os.path.isdir(dirs):
+            os.makedirs(dirs)
+        return path
+
     def get_path(self, *args):
-        # TODO: get root from config.
+        root = self.config["storage"]["root"]
         return self.safe_path_join(root, *args)
 
     def get_resouces_path(self, *args):
-        # TODO: get root from config. (default to main_root/resources)
-        return self.safe_path_join(root, *args)
+        root = self.config["storage"].get("resources", "resources")
+        return self.get_path(root, *args)
 
     # Styles:
 
     def get_style_path(self, *args):
-        # TODO: get root from config.
-        return self.get_resouces_path("style", *args)
+        root = self.config["storage"].get("styles", "styles")
+        return self.get_resouces_path(root, *args)
 
     # Files:
 
     def get_file_path(self, *args):
-        return self.get_resouces_path("files", *args)
+        root = self.config["storage"].get("data", "data")
+        return self.get_resouces_path(root, *args)
 
     # Available (get):
 
     def get_available_path(self, *args):
-        # TODO: get root from config. (default to main_root/available)
-        return self.safe_path_join(root, *args)
+        root = self.config["storage"].get("available", "available")
+        return self.get_path(root, *args)
 
     def get_available(self):
         path = self.get_available_path("layers.map")
@@ -828,24 +856,29 @@ class MRA(object):
 
     # Workspaces:
 
+    def list_workspaces(self):
+        for (root, subFolders, files) in os.walk(self.get_available_path()):
+            for f in files:
+                if f.endswith(".ws.map") and not f.startswith('.'):
+                    yield f[:-7]
+
     def create_workspace(self, name):
-        path = self.get_available_path("%s.ws" % name)
-        # TODO: Create the thing.
-        return Workspace(path)
+        path = self.get_available_path("%s.ws.map" % name)
+        return Workspace(self.mk_path(path), create=True)
 
     def get_workspace(self, name):
-        path = self.get_available_path("%s.ws" % name)
+        path = self.get_available_path("%s.ws.map" % name)
         return Workspace(path)
 
     def delete_workspace(self, name):
-        path = self.get_available_path("%s.ws" % name)
+        path = self.get_available_path("%s.ws.map" % name)
 
 
     # Services:
 
     def get_service_path(self, *args):
-        # TODO: get root from config. (default to main_root/services)
-        return self.safe_path_join(root, *args)
+        root = self.config["storage"].get("services", "services")
+        return self.get_path(root, *args)
 
     def get_services(self):
         pass
