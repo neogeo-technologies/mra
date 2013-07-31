@@ -748,11 +748,11 @@ class Workspace(Mapfile):
         if self.has_layermodel(st_type, store, name):
             raise KeyExists((st_type, store, name))
         ft = self.__ms2model(mapscript.layerObj(self.ms), st_type=st_type)
-        ft.update(self, st_type, store, name, metadata)
+        ft.update(st_type, store, name, metadata)
         return ft
 
     def update_layermodel(self, st_type, store, name, metadata={}):
-        ft.update(self, st_type, store, name, metadata)
+        ft.update(st_type, store, name, metadata)
 
     def delete_layermodel(self, st_type, ds_name, ft_name):
         model = self.get_layermodel(st_type, ds_name, ft_name)

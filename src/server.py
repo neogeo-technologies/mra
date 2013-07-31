@@ -167,7 +167,7 @@ class datastore(object):
         ws = mra.get_workspace(ws_name)
 
         # TODO: check, this is not consistent between ds/cs.
-        # We need to check if this datatore is empty.
+        # We need to check if this datastore is empty.
         assert_is_empty(ws.iter_featuretypemodels(ds_name=ds_name), "datastore", ds_name)
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
@@ -360,7 +360,7 @@ class coveragestore(object):
         ws = mra.get_workspace(ws_name)
 
         # TODO: check, this is not consistent between ds/cs.
-        # We need to check if this datatore is empty.
+        # We need to check if this datastore is empty.
         assert_is_empty(ws.iter_coverages(cs_name=cs_name), "coveragestore", ds_name)
 
         with webapp.mightNotFound("coverageStore", workspace=ws_name):
