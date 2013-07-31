@@ -177,39 +177,40 @@ class datastore(object):
 class featuretypes(object):
     @HTTPCompatible()
     def GET(self, ws_name, ds_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
+
         return {"featureTypes": [{
                     "name": ft.name,
-                    "href": "%s/maps/%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
-                        web.ctx.home, map_name, ws.name, ds_name, ft.name, format)
+                    "href": "%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
+                        web.ctx.home, ws.name, ds_name, ft.name, format)
                     } for ft in ws.iter_featuretypemodels(ds_name)]
                 }
 
     @HTTPCompatible()
     def POST(self, ws_name, ds_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         data = get_data(name="featureType", mandatory=["name"], authorized=["name", "title", "abstract"])
         with webapp.mightConflict("featureType", datastore=ds_name):
             with webapp.mightNotFound("featureType", datastore=ds_name):
-                ws.create_featuretypemodel(data["name"], ds_name, data)
+                ws.create_featuretypemodel(ds_name, data["name"], data)
         ws.save()
 
-        webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s/featuretypes/%s%s" % (
-                web.ctx.home, map_name, ws.name, ds_name, data["name"], dotformat))
+        webapp.Created("%s/workspaces/%s/datastores/%s/featuretypes/%s%s" % (
+                web.ctx.home, ws.name, ds_name, data["name"], dotformat))
 
 
 class featuretype(object):
     @HTTPCompatible()
     def GET(self, ws_name, ds_name, ft_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         ds = ws.get_datastore(ds_name)
         with webapp.mightNotFound("dataStore", datastore=ds_name):
             dsft = ds[ft_name]
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
-            ft = ws.get_featuretypemodel(ft_name, ds_name)
+            ft = ws.get_featuretypemodel(ds_name, ft_name)
 
         extent = ft.get_extent()
         latlon_extent = ft.get_latlon_extent()
@@ -249,8 +250,8 @@ class featuretype(object):
                     "enabled": True, # TODO
                     "store": { # TODO: add key: class="dataStore"
                         "name": ds_name,
-                        "href": "%s/maps/%s/workspaces/%s/datastores/%s.%s" % (
-                            web.ctx.home, map_name, ws_name, ds_name, format)
+                        "href": "%s/workspaces/%s/datastores/%s.%s" % (
+                            web.ctx.home, ws_name, ds_name, format)
                         },
                     "maxFeatures": 0, # TODO
                     "numDecimals": 0, # TODO
@@ -259,7 +260,7 @@ class featuretype(object):
 
     @HTTPCompatible()
     def PUT(self, ws_name, ds_name, ft_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         data = get_data(name="featureType", mandatory=["name"], authorized=["name", "title", "abstract"])
         if ft_name != data["name"]:
@@ -268,18 +269,19 @@ class featuretype(object):
         metadata = dict((k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
-            ws.update_featuretypemodel(ft_name, ds_name, metadata)
+            ws.update_featuretypemodel(ds_name, ft_name, metadata)
         ws.save()
 
     @HTTPCompatible()
     def DELETE(self, ws_name, ds_name, ft_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = mra.get_workspace(ws_name)
 
         # We need to check if there are any layers using this.
-        assert_is_empty(mf.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name, "type":"featuretype"}),"featuretype", ft_name)
+        assert_is_empty(mf.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name,
+                                            "type":"featuretype"}),"featuretype", ft_name)
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
-            ws.delete_featuretypemodel(ft_name, ds_name)
+            ws.delete_featuretypemodel(ds_name, ft_name)
         ws.save()
 
 

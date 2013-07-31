@@ -725,8 +725,8 @@ class Workspace(Mapfile):
     def iter_layermodels(self, st_type=None, store=None, **kwargs):
         if st_type:
             kwargs.setdefault("mra", {})["type"] = st_type
-        if ds_name != None:
-            kwargs.setdefault("mra", {})["storage"] = ds_name
+        if store != None:
+            kwargs.setdefault("mra", {})["storage"] = store
         for ms_layer in self.iter_ms_layers(*kwargs):
             yield self.__ms2model(ms_layer)
 
