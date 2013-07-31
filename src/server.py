@@ -564,12 +564,10 @@ class files(object):
 class styles(object):
     @HTTPCompatible()
     def GET(self, format):
-        mf = get_mapfile(map_name)
-
         return {"styles": [{
-                    "name": os.path.basename(os.path.basename(s_name)),
-                    "href": "%s/styles/%s.%s" % (web.ctx.home, os.path.basename(s_name), format)
-                    } for s_name in tools.iter_styles(mf)]
+                    "name": s_name,
+                    "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format)
+                    } for s_name in mra.list_styles(mf)]
                 }
 
     @HTTPCompatible()
@@ -580,34 +578,19 @@ class styles(object):
         name = params.name
         if name == None:
             raise webapp.BadRequest(message="no parameter 'name' given.")
-        with webapp.mightConflict(message="style {exception} already exists."):
-            if name in tools.iter_styles(mf):
-                raise webapp.KeyExists(name)
 
         data = web.data()
-        path = tools.mk_style_path(name)
-
-        with open(path, "w") as f:
-            f.write(data)
+        mra.create_style(name, data)
 
 
 class style(object):
     @HTTPCompatible(authorize=["sld"])
     def GET(self, s_name, format):
-        mf = get_mapfile(map_name)
+        with webapp.mightNotFound("style", mapfile=map_name):
+            style = mra.get_style(s_name)
 
         if format == "sld":
-            # We look for styles on disk and in the mapfiles.
-            try:
-                return open(tools.get_style_path(s_name)).read()
-            except IOError, OSError:
-                with webapp.mightNotFound("style", mapfile=map_name):
-                    return mf.get_style_sld(s_name)
-
-        # We still need to check if this actually exists...
-        with webapp.mightNotFound("style", mapfile=map_name):
-            if not os.path.exists(tools.get_style_path(s_name)) and not s_name in mf.iter_styles():
-                raise KeyError(s_name)
+            return style
 
         return {"style": {
                     "name": s_name,
@@ -618,42 +601,17 @@ class style(object):
 
     @HTTPCompatible()
     def PUT(self, s_name, format):
-        path = tools.get_style_path(s_name)
-        try:
-            os.remove(path)
-        except OSError:
-            mf = get_mapfile(map_name)
-            if s_name in mf.iter_styles():
-                raise webapp.NotImplemented(message="Updating manually added styles is not implemented.")
-            else:
-                raise webapp.NotFound("style '%s' not found in mapfile '%s'." % (s_name, map_name))
-
+        #TODO: Also update layers using this style.
+        with webapp.mightNotFound("style", mapfile=map_name):
+            mra.delete_style(s_name)
         data = web.data()
-        with open(path, "w") as f:
-            f.write(data)
-
+        mra.create_style(s_name, data)
 
     @HTTPCompatible()
     def DELETE(self, s_name, format):
-        mf = get_mapfile(map_name)
-
-        # OK check any(class.group == s_name for class in layer.iter_classes)
-        layers_using = [layer.ms.name for layer in mf.iter_layers()
-                        if any(clazz.ms.group == s_name for clazz in layer.iter_classes())]
-
-        if layers_using:
-            raise webapp.Forbidden(message="Can't remove style '%s' because it is beeing used by the folowing layers: %s."
-                                   % (s_name, layers_using))
-
-        path = tools.get_style_path(s_name)
-        try:
-            os.remove(path)
-        except OSError:
-            mf = get_mapfile(map_name)
-            if s_name in mf.iter_styles():
-                raise webapp.NotImplemented(message="Deleting manually added styles is not implemented.")
-            else:
-                raise webapp.NotFound("style '%s' not found in mapfile '%s'." % (s_name, map_name))
+        #TODO: Maybe check for layers using this style?
+        with webapp.mightNotFound("style", mapfile=map_name):
+            mra.delete_style(s_name)
 
 
 class layers(object):

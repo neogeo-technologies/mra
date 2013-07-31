@@ -872,6 +872,31 @@ class MRA(object):
     def pub_style_path(self, path):
         return os.path.relpath(path, self.get_style_path())
 
+    def list_styles(self):
+        for (_, _, files) in os.walk(self.get_available_path()):
+            for f in files:
+                if f.endswith(".sld") and not f.startswith('.'):
+                    yield f[:-4]
+
+    def create_style(self, name, data):
+        path = self.get_style_path("%s.sld" % name)
+        with open(self.mk_path(path), "w") as f:
+            f.write(data)
+        return fp
+
+    def get_style(self, name):
+        try:
+            return open(mra.get_style_path(name)).read()
+        except OSError:
+            raise KeyError(name)
+
+    def delete_style(self, name):
+        path = tools.get_style_path(s_name)
+        try:
+            os.remove(path)
+        except OSError:
+            raise KeyError(name)
+
     # Files:
 
     def get_file_path(self, *args):
@@ -905,7 +930,7 @@ class MRA(object):
     # Workspaces:
 
     def list_workspaces(self):
-        for (root, subFolders, files) in os.walk(self.get_available_path()):
+        for (_, _, files) in os.walk(self.get_available_path()):
             for f in files:
                 if f.endswith(".ws.map") and not f.startswith('.'):
                     yield f[:-7]
