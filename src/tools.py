@@ -178,7 +178,7 @@ def proj4_to_wkt(proj4):
 def wkt_to_authority(wkt):
     srs = osr.SpatialReference()
     srs.ImportFromWkt(wkt)
-    
+
     # Are there really no other with osgeo? Oo
 
     if srs.GetAuthorityCode('PROJCS') != None:

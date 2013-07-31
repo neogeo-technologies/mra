@@ -137,8 +137,6 @@ class Layer(MetadataMixin):
 
     def add_style_sld(self, mf, s_name, new_sld):
 
-
-
         # Because we do not want to apply the sld to real layers by mistake
         # we need to rename it to something we are sure is not used.
         sld_layer_name = "__mra_tmp_template"
@@ -150,7 +148,8 @@ class Layer(MetadataMixin):
         xmlsld = parseString(new_sld)
 
         try:
-            xmlsld.firstChild.getElementsByTagName("NamedLayer")[0].getElementsByTagName("Name")[0].firstChild.data = sld_layer_name
+            xmlsld.firstChild.getElementsByTagName("NamedLayer")[0]\
+                .getElementsByTagName("Name")[0].firstChild.data = sld_layer_name
         except:
             raise ValueError("Bad sld (No NamedLayer/Name)")
 
@@ -161,11 +160,11 @@ class Layer(MetadataMixin):
         ms_template_layer = self.ms.clone()
         ms_template_layer.name = sld_layer_name
         mf.ms.insertLayer(ms_template_layer)
-              
+
         try:
             ms_template_layer.applySLD(new_sld, sld_layer_name)
         except:
-            raise ValueError("Unable to access storage.")     
+            raise ValueError("Unable to access storage.")
 
         for i in xrange(ms_template_layer.numclasses):
             ms_class = ms_template_layer.getClass(i)
@@ -333,7 +332,9 @@ class FeatureTypeModel(LayerModel):
         cparam = info["connectionParameters"]
         if cparam.get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
             self.ms.connectiontype = mapscript.MS_POSTGIS
-            self.ms.connection = get_store_connection_string(info)
+            connection = "dbname=%s port=%s host=%s " % (cparam["database"], cparam["port"], cparam["host"])
+            connection += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
+            self.ms.connection = connection
             self.ms.data = "%s FROM %s" % (ds[ft_name].get_geometry_column(), ft_name)
             self.set_metadata("ows_extent", "%s %s %s %s" %
                 (ft.get_extent().minX(), ft.get_extent().minY(),
