@@ -715,9 +715,9 @@ class Workspace(Mapfile):
     # LayerModels:
 
     def __ms2model(self, ms_layer, st_type=None):
-        if st_type == "datatore" or ms_layer.name.startswith("ft:"):
+        if st_type == "featuretype" or not st_type and ms_layer.name.startswith("ft:"):
             return FeatureTypeModel(self, ms_layer)
-        elif st_type == "coveragestore" or ms_layer.name.startswith("c:"):
+        elif st_type == "coverage" or not st_type and ms_layer.name.startswith("c:"):
             return CoverageModel(self, ms_layer)
         else:
             raise ValueError("Badly named Layer Model '%s'." % ms_layer.name)
