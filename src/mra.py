@@ -30,6 +30,7 @@ import string
 import urlparse
 import functools
 
+import web
 import yaml
 import mapscript
 
@@ -280,13 +281,17 @@ class Layergroup(object):
 
 class Mapfile(MetadataMixin):
 
-    def __init__(self, path, create=False):
+    def __init__(self, path, create=False, needed=False):
         self.path = path
         self.filename = os.path.basename(self.path)
         self.name = os.path.splitext(self.filename)[0]
 
-        if create and os.path.exists(self.path):
-            raise KeyExists(self.filename)
+        if os.path.exists(self.path):
+            if create and not needed:
+                raise KeyExists(self.filename)
+            create = False
+        else:
+            create = True
 
         if create:
             self.ms = mapscript.mapObj()
@@ -924,8 +929,7 @@ class MRA(object):
 
     def get_available(self):
         path = self.get_available_path("layers.map")
-        # TODO: Create the thing if not existing.
-        return Mapfile(path)
+        return Mapfile(path, needed=True)
 
     # Workspaces:
 
@@ -962,3 +966,15 @@ class MRA(object):
     def get_service(self, name):
         path = self.get_service_path("%s.map" % name)
         return Mapfile(path)
+
+    # URL Helpers:
+
+    def href_parse(self, href, nb):
+        url = urlparse.urlparse(href)
+        parts = url.path.rsplit("/", nb)[0:]
+        if parts:
+            parts[-1] = parts[-1].rsplit(".", 1)[0]
+        return parts
+
+
+

@@ -617,7 +617,7 @@ class style(object):
 class layers(object):
     @HTTPCompatible()
     def GET(self, format):
-        mf = get_mapfile(map_name)
+        mf = mra.get_available()
         return {"layers": [{
                     "name": layer.ms.name,
                     "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
@@ -633,30 +633,24 @@ class layers(object):
         l_name = data.pop("name")
         l_enabled = data.pop("enabled", True)
 
-        # This means we can have one mapfile for each workspace
-        # and if eveything uses urls it should work *almost* as is.
-        url = urlparse.urlparse(data["resource"]["href"])
-        if url.path.startswith(web.ctx.homepath):
-            path = url.path[len(web.ctx.homepath):]
-        else:
-            raise webapp.BadRequest(message="Resource href is not handled by MRA.")
-
         try:
-            _, map_name, _, ws_name, st_type, st_name, r_type, r_name = path.rsplit("/", 7)
+            href = data["resource"]["href"]
+            ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
         except ValueError:
             raise webapp.NotFound(message="ressource '%s' was not found." % path)
 
-        r_name = r_name.rsplit(".", 1)[0]
+        st_type = st_type[:-1] # Remove trailing s.
 
         ws = mra.get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
             try:
-                model = ws.get_model(r_name, r_type[:-1], st_name)
+                model = ws.get_layermodel(r_name, r_type, st_name)
             except ValueError:
-                raise webapp.NotFound("Invalid layer model '%s'" % r_type[:-1])
+                raise KeyError(st_type)
 
-        with webapp.mightConflict("layer", mapfile=map_name):
-            mf.create_layer(ws, model, l_name, l_enabled)
+        mf = mra.get_available()
+        with webapp.mightConflict():
+            mf.create_layer(model, l_name, l_enabled)
         mf.save()
 
         webapp.Created("%s/layers/%s.%s" % (web.ctx.home, l_name, format))
@@ -665,8 +659,8 @@ class layers(object):
 class layer(object):
     @HTTPCompatible()
     def GET(self, l_name, format):
-        mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layer", mapfile=map_name):
+        mf = mra.get_available()
+        with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
 
         data_type, store_type = {
@@ -702,7 +696,7 @@ class layer(object):
 
     @HTTPCompatible()
     def PUT(self, l_name, format):
-        mf = get_mapfile(map_name)
+        mf = mra.get_available()
 
         data = get_data(name="layer", mandatory=["name", "resource"],
                         authorized=["name", "title", "abstract", "resource", "enabled"])
@@ -711,37 +705,35 @@ class layer(object):
 
         l_enabled = data.pop("enabled", True)
 
-        # This means we can have one mapfile for each workspace
-        # and if eveything uses urls it should work *almost* as is.
-        r_href = data["resource"]["href"]
+
         try:
-            _, map_name, _, ws_name, st_type, st_name, r_type, r_name = r_href.rsplit("/", 7)
+            href = data["resource"]["href"]
+            ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
         except ValueError:
-            raise webapp.NotFound(message="ressource '%s' was not found." % r_href)
+            raise webapp.NotFound(message="ressource '%s' was not found." % path)
 
-        r_name = r_name.rsplit(".", 1)[0]
+        st_type = st_type[:-1] # Remove trailing s.
 
-        ws = mf.get_workspace(ws_name)
+        ws = mra.get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
             try:
-                model = ws.get_model(r_name, r_type[:-1], st_name)
+                model = ws.get_layermodel(r_name, r_type, st_name)
             except ValueError:
-                raise webapp.NotFound("Invalid layer model '%s'" % st_type)
+                raise KeyError(st_type)
 
-        with webapp.mightNotFound("layer", mapfile=map_name):
+        mf = mra.get_available()
+        with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
-
             if layer.get_mra_metadata("type") != r_type:
-                raise webapp.BadRequest("Can't change a '%s' layer into a '%s'." % (
-                        layer.get_mra_metadata("type"), r_type))
-
+                raise webapp.BadRequest("Can't change a '%s' layer into a '%s'."
+                                        % (layer.get_mra_metadata("type"), r_type))
             model.configure_layer(ws, layer, l_enabled)
         mf.save()
 
     @HTTPCompatible()
     def DELETE(self, l_name, format):
-        mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layer", mapfile=map_name):
+        mf = mra.get_available()
+        with webapp.mightNotFound():
             mf.delete_layer(l_name)
         mf.save()
 
@@ -749,7 +741,7 @@ class layer(object):
 class layerstyles(object):
     @HTTPCompatible()
     def GET(self, l_name, format):
-        mf = get_mapfile(map_name)
+        mf = mra.get_available()
         with webapp.mightNotFound("layer", mapfile=map_name):
             layer = mf.get_layer(l_name)
 
@@ -781,7 +773,7 @@ class layerstyles(object):
         s_name = s_name.rsplit(".", 1)[0]
 
         # Get the new style.
-        mf = get_mapfile(map_name)
+        mf = mra.get_available()
 
         try:
             style = open(tools.get_style_path(s_name)).read()
@@ -801,7 +793,7 @@ class layerstyles(object):
 class layerstyle(object):
     @HTTPCompatible()
     def DELETE(self, l_name, s_name, format):
-        mf = get_mapfile(map_name)
+        mf = mra.get_available()
         with webapp.mightNotFound("layer", mapfile=map_name):
             layer = mf.get_layer(l_name)
         with webapp.mightNotFound("style", layer=l_name):
@@ -812,7 +804,7 @@ class layerstyle(object):
 class layerfields(object):
     @HTTPCompatible()
     def GET(self, l_name, format):
-        mf = get_mapfile(map_name)
+        mf = mra.get_available()
         with webapp.mightNotFound("layer", mapfile=map_name):
             layer = mf.get_layer(l_name)
 
@@ -826,7 +818,7 @@ class layerfields(object):
 class layergroups(object):
     @HTTPCompatible()
     def GET(self, format):
-        mf = get_mapfile(map_name)
+        mf = mra.get_available()
 
         return {"layerGroups" : [{
                     "name": lg.name,
@@ -836,7 +828,7 @@ class layergroups(object):
 
     @HTTPCompatible()
     def POST(self, format):
-        mf = get_mapfile(map_name)
+        mf = mra.get_available()
 
         data = get_data(name="layerGroup", mandatory=["name"], authorized=["name", "title", "abstract", "layers"])
         lg_name = data.pop("name")
@@ -855,7 +847,7 @@ class layergroup(object):
 
     @HTTPCompatible()
     def GET(self, lg_name, format):
-        mf = get_mapfile(map_name)
+        mf = mra.get_available()
         with webapp.mightNotFound("layerGroup", mapfile=map_name):
             lg = mf.get_layergroup(lg_name)
 
@@ -881,7 +873,7 @@ class layergroup(object):
 
     @HTTPCompatible()
     def PUT(self, lg_name, format):
-        mf = get_mapfile(map_name)
+        mf = mra.get_available()
 
         with webapp.mightNotFound("layerGroup", mapfile=map_name):
             lg = mf.get_layergroup(lg_name)
@@ -902,7 +894,7 @@ class layergroup(object):
     @HTTPCompatible()
     def DELETE(self, lg_name, format):
 
-        mf = get_mapfile(map_name)
+        mf = mra.get_available()
         with webapp.mightNotFound("layerGroup", mapfile=map_name):
             mf.delete_layergroup(lg_name)
         mf.save()
