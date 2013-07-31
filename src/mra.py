@@ -26,14 +26,20 @@
 
 import os
 import os.path
-
+import string
+import urlparse
 import functools
-import yaml
 
+import yaml
 import mapscript
 
+import tools
+from extensions import plugins
+
+import webapp
 from webapp import KeyExists
 
+import stores
 import metadata
 
 class MetadataMixin(object):
