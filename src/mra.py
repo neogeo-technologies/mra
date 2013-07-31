@@ -636,7 +636,6 @@ class Workspace(Mapfile):
 
     # Stores:
     def get_store(self, st_type, name):
-        st_type = st_type if st_type.endswith("s") else st_type + "s"
         cparam = get_store_connection_string(self.get_store_info(st_type, name))
         if st_type == "datastores":
             return stores.Datastore(cparam)
