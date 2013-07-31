@@ -646,28 +646,28 @@ class Workspace(Mapfile):
             raise AssertionError("Unknown st_type '%s'." % st_type)
 
     def get_store_info(self, st_type, name):
-        info = self.get_mra_metadata(st_type, {})[name].copy()
+        info = self.get_mra_metadata("%ss" % st_type, {})[name].copy()
         info["name"] = name
         return info
 
     def iter_store_names(self, st_type):
-        return self.get_mra_metadata(st_type, {}).iterkeys()
+        return self.get_mra_metadata("%ss" % st_type, {}).iterkeys()
 
     def iter_stores(self, st_type):
-        return self.get_mra_metadata(st_type, {}).iteritems()
+        return self.get_mra_metadata("%ss" % st_type, {}).iteritems()
 
     def create_store(self, st_type, name, configuration):
-        with self.mra_metadata(st_type, {}) as stores:
+        with self.mra_metadata("%ss" % st_type, {}) as stores:
             if name in stores:
                 raise KeyExists(name)
             stores[name] = configuration
 
     def update_store(self, st_type, name, configuration):
-        with self.mra_metadata(st_type, {}) as stores:
+        with self.mra_metadata("%ss" % st_type, {}) as stores:
             stores[name].update(configuration)
 
     def delete_store(self, st_type, name):
-        with self.mra_metadata(st_type, {}) as stores:
+        with self.mra_metadata("%ss" % st_type, {}) as stores:
             del stores[name]
 
     # Datastores:
