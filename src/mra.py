@@ -498,8 +498,6 @@ class FeatureTypeModel(LayerModel):
                 "name": self.get_mra_metadata("name"),
                 "type": self.get_mra_metadata("type"),
                 "storage": self.get_mra_metadata("storage"),
-                "workspace": self.get_mra_metadata("workspace"),
-                "is_model": False,
                 })
 
         layer.update_metadatas({
@@ -609,8 +607,6 @@ class CoverageModel(LayerModel):
                 "name": self.get_mra_metadata("name"),
                 "type": self.get_mra_metadata("type"),
                 "storage": self.get_mra_metadata("storage"),
-                "workspace": self.get_mra_metadata("workspace"),
-                "is_model": False,
                 })
 
         layer.set_metadatas({

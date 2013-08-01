@@ -637,14 +637,14 @@ class layers(object):
         except ValueError:
             raise webapp.NotFound(message="ressource '%s' was not found." % href)
 
-        st_type = st_type[:-1] # Remove trailing s.
+        st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
 
         ws = mra.get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
             try:
                 model = ws.get_layermodel(r_type, st_name, r_name)
             except ValueError:
-                raise KeyError(st_type)
+                raise KeyError(r_type)
 
         mf = mra.get_available()
         with webapp.mightConflict():
@@ -710,14 +710,14 @@ class layer(object):
         except ValueError:
             raise webapp.NotFound(message="ressource '%s' was not found." % href)
 
-        st_type = st_type[:-1] # Remove trailing s.
+        st_type, f_type = st_type[:-1], r_type[:-1] # Remove trailing s.
 
         ws = mra.get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
             try:
                 model = ws.get_layermodel(r_type, st_name, r_name)
             except ValueError:
-                raise KeyError(st_type)
+                raise KeyError(r_type)
 
         mf = mra.get_available()
         with webapp.mightNotFound():
