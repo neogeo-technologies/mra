@@ -140,7 +140,7 @@ class Layer(MetadataMixin):
             yield Class(self.ms.getClass(i))
 
     def get_styles(self):
-        return set(clazz.ms.group for clazz in self.iter_classes())
+        return set(self.ms.getClass(i).group for i in xrange(self.ms.numclasses))
 
     def iter_styles(self):
         return iter(self.get_styles())
