@@ -869,24 +869,24 @@ class MRA(object):
     def pub_path(self, path):
         return os.path.relpath(path, self.get_path())
 
-    def get_resources_path(self, *args):
+    def get_resource_path(self, *args):
         root = self.config["storage"].get("resources", self.get_path("resources"))
         return self.get_path(root, *args)
 
-    def pub_resources_path(self, path):
+    def pub_resource_path(self, path):
         return os.path.relpath(path, self.get_resource_path())
 
     # Styles:
 
     def get_style_path(self, *args):
         root = self.config["storage"].get("styles", self.get_resource_path("styles"))
-        return self.get_resouces_path(root, *args)
+        return self.get_resource_path(root, *args)
 
     def pub_style_path(self, path):
         return os.path.relpath(path, self.get_style_path())
 
     def list_styles(self):
-        for (_, _, files) in os.walk(self.get_available_path()):
+        for (_, _, files) in os.walk(self.get_style_path()):
             for f in files:
                 if f.endswith(".sld") and not f.startswith('.'):
                     yield f[:-4]
@@ -895,26 +895,26 @@ class MRA(object):
         path = self.get_style_path("%s.sld" % name)
         with open(self.mk_path(path), "w") as f:
             f.write(data)
-        return fp
+        return path
 
     def get_style(self, name):
         try:
-            return open(mra.get_style_path(name)).read()
-        except OSError:
+            return open(self.get_style_path("%s.sld" % name)).read()
+        except (OSError, IOError):
             raise KeyError(name)
 
     def delete_style(self, name):
         path = tools.get_style_path(s_name)
         try:
             os.remove(path)
-        except OSError:
+        except (OSError, IOError):
             raise KeyError(name)
 
     # Files:
 
     def get_file_path(self, *args):
         root = self.config["storage"].get("data", self.get_resource_path("data"))
-        return self.get_resouces_path(root, *args)
+        return self.get_resource_path(root, *args)
 
     def pub_file_path(self, path):
         return os.path.relpath(path, self.get_file_path())
@@ -979,7 +979,7 @@ class MRA(object):
 
     def href_parse(self, href, nb):
         url = urlparse.urlparse(href)
-        parts = url.path.rsplit("/", nb)[0:]
+        parts = url.path.split("/")[-nb:]
         if parts:
             parts[-1] = parts[-1].rsplit(".", 1)[0]
         return parts

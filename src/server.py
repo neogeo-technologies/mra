@@ -567,7 +567,7 @@ class styles(object):
         return {"styles": [{
                     "name": s_name,
                     "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format)
-                    } for s_name in mra.list_styles(mf)]
+                    } for s_name in mra.list_styles()]
                 }
 
     @HTTPCompatible()
@@ -642,7 +642,7 @@ class layers(object):
         ws = mra.get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
             try:
-                model = ws.get_layermodel(r_name, r_type, st_name)
+                model = ws.get_layermodel(r_type, st_name, r_name)
             except ValueError:
                 raise KeyError(st_type)
 
@@ -715,7 +715,7 @@ class layer(object):
         ws = mra.get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
             try:
-                model = ws.get_layermodel(r_name, r_type, st_name)
+                model = ws.get_layermodel(r_type, st_name, r_name)
             except ValueError:
                 raise KeyError(st_type)
 
