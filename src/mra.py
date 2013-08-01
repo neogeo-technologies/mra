@@ -899,6 +899,8 @@ class MRA(object):
         try:
             return open(self.get_style_path("%s.sld" % name)).read()
         except (OSError, IOError):
+            if name in ["default_point", "default_line", "default_polygon"]:
+                return open(os.path.join(os.path.dirname(__file__), "%s.sld" % name)).read()
             raise KeyError(name)
 
     def delete_style(self, name):
