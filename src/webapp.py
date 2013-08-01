@@ -436,7 +436,7 @@ def get_data(name=None, mandatory=[], authorized=[], forbidden=[]):
     data = web.data()
 
     if not data:
-        raise web.badrequest('You must suply some data. (mandatory: %s, authorized: %s)' % (madatory, authorized))
+        raise web.badrequest('You must suply some data. (mandatory: %s, authorized: %s)' % (mandatory, authorized))
 
     if not 'CONTENT_TYPE' in web.ctx.env:
         raise web.badrequest('You must specify a Content-Type.')
