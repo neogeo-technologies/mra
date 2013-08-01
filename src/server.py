@@ -710,7 +710,7 @@ class layer(object):
         except ValueError:
             raise webapp.NotFound(message="ressource '%s' was not found." % href)
 
-        st_type, f_type = st_type[:-1], r_type[:-1] # Remove trailing s.
+        st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
 
         ws = mra.get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
@@ -725,7 +725,7 @@ class layer(object):
             if layer.get_mra_metadata("type") != r_type:
                 raise webapp.BadRequest("Can't change a '%s' layer into a '%s'."
                                         % (layer.get_mra_metadata("type"), r_type))
-            model.configure_layer(ws, layer, l_enabled)
+            model.configure_layer(layer, l_enabled)
         mf.save()
 
     @HTTPCompatible()
@@ -766,6 +766,7 @@ class layerstyles(object):
         with webapp.mightNotFound():
             style = mra.get_style(s_name)
 
+        mf = mra.get_available()
         with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
 
