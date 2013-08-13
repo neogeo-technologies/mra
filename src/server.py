@@ -892,6 +892,73 @@ class layergroup(object):
         mf.save()
 
 
+class OWSGlobalSettings(object):
+
+    @HTTPCompatible()
+    def GET(self, ows, format):
+        mf = mra.get_available()
+        try:
+            if mf.get_metadata("%s_enable_request" % ows) == "*":
+                is_enabled = True
+        except:
+            is_enabled = False
+
+        return { 
+            ows: {
+                "enabled": is_enabled,
+                "name": ows,
+                "schemaBaseURL": mf.get_metadata("ows_schemas_location", "http://schemas.opengis.net"),
+                }
+            }
+    
+    @HTTPCompatible()
+    def PUT(self, ows, format):
+        mf = mra.get_available()
+        data = get_data(name=ows, mandatory=["enabled"], authorized=["enabled"])
+        is_enabled = data.pop("enabled")
+        values = {True: "*", "true": "*", False: "", "false": ""}
+        if is_enabled not in values:
+            raise KeyError("'%s' is not valid" % is_enabled)
+        mf.set_metadata("%s_enable_request" % ows, values[is_enabled])
+        mf.save()
+
+
+class OWSSettings(object):
+
+    @HTTPCompatible()
+    def GET(self, ows, ws_name, format):
+        ws = get_workspace(ws_name)
+        try:
+            if ws.get_metadata("%s_enable_request" % ows) == "*":
+                is_enabled = True
+        except:
+            is_enabled = False
+
+        return {
+            ows: {
+                "enabled": is_enabled,
+                "name": ows,
+                "schemaBaseURL": ws.get_metadata("ows_schemas_location", "http://schemas.opengis.net"),
+                }
+            }
+
+    @HTTPCompatible()
+    def PUT(self, ows, ws_name, format):
+        ws = get_workspace(ws_name)
+        data = get_data(name=ows, mandatory=["enabled"], authorized=["enabled"])
+        is_enabled = data.pop("enabled")
+        values = {True: "*", "true": "*", False: "", "false": ""}
+        if is_enabled not in values:
+            raise KeyError("'%s' is not valid" % is_enabled)
+        ws.set_metadata("%s_enable_request" % ows, values[is_enabled])
+        ws.save()
+
+    @HTTPCompatible()
+    def DELETE(self, ows, ws_name, format):
+        ws = get_workspace(ws_name)
+        ws.set_metadata("%s_enable_request" % ows, "")
+        ws.save()
+
 # Index:
 urlmap(index, "")
 
@@ -930,6 +997,10 @@ urlmap(layerfields, "layers", (), "fields")
 # Layergroups:
 urlmap(layergroups, "layergroups")
 urlmap(layergroup, "layergroups", ())
+
+# OGC Web Services:
+urlmap(OWSGlobalSettings, "services", "(wms|wfs|wcs)", "settings")
+urlmap(OWSSettings, "services", "(wms|wfs|wcs)", (), "settings")
 
 urls = tuple(urlmap)
 
