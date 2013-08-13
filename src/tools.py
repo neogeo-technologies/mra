@@ -38,36 +38,36 @@ from osgeo import osr
 
 __config = None
 
-def get_config(key=None, mode='r'):
-    """This reads the YAML configuration file."""
+# def get_config(key=None, mode='r'):
+#     """This reads the YAML configuration file."""
 
-    global __config
-    if not __config:
-        try:
-            __config = yaml.load(open(os.path.join(sys.path[0], 'mra.yaml'), mode))
-        except yaml.YAMLError, exc:
-            exit('Error in configuration file: %s' % exc)
-    return __config if key == None else __config[key] if key in __config else {}
+#     global __config
+#     if not __config:
+#         try:
+#             __config = yaml.load(open(os.path.join(sys.path[0], 'mra.yaml'), mode))
+#         except yaml.YAMLError, exc:
+#             exit('Error in configuration file: %s' % exc)
+#     return __config if key == None else __config[key] if key in __config else {}
 
 
-def get_mapfile_paths():
-    """Generates a list of mapfile paths managed by Mapserver REST API."""
+# def get_mapfile_paths():
+#     """Generates a list of mapfile paths managed by Mapserver REST API."""
 
-    for (root, subFolders, files) in os.walk(get_config('storage')['mapfiles']):
-        for f in files:
-            if f.endswith('.map') and not f.startswith('.'):
-                yield os.path.join(root, f)
+#     for (root, subFolders, files) in os.walk(get_config('storage')['mapfiles']):
+#         for f in files:
+#             if f.endswith('.map') and not f.startswith('.'):
+#                 yield os.path.join(root, f)
 
-def get_mapfile(name):
-    with webapp.mightNotFound(message="Could not find mapfile '%s'." % name, exceptions=(IOError, OSError, KeyError)):
-        mf = mapfile.Mapfile(name, get_config('storage')['mapfiles'])
-    return mf
+# def get_mapfile(name):
+#     with webapp.mightNotFound(message="Could not find mapfile '%s'." % name, exceptions=(IOError, OSError, KeyError)):
+#         mf = mapfile.Mapfile(name, get_config('storage')['mapfiles'])
+#     return mf
 
-def get_mapfile_workspace(mf_name, ws_name):
-    mf = get_mapfile(mf_name)
-    with webapp.mightNotFound("workspace", mapfile=mf_name):
-        ws = mf.get_workspace(ws_name)
-    return mf, ws
+# def get_mapfile_workspace(mf_name, ws_name):
+#     mf = get_mapfile(mf_name)
+#     with webapp.mightNotFound("workspace", mapfile=mf_name):
+#         ws = mf.get_workspace(ws_name)
+#     return mf, ws
 
 def assert_is_empty(generator, tname, iname):
     try:
@@ -76,7 +76,6 @@ def assert_is_empty(generator, tname, iname):
         pass # Everything is ok.
     else:
         raise webapp.Forbidden(message="Can't remove '%s' because it is an non-empty %s." % (iname, tname))
-
 
 def href(url):
     return pyxml.Entries({'href': url})
@@ -87,78 +86,78 @@ def safe_path_join(root, *args):
         raise webapp.Forbidden(message="path '%s' outside root directory." % (args))
     return full_path
 
-def get_mapfile_path(*args):
-    return safe_path_join(get_config('storage')['mapfiles'], *args)
+# def get_mapfile_path(*args):
+#     return safe_path_join(get_config('storage')['mapfiles'], *args)
 
-def get_resource_path(*args):
-    return safe_path_join(get_config('storage')['resources'], *args)
+# def get_resource_path(*args):
+#     return safe_path_join(get_config('storage')['resources'], *args)
 
-def get_st_data_path(ws_name, st_type, name, *args):
-    return get_resource_path("workspaces", ws_name, st_type, name, *args)
+# def get_st_data_path(ws_name, st_type, name, *args):
+#     return get_resource_path("workspaces", ws_name, st_type, name, *args)
 
-def get_ds_data_path(ws_name, name, *args):
-    return get_st_data_path(ws_name, "datastores", name, *args)
+# def get_ds_data_path(ws_name, name, *args):
+#     return get_st_data_path(ws_name, "datastores", name, *args)
 
-def get_cs_data_path(ws_name, name, *args):
-    return get_st_data_path(ws_name, "coveragestores", name, *args)
+# def get_cs_data_path(ws_name, name, *args):
+#     return get_st_data_path(ws_name, "coveragestores", name, *args)
 
-def get_style_path(name, *args):
-    return safe_path_join(get_config('storage')['resources'], "styles", name, *args)
+# def get_style_path(name, *args):
+#     return safe_path_join(get_config('storage')['resources'], "styles", name, *args)
 
-def iter_styles(mapfile=None):
-    """Generates a list of style paths managed by Mapserver REST API."""
+# def iter_styles(mapfile=None):
+#     """Generates a list of style paths managed by Mapserver REST API."""
 
-    used_styles = list(mapfile.iter_styles()) if mapfile else []
+#     used_styles = list(mapfile.iter_styles()) if mapfile else []
 
-    for s in used_styles:
-        yield s
+#     for s in used_styles:
+#         yield s
 
-    styles_dir = os.path.join(get_config('storage')['resources'], "styles")
-    if not os.path.isdir(styles_dir):
-        return
+#     styles_dir = os.path.join(get_config('storage')['resources'], "styles")
+#     if not os.path.isdir(styles_dir):
+#         return
 
-    for (root, subFolders, files) in os.walk(styles_dir):
-        for f in files:
-            if f not in used_styles:
-                yield f
+#     for (root, subFolders, files) in os.walk(styles_dir):
+#         for f in files:
+#             if f not in used_styles:
+#                 yield f
 
-def mk_path(path):
-    dirs = os.path.dirname(path)
-    if not os.path.isdir(dirs):
-        os.makedirs(dirs)
+# def mk_path(path):
+#     dirs = os.path.dirname(path)
+#     if not os.path.isdir(dirs):
+#         os.makedirs(dirs)
 
-def mk_mapfile_path(name, *args):
-    path = get_mapfile_path(name, *args)
-    mk_path(path)
-    return path
+# def mk_mapfile_path(name, *args):
+#     path = get_mapfile_path(name, *args)
+#     mk_path(path)
+#     return path
 
-def mk_ds_data_path(ws_name, name, *args):
-    path = get_ds_data_path(name, *args)
-    mk_path(path)
-    return path
+# def mk_ds_data_path(ws_name, name, *args):
+#     path = get_ds_data_path(name, *args)
+#     mk_path(path)
+#     return path
 
-def mk_cs_data_path(ws_name, name, *args):
-    path = get_cs_data_path(ws_name, name, *args)
-    mk_path(path)
-    return path
+# def mk_cs_data_path(ws_name, name, *args):
+#     path = get_cs_data_path(ws_name, name, *args)
+#     mk_path(path)
+#     return path
 
-def mk_st_data_path(ws_name, st_type, name, *args):
-    path = get_st_data_path(ws_name, st_type, name, *args)
-    mk_path(path)
-    return path
+# def mk_st_data_path(ws_name, st_type, name, *args):
+#     path = get_st_data_path(ws_name, st_type, name, *args)
+#     mk_path(path)
+#     return path
 
-def mk_style_path(name, *args):
-    path = get_style_path(name, *args)
-    mk_path(path)
-    return path
+# def mk_style_path(name, *args):
+#     path = get_style_path(name, *args)
+#     mk_path(path)
+#     return path
 
-def no_root(root, path):
-    path = os.path.abspath(path)
-    root = os.path.abspath(root)
-    return path[len(root):] if path.startswith(root) else path
+# def no_root(root, path):
+#     path = os.path.abspath(path)
+#     root = os.path.abspath(root)
+#     return path[len(root):] if path.startswith(root) else path
 
-def no_res_root(path):
-    return os.path.relpath(path, get_config('storage')['resources'])
+# def no_res_root(path):
+#     return os.path.relpath(path, get_config('storage')['resources'])
 
 def is_hidden(path):
     # TODO Add a lot of checks, recursive option (to check folders)

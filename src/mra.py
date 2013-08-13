@@ -43,24 +43,6 @@ from webapp import KeyExists
 import stores
 import metadata
 
-
-def get_store_connection_string(info):
-    cparam = info["connectionParameters"]
-    if cparam.get("dbtype", "") == "postgis":
-        # First mandatory
-        url = "PG:dbname=%s port=%s host=%s " % (cparam["database"], cparam["port"], cparam["host"])
-        # Then optionals:
-        url += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
-        return url
-    elif "url" in cparam:
-        url = urlparse.urlparse(cparam["url"])
-        if url.scheme != "file" or url.netloc:
-            raise ValueError("Only local files are suported.")
-        return url.path
-    else:
-        raise ValueError("Unhandled type '%s'" % cparam.get("dbtype", "<unknown>"))
-
-
 class MetadataMixin(object):
 
     def __getattr__(self, attr):
@@ -290,7 +272,7 @@ class Mapfile(MetadataMixin):
             if create and not needed:
                 raise KeyExists(self.filename)
             create = False
-        else:
+        elif needed:
             create = True
 
         if create:
@@ -465,7 +447,7 @@ class FeatureTypeModel(LayerModel):
         else:
             self.ms.connectiontype = mapscript.MS_SHAPEFILE
             url = urlparse.urlparse(cparam["url"])
-            self.ms.data = tools.get_resource_path(url.path)
+            self.ms.data = self.ws.mra.get_file_path(url.path)
 
         # Deactivate wms and wfs requests, because we are a virtual layer.
         self.set_metadatas({
@@ -549,7 +531,7 @@ class FeatureTypeModel(LayerModel):
 
 class CoverageModel(LayerModel):
 
-    def update(self, ws, cs_name, c_name, metadata):
+    def update(self, cs_name, c_name, metadata):
         ws = self.ws
 
         cs = ws.get_coveragestore(cs_name)
@@ -571,7 +553,7 @@ class CoverageModel(LayerModel):
         #if cparam["dbtype"] in ["tif", "tiff"]:
         self.ms.connectiontype = mapscript.MS_RASTER
         url = urlparse.urlparse(cparam["url"])
-        self.ms.data = tools.get_resource_path(url.path)
+        self.ms.data = self.ws.mra.get_file_path(url.path)
             # TODO: strip extention.
         #else:
         #    raise ValueError("Unhandled type '%s'" % cparam["dbtype"])
@@ -587,7 +569,7 @@ class CoverageModel(LayerModel):
         self.update_mra_metadatas({"name": c_name, "type": "coverage", "storage": cs_name,
                                    "workspace": ws.name, "is_model": True})
 
-    def configure_layer(self, ws, layer, enabled=True):
+    def configure_layer(self, layer, enabled=True):
         ws = self.ws
 
         plugins.extend("pre_configure_raster_layer", self, ws, layer)
@@ -627,14 +609,16 @@ class CoverageModel(LayerModel):
 
 class Workspace(Mapfile):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, mra, *args, **kwargs):
         Mapfile.__init__(self, *args, **kwargs)
         if self.name.endswith(".ws"):
             self.name = self.name[:-3]
 
+        self.mra = mra
+
     # Stores:
     def get_store(self, st_type, name):
-        cparam = get_store_connection_string(self.get_store_info(st_type, name))
+        cparam = self.mra.get_store_connection_string(self.get_store_info(st_type, name))
         if st_type == "datastore":
             return stores.Datastore(cparam)
         elif st_type == "coveragestore":
@@ -904,7 +888,7 @@ class MRA(object):
             raise KeyError(name)
 
     def delete_style(self, name):
-        path = tools.get_style_path(s_name)
+        path = self.get_style_path(s_name)
         try:
             os.remove(path)
         except (OSError, IOError):
@@ -920,7 +904,7 @@ class MRA(object):
         return os.path.relpath(path, self.get_file_path())
 
     def create_file(self, name, data=None):
-        fp = mra.mk_path(mra.get_file_path(name))
+        fp = self.mk_path(self.get_file_path(name))
         with open(fp, "w") as f:
             if data:
                 f.write(data)
@@ -949,11 +933,14 @@ class MRA(object):
 
     def create_workspace(self, name):
         path = self.get_available_path("%s.ws.map" % name)
-        return Workspace(self.mk_path(path), create=True)
+        return Workspace(self, self.mk_path(path), create=True)
 
     def get_workspace(self, name):
         path = self.get_available_path("%s.ws.map" % name)
-        return Workspace(path)
+        try:
+            return Workspace(self, path)
+        except IOError, OSError:
+            raise KeyError(name)
 
     def delete_workspace(self, name):
         path = self.get_available_path("%s.ws.map" % name)
@@ -983,6 +970,24 @@ class MRA(object):
         if parts:
             parts[-1] = parts[-1].rsplit(".", 1)[0]
         return parts
+
+    # Other helpers:
+
+    def get_store_connection_string(self, info):
+        cparam = info["connectionParameters"]
+        if cparam.get("dbtype", "") == "postgis":
+            # First mandatory
+            url = "PG:dbname=%s port=%s host=%s " % (cparam["database"], cparam["port"], cparam["host"])
+            # Then optionals:
+            url += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
+            return url
+        elif "url" in cparam:
+            url = urlparse.urlparse(cparam["url"])
+            if url.scheme != "file" or url.netloc:
+                raise ValueError("Only local files are suported.")
+            return self.get_file_path(url.path)
+        else:
+            raise ValueError("Unhandled type '%s'" % cparam.get("dbtype", "<unknown>"))
 
 
 

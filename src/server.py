@@ -43,15 +43,20 @@ import webapp
 from webapp import HTTPCompatible, urlmap, get_data
 
 import tools
-from tools import get_mapfile, get_mapfile_workspace, get_config, href, assert_is_empty
+from tools import href, assert_is_empty
 
 from pyxml import Entries
 
 
 from extensions import plugins
 
-mralogs.setup(get_config("logging")["level"], get_config("logging")["file"],
-              get_config("logging")["format"])
+
+# Some helper functions first.
+def get_workspace(ws_name):
+    with webapp.mightNotFound():
+        return mra.get_workspace(ws_name)
+
+# Now the main classes that handle the REST API.
 
 class index(object):
     @HTTPCompatible()
@@ -87,7 +92,7 @@ class workspaces(object):
 class workspace(object):
     @HTTPCompatible()
     def GET(self, ws_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
         return {"workspace": ({
                     "name": ws.name,
                     "dataStores":
@@ -102,7 +107,7 @@ class workspace(object):
 class datastores(object):
     @HTTPCompatible()
     def GET(self, ws_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
         return {"dataStores": [{
                     "name": ds_name,
                     "href": "%s/workspaces/%s/datastores/%s.%s" % (
@@ -112,7 +117,7 @@ class datastores(object):
 
     @HTTPCompatible()
     def POST(self, ws_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         ds_name = data.pop("name")
@@ -128,7 +133,7 @@ class datastores(object):
 class datastore(object):
     @HTTPCompatible()
     def GET(self, ws_name, ds_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             info = ws.get_datastore_info(ds_name)
@@ -152,7 +157,7 @@ class datastore(object):
 
     @HTTPCompatible()
     def PUT(self, ws_name, ds_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         if ds_name != data.pop("name"):
@@ -164,7 +169,7 @@ class datastore(object):
 
     @HTTPCompatible()
     def DELETE(self, ws_name, ds_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         # TODO: check, this is not consistent between ds/cs.
         # We need to check if this datastore is empty.
@@ -178,7 +183,7 @@ class datastore(object):
 class featuretypes(object):
     @HTTPCompatible()
     def GET(self, ws_name, ds_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         return {"featureTypes": [{
                     "name": ft.name,
@@ -189,7 +194,7 @@ class featuretypes(object):
 
     @HTTPCompatible()
     def POST(self, ws_name, ds_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         data = get_data(name="featureType", mandatory=["name"], authorized=["name", "title", "abstract"])
         with webapp.mightConflict("featureType", datastore=ds_name):
@@ -204,7 +209,7 @@ class featuretypes(object):
 class featuretype(object):
     @HTTPCompatible()
     def GET(self, ws_name, ds_name, ft_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         ds = ws.get_datastore(ds_name)
         with webapp.mightNotFound("dataStore", datastore=ds_name):
@@ -261,7 +266,7 @@ class featuretype(object):
 
     @HTTPCompatible()
     def PUT(self, ws_name, ds_name, ft_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         data = get_data(name="featureType", mandatory=["name"], authorized=["name", "title", "abstract"])
         if ft_name != data["name"]:
@@ -275,7 +280,7 @@ class featuretype(object):
 
     @HTTPCompatible()
     def DELETE(self, ws_name, ds_name, ft_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         # We need to check if there are any layers using this.
         assert_is_empty(mf.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name,
@@ -289,7 +294,7 @@ class featuretype(object):
 class coveragestores(object):
     @HTTPCompatible()
     def GET(self, ws_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         return {"coverageStores": [{
                     "name": cs_name,
@@ -300,7 +305,7 @@ class coveragestores(object):
 
     @HTTPCompatible()
     def POST(self, ws_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         cs_name = data.pop("name")
@@ -316,7 +321,7 @@ class coveragestores(object):
 class coveragestore(object):
     @HTTPCompatible()
     def GET(self, ws_name, cs_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         with webapp.mightNotFound("coverageStore", workspace=ws_name):
             info = ws.get_coveragestore_info(cs_name)
@@ -345,7 +350,7 @@ class coveragestore(object):
 
     @HTTPCompatible()
     def PUT(self, ws_name, cs_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         if cs_name != data.pop("name"):
@@ -357,7 +362,7 @@ class coveragestore(object):
 
     @HTTPCompatible()
     def DELETE(self, ws_name, cs_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         # TODO: check, this is not consistent between ds/cs.
         # We need to check if this datastore is empty.
@@ -371,7 +376,7 @@ class coveragestore(object):
 class coverages(object):
     @HTTPCompatible()
     def GET(self, ws_name, cs_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         return {"coverages": [{
                     "name": c.name,
@@ -382,7 +387,7 @@ class coverages(object):
 
     @HTTPCompatible()
     def POST(self, ws_name, cs_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
 
@@ -398,7 +403,7 @@ class coverages(object):
 class coverage(object):
     @HTTPCompatible()
     def GET(self, ws_name, cs_name, c_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         # with webapp.mightNotFound("coveragestore", workspace=ws_name):
         #     cs = ws.get_coveragestore(cs_name)
@@ -467,7 +472,7 @@ class coverage(object):
 
     @HTTPCompatible()
     def PUT(self, ws_name, cs_name, c_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
         if c_name != data["name"]:
@@ -482,7 +487,7 @@ class coverage(object):
 
     @HTTPCompatible()
     def DELETE(self, ws_name, cs_name, c_name, format):
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         # We need to check if there are any layers using this.
         assert_is_empty(mf.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name,
@@ -512,8 +517,7 @@ class files(object):
         elif f_type == "external":
             raise webapp.NotImplemented()
 
-
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
 
         # Now we make sure the store exists.
         try:
@@ -521,6 +525,7 @@ class files(object):
         except KeyError:
             # Create the store if it seems legit and it does not exist.
             if st_type == "datastores" or st_type == "coveragestores":
+                st_type = st_type[:-1] # Remove trailing 's'
                 with webapp.mightConflict("dataStore", workspace=ws_name):
                     ws.create_store(st_type, st_name, {})
             # Finaly check if its OK now.
@@ -530,7 +535,8 @@ class files(object):
 
         # Then we store the file.
         ext = web.ctx.env.get('CONTENT_TYPE', '').split("/")[-1]
-        mra.create_file(st_name + (".%s" % ext) if ext else "", data=data)
+        path = mra.create_file(st_name + (".%s" % ext) if ext else "", data=data)
+        dest = os.path.join(os.path.split(path)[0], st_name)
 
         # We also unzip it if its ziped.
         ctype = web.ctx.env.get('CONTENT_TYPE', None)
@@ -543,7 +549,7 @@ class files(object):
                 if format and fp.endswith(format) and not tools.is_hidden(fp):
                     path = fp
 
-                z.extract(f, path=tools.get_st_data_path(ws_name, st_type, st_name))
+                z.extract(f, path=dest)
 
         # Set new connection parameters:
         ws.update_store(st_type, st_name, {"connectionParameters":{"url":"file:"+mra.pub_file_path(path)}})
@@ -639,7 +645,7 @@ class layers(object):
 
         st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
 
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
             try:
                 model = ws.get_layermodel(r_type, st_name, r_name)
@@ -712,7 +718,7 @@ class layer(object):
 
         st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
 
-        ws = mra.get_workspace(ws_name)
+        ws = get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
             try:
                 model = ws.get_layermodel(r_type, st_name, r_name)
@@ -929,6 +935,9 @@ urls = tuple(urlmap)
 
 
 mra = MRA(os.path.join(sys.path[0], "mra.yaml"))
+
+mralogs.setup(mra.config["logging"]["level"], mra.config["logging"]["file"],
+              mra.config["logging"]["format"])
 
 web.config.debug = mra.config["debug"].get("web_debug", False)
 webapp.exceptionManager.raise_all = mra.config["debug"].get("raise_all", False)
