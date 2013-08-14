@@ -868,10 +868,17 @@ class MRA(object):
         return os.path.relpath(path, self.get_style_path())
 
     def list_styles(self):
+        todo = ["default_point.sld", "default_line.sld", "default_polygon.sld"]
         for (_, _, files) in os.walk(self.get_style_path()):
             for f in files:
                 if f.endswith(".sld") and not f.startswith('.'):
                     yield f[:-4]
+                if f in todo:
+                    todo.remove(f)
+
+        for f in todo:
+            yield f[:-4]
+
 
     def create_style(self, name, data):
         path = self.get_style_path("%s.sld" % name)
