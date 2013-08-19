@@ -204,7 +204,7 @@ class Layer(MetadataMixin):
             raise KeyError(s_name)
 
 
-class Layergroup(object):
+class LayerGroup(object):
 
     def __init__(self, name, mapfile):
         self.name = name
