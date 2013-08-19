@@ -824,7 +824,8 @@ class layergroups(object):
 
         data = get_data(name="layerGroup", mandatory=["name"], authorized=["name", "title", "abstract", "layers"])
         lg_name = data.pop("name")
-        layers = [mf.get_layer(l_name) for l_name in data.pop("layers", [])]
+        with webapp.mightNotFound():
+            layers = [mf.get_layer(l_name) for l_name in data.pop("layers", [])]
 
         with webapp.mightConflict():
             lg = mf.create_layergroup(lg_name, data)
@@ -903,14 +904,14 @@ class OWSGlobalSettings(object):
         except:
             is_enabled = False
 
-        return { 
+        return {
             ows: {
                 "enabled": is_enabled,
                 "name": ows,
                 "schemaBaseURL": mf.get_metadata("ows_schemas_location", "http://schemas.opengis.net"),
                 }
             }
-    
+
     @HTTPCompatible()
     def PUT(self, ows, format):
         mf = mra.get_available()
