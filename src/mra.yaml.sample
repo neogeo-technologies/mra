@@ -1,6 +1,19 @@
 storage:
-    mapfiles: "/path/to/your/mapfiles/directory"
-    resources: "/path/to/your/data/directory"
+
+    ## All default storage paths are relative to mra's root which is described here:
+
+    root: "/my/full/path/to/mra/root"
+
+    ## However, you can specify specific directories for any of those sub-directories.
+    ## They will default to root/sub_directory_name
+    # services: ""
+    # available: ""
+    # resources: ""
+
+    ## Folowing the same principle, the folowing two directories will
+    ## default to resources/sub_directory_name
+    # styles: ""
+    # data: ""
 
 mapserver:
     url: "http://127.0.0.1/cgi-bin/mapserv?"
@@ -9,31 +22,28 @@ mapserver:
     wcs_version: "1.0.0"
 
 debug:
-    # web_debug allows for easy debuging in the the browser, should be deactivated in production.
+    ## web_debug allows for easy debuging in the the browser, should be deactivated in production.
     web_debug: False
-    # Normaly some exceptions are transformed into web errors. (404, ...)
-    # This can be prevented by setting raise_all to True.
+
+    ## Normaly some exceptions are transformed into web errors. (404, ...)
+    ## This can be prevented by setting raise_all to True.
     raise_all: False
 
 logging:
     format: "%(asctime)s %(levelname)7s: (%(funcName)s:%(lineno)s) %(message)s"
-    file: "./mra.log"
-    level: "DEBUG"
-    # Add the logs to the generated output of the webapp by setting web_logs.
+    file: "/tmp/mra.log"
+    level: "INFO"
+
+    ## Add the logs to the generated output of the webapp by setting web_logs.
     web_logs: False
 
-testing:
-    # Aditions to the API for testing, should ne deactivated in production.
-    active: False
-    # Which map file to use to create new test files.
-    model: model
-
 plugins:
-    # The paths in this lists will be loaded as plugins.
-    # A plugin can be a python package, if that is the case it
-    # should define the __all__ attribute to indicate which modules
-    # should be handled as plugins. (An example can be found in /plugins)
+    ## The paths in this lists will be loaded as plugins.
+    ## A plugin can be a python package, if that is the case it
+    ## should define the __all__ attribute to indicate which modules
+    ## should be handled as plugins. (An example can be found in /plugins)
 
     loadpaths: [
-#       "/path/to/your/plugins"
+    #    "/my/full/path/to/plugins"
     ]
+
