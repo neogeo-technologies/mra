@@ -416,10 +416,22 @@ class FeatureTypeModel(LayerModel):
     def update(self, ds_name, ft_name, metadata):
         ws = self.ws
 
+        # Checks if postgis table, then adds the schema.
+        info = ws.get_datastore_info(ds_name)
+        cparam = info["connectionParameters"]
+        if cparam.get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
+            if cparam.get("schema", ""):
+                table = "%s.%s" % (cparam.get("schema", ""), ft_name)
+            else:
+                table = "public.%s" % ft_name
+        else:
+            table = ft_name
+
         # Make sure the datastore exists.
         ds = ws.get_datastore(ds_name)
-
-        ft = ds[ft_name]
+        
+        # Make sure the ft exists.
+        ft = ds[table]
         self.name = ft_name
 
         # Set basic attributes.
@@ -431,14 +443,12 @@ class FeatureTypeModel(LayerModel):
 
         # Configure the connection to the store.
         # This is a little hacky as we have to translate stuff...
-        info = ws.get_datastore_info(ds_name)
-        cparam = info["connectionParameters"]
         if cparam.get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
             self.ms.connectiontype = mapscript.MS_POSTGIS
             connection = "dbname=%s port=%s host=%s " % (cparam["database"], cparam["port"], cparam["host"])
             connection += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
             self.ms.connection = connection
-            self.ms.data = "%s FROM %s" % (ds[ft_name].get_geometry_column(), ft_name)
+            self.ms.data = "%s FROM %s" % (ds[table].get_geometry_column(), table)
             self.set_metadata("ows_extent", "%s %s %s %s" %
                 (ft.get_extent().minX(), ft.get_extent().minY(),
                 ft.get_extent().maxX(), ft.get_extent().maxY()))
@@ -455,7 +465,7 @@ class FeatureTypeModel(LayerModel):
             "wfs_enable_request": "!GetCapabilities !DescribeFeatureType !GetFeature",
             })
 
-        # Update mra metadatas, and make sure the mandatory ones are left untouched.
+        # Update mra metadata, and make sure the mandatory ones are left untouched.
         self.update_mra_metadatas(metadata)
         self.update_mra_metadatas({"name": ft_name, "type": "featuretype", "storage": ds_name})
 
@@ -995,6 +1005,3 @@ class MRA(object):
             return self.get_file_path(url.path)
         else:
             raise ValueError("Unhandled type '%s'" % cparam.get("dbtype", "<unknown>"))
-
-
-

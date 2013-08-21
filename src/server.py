@@ -212,8 +212,20 @@ class featuretype(object):
         ws = get_workspace(ws_name)
 
         ds = ws.get_datastore(ds_name)
+
+        # Checks if postgis table, then adds the schema.
+        info = ws.get_datastore_info(ds_name)
+        cparam = info["connectionParameters"]
+        if cparam.get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
+            if cparam.get("schema", ""):
+                table = "%s.%s" % (cparam.get("schema", ""), ft_name)
+            else:
+                table = "public.%s" % ft_name
+        else:
+            table = ft_name
+
         with webapp.mightNotFound("dataStore", datastore=ds_name):
-            dsft = ds[ft_name]
+            dsft = ds[table]
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
             ft = ws.get_featuretypemodel(ds_name, ft_name)
@@ -283,7 +295,7 @@ class featuretype(object):
         ws = get_workspace(ws_name)
 
         # We need to check if there are any layers using this.
-        assert_is_empty(mf.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name,
+        assert_is_empty(ws.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name,
                                             "type":"featuretype"}),"featuretype", ft_name)
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
@@ -490,7 +502,7 @@ class coverage(object):
         ws = get_workspace(ws_name)
 
         # We need to check if there are any layers using this.
-        assert_is_empty(mf.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name,
+        assert_is_empty(ws.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name,
                                             "type":"coverage"}), "coverage", ft_name)
 
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
