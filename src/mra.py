@@ -152,6 +152,7 @@ class Layer(MetadataMixin):
         # Remove encoding ?
         # @wapiflapi Mapscript ne gère pas les espaces...
         new_sld = xmlsld.toxml()
+        new_sld = "".join(line.strip() for line in new_sld.split("\n"))
 
         ms_template_layer = self.ms.clone()
         ms_template_layer.name = sld_layer_name
@@ -416,22 +417,11 @@ class FeatureTypeModel(LayerModel):
     def update(self, ds_name, ft_name, metadata):
         ws = self.ws
 
-        # Checks if postgis table, then adds the schema.
-        info = ws.get_datastore_info(ds_name)
-        cparam = info["connectionParameters"]
-        if cparam.get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
-            if cparam.get("schema", ""):
-                table = "%s.%s" % (cparam.get("schema", ""), ft_name)
-            else:
-                table = "public.%s" % ft_name
-        else:
-            table = ft_name
-
         # Make sure the datastore exists.
         ds = ws.get_datastore(ds_name)
         
         # Make sure the ft exists.
-        ft = ds[table]
+        ft = ds[ft_name]
         self.name = ft_name
 
         # Set basic attributes.
@@ -443,12 +433,14 @@ class FeatureTypeModel(LayerModel):
 
         # Configure the connection to the store.
         # This is a little hacky as we have to translate stuff...
+        info = ws.get_datastore_info(ds_name)
+        cparam = info["connectionParameters"]
         if cparam.get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
             self.ms.connectiontype = mapscript.MS_POSTGIS
             connection = "dbname=%s port=%s host=%s " % (cparam["database"], cparam["port"], cparam["host"])
             connection += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
             self.ms.connection = connection
-            self.ms.data = "%s FROM %s" % (ds[table].get_geometry_column(), table)
+            self.ms.data = "%s FROM %s.%s" % (ds[ft_name].get_geometry_column(), cparam["schema"], ft_name)
             self.set_metadata("ows_extent", "%s %s %s %s" %
                 (ft.get_extent().minX(), ft.get_extent().minY(),
                 ft.get_extent().maxX(), ft.get_extent().maxY()))
@@ -628,9 +620,14 @@ class Workspace(Mapfile):
 
     # Stores:
     def get_store(self, st_type, name):
-        cparam = self.mra.get_store_connection_string(self.get_store_info(st_type, name))
+        info = self.get_store_info(st_type, name)
+        cparam = self.mra.get_store_connection_string(info)
         if st_type == "datastore":
-            return stores.Datastore(cparam)
+            if info["connectionParameters"].get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
+                schema = info["connectionParameters"].get("schema", "public")
+            else:
+                schema = None
+            return stores.Datastore(cparam, schema)
         elif st_type == "coveragestore":
             return stores.Coveragestore(cparam)
         else:

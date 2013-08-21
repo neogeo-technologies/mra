@@ -302,12 +302,13 @@ class Featuretype(object):
 class Datastore(object):
     """A datastore implementation backed by ogr."""
 
-    def __init__(self, path):
+    def __init__(self, path, schema=None):
         """Path will be used to open the store, it can be a simple filesystem path
         or something more complex used by gdal/ogr to access databases for example.
 
         The first argument to __init__ can also directly be a gdal/ogr object.
         """
+        self.schema = schema
         self.backend = path if isinstance(path, ogr.DataSource) else ogr.Open(path)
         if self.backend == None:
             raise ValueError("Datastore backend could not be opened using '%s'." % path)
@@ -330,6 +331,8 @@ class Datastore(object):
             item = self.backend.GetLayerByIndex(key)
             if item == None: raise IndexError("No layer '%s'" % key)
         else:
+            if self.schema:
+                key = "%s.%s" % (self.schema, key)
             item = self.backend.GetLayerByName(key.encode('ascii', 'ignore'))
             if item == None: raise KeyError(key)
         return Featuretype(item, self)

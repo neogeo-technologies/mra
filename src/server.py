@@ -196,11 +196,25 @@ class featuretypes(object):
     def POST(self, ws_name, ds_name, format):
         ws = get_workspace(ws_name)
 
-        data = get_data(name="featureType", mandatory=["name"], authorized=["name", "title", "abstract"])
+        data = get_data(name="featureType", 
+                        mandatory=["name"], 
+                        authorized=["name", "title", "abstract"])
+
+        # Creates first the feature type:        
         with webapp.mightConflict("featureType", datastore=ds_name):
             with webapp.mightNotFound("featureType", datastore=ds_name):
                 ws.create_featuretypemodel(ds_name, data["name"], data)
         ws.save()
+
+        # Then creates the associated layer by default:
+     
+        model = ws.get_featuretypemodel(ds_name, data["name"])
+
+        mf = mra.get_available()
+
+        with webapp.mightConflict():
+            mf.create_layer(model, data["name"], True)
+        mf.save()
 
         webapp.Created("%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
                 web.ctx.home, ws.name, ds_name, data["name"], format))
@@ -213,19 +227,8 @@ class featuretype(object):
 
         ds = ws.get_datastore(ds_name)
 
-        # Checks if postgis table, then adds the schema.
-        info = ws.get_datastore_info(ds_name)
-        cparam = info["connectionParameters"]
-        if cparam.get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
-            if cparam.get("schema", ""):
-                table = "%s.%s" % (cparam.get("schema", ""), ft_name)
-            else:
-                table = "public.%s" % ft_name
-        else:
-            table = ft_name
-
         with webapp.mightNotFound("dataStore", datastore=ds_name):
-            dsft = ds[table]
+            dsft = ds[ft_name]
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
             ft = ws.get_featuretypemodel(ds_name, ft_name)
