@@ -214,10 +214,18 @@ class URLMap(object):
         list. Else the value is used. The final values of the components are
         always separated by a "/" in the final path.
         """
+
+        last_is_var = False
+
         components = []
         for i, arg in enumerate(args):
             if arg == () and i == len(args) - 1:
                 # Special case if last component is a variable.
+                last_is_var = True
+
+                # experimental:
+                self.endvar = "/([^/]+)$"
+
                 components.append(self.endvar)
             elif arg == ():
                 components.append(self.var)
@@ -227,11 +235,15 @@ class URLMap(object):
                 components.append("/%s" % arg)
 
 
-        format = kwargs.get("format", True)
-        if format:
-            components.append(format if isinstance(format, basestring) else "(?:(\.[^/^.]+)?|/$)$")
+        # format = kwargs.get("format", True)
+        # if format:
+        #     components.append(format if isinstance(format, basestring) else "(?:(\.[^/^.]+)?|/$)")
 
-        url = "".join(components) + "$"
+        url = "".join(components)
+
+        if not last_is_var:
+            url += "(?:/|(\\.[^/.]+)?)"
+
         self.map.extend((url, page if isinstance(page, basestring) else page.__name__))
 
     def __getattr__(self, name):
@@ -352,20 +364,19 @@ class HTTPCompatible(object):
 
             args = list(args)
 
-            # If the last argument is a string starting with "." we use it as format
-            # Else we use the default value, and remove None if it was specified.
-            if args and isinstance(args[-1], basestring) and args[-1].startswith("."):
-                page_format = args.pop()[1:]
-                if not self.parse_format and args:
-                    # Recover from regex that splited the format off anyway.
-                    # TODO: only if the full url ends with args[-1].format
-                    args[-1] = "%s.%s" % (args[-1], page_format)
-                    page_format = self.default
+            if isinstance(args[-1], basestring):
+                last = args[-1].split(".")
+                if len(last) == 1:
+                    last.append(self.default)
+                page_format = last.pop(-1)
+
+                if len(last[0]) == 0:
+                    del args[-1]
+                else:
+                    args[-1] = ".".join(last)
             else:
                 page_format = self.default
-                # Remove None if it was forcing default.
-                if args and args[-1] == None:
-                    del args[-1]
+
 
             # TODO: look at web.ctx.env.get("Accept") and take it into account.
             # Send a NotAcceptable error if we can't agree with the client.

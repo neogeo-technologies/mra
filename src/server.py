@@ -1025,7 +1025,6 @@ urlmap(OWSSettings, "services", "(wms|wfs|wcs)", (), "settings")
 
 urls = tuple(urlmap)
 
-
 mra = MRA(os.path.join(sys.path[0], "mra.yaml"))
 
 mralogs.setup(mra.config["logging"]["level"], mra.config["logging"]["file"],
