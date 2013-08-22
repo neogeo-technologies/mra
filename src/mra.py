@@ -144,8 +144,8 @@ class Layer(MetadataMixin):
         xmlsld = parseString(new_sld)
 
         try:
-            xmlsld.firstChild.getElementsByTagName("NamedLayer")[0]\
-                .getElementsByTagName("Name")[0].firstChild.data = sld_layer_name
+            xmlsld.firstChild.getElementsByTagNameNS("*", "NamedLayer")[0]\
+                .getElementsByTagNameNS("*", "Name")[0].firstChild.data = sld_layer_name
         except:
             raise ValueError("Bad sld (No NamedLayer/Name)")
 
@@ -419,7 +419,7 @@ class FeatureTypeModel(LayerModel):
 
         # Make sure the datastore exists.
         ds = ws.get_datastore(ds_name)
-        
+
         # Make sure the ft exists.
         ft = ds[ft_name]
         self.name = ft_name
@@ -775,6 +775,7 @@ class Workspace(Mapfile):
         if self.has_layermodel(st_type, store, name):
             raise KeyExists((st_type, store, name))
         ft = self.__ms2model(mapscript.layerObj(self.ms), st_type=st_type)
+
         ft.update(store, name, metadata)
         return ft
 

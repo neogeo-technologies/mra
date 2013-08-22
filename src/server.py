@@ -119,11 +119,13 @@ class datastores(object):
     def POST(self, ws_name, format):
         ws = get_workspace(ws_name)
 
+
         data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         ds_name = data.pop("name")
 
         with webapp.mightConflict("dataStore", workspace=ws_name):
             ws.create_datastore(ds_name, data)
+
         ws.save()
 
         webapp.Created("%s/workspaces/%s/datastores/%s.%s" % (
@@ -160,6 +162,7 @@ class datastore(object):
         ws = get_workspace(ws_name)
 
         data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
+
         if ds_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a data store.")
 
@@ -196,18 +199,18 @@ class featuretypes(object):
     def POST(self, ws_name, ds_name, format):
         ws = get_workspace(ws_name)
 
-        data = get_data(name="featureType", 
-                        mandatory=["name"], 
+        data = get_data(name="featureType",
+                        mandatory=["name"],
                         authorized=["name", "title", "abstract"])
 
-        # Creates first the feature type:        
+        # Creates first the feature type:
         with webapp.mightConflict("featureType", datastore=ds_name):
             with webapp.mightNotFound("featureType", datastore=ds_name):
                 ws.create_featuretypemodel(ds_name, data["name"], data)
         ws.save()
 
         # Then creates the associated layer by default:
-     
+
         model = ws.get_featuretypemodel(ds_name, data["name"])
 
         mf = mra.get_available()
@@ -600,6 +603,8 @@ class styles(object):
 
         data = web.data()
         mra.create_style(name, data)
+
+        webapp.Created("%s/styles/%s.%s" % (web.ctx.home, name, format))
 
 
 class style(object):
