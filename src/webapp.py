@@ -295,7 +295,7 @@ class HTTPCompatible(object):
     def __init__(self, authorize=set(), forbid=set(), authorized=set(["xml", "json", "html"]),
                  allow_all=False, default="html", renderer=default_renderer, render=None,
                  parse_format=True, trim_nones=True,
-                 name_hint="MapServerRESTAPI_Response"):
+                 name_hint=None):
         """Decorator factory used to transform the output of a backend function
         to be suited for the web. see help(HTTPCompatible) for more information.
 
@@ -313,6 +313,7 @@ class HTTPCompatible(object):
         or put it back with the normal arguments.
 
         name_hint is used if the output format requires the outer-most level to have a name.
+        If it set to None it will be expected the return is a one element dict.
         """
 
         self.default = default
@@ -402,11 +403,18 @@ class HTTPCompatible(object):
             except BaseException as e:
                 raise
 
+            name_hint = self.name_hint
+
+            if name_hint == None and isinstance(content, dict) and len(content) == 1:
+                name_hint = next(content.iterkeys())
+                content = next(content.itervalues())
+            elif name_hint == None:
+                name_hint = "response"
+
             # We want to make sure we don't end up doing str(None)
             if content == None:
                 content = ""
 
-            name_hint = self.name_hint
             # Lets add the logs to the content.
             if add_debug:
                 msgs = [{"asctime":msg.asctime,
@@ -446,6 +454,8 @@ def get_data(name=None, mandatory=[], authorized=[], forbidden=[]):
     try:
         if 'text/xml' in ctype or  'application/xml' in ctype:
             data, dname = pyxml.loads(data, retname=True)
+            print "received '%s'" % dname
+            print data
             if name and dname != name: data = None
         elif 'application/json' in ctype:
             data = json.loads(data)
