@@ -652,7 +652,7 @@ class layers(object):
     def POST(self, format):
         data = get_data(name="layer",
                         mandatory=["name", "resource"],
-                        authorized=["name", "title", "abstract", "resource", "enabled"])
+                        authorized=["name", "title", "abstract", "resource", "enabled", "defaultStyle"])
 
         l_name = data.pop("name")
         l_enabled = data.pop("enabled", True)
@@ -675,6 +675,15 @@ class layers(object):
         mf = mra.get_available()
         with webapp.mightConflict():
             mf.create_layer(model, l_name, l_enabled)
+
+        # If we have a defaultStyle apply it.
+        s_name = data.get("defaultStyle", {}).get("name")
+        if s_name:
+            with webapp.mightNotFound():
+                style = mra.get_style(s_name)
+                layer = mf.get_layer(l_name)
+            layer.add_style_sld(mf, s_name, style)
+
         mf.save()
 
         webapp.Created("%s/layers/%s.%s" % (web.ctx.home, l_name, format))
@@ -722,36 +731,47 @@ class layer(object):
     def PUT(self, l_name, format):
         mf = mra.get_available()
 
-        data = get_data(name="layer", mandatory=["name", "resource"],
-                        authorized=["name", "title", "abstract", "resource", "enabled"])
-        if l_name != data.pop("name"):
+        data = get_data(name="layer", mandatory=[],
+                        authorized=["name", "title", "abstract", "resource", "enabled", "defaultStyle"])
+        if l_name != data.get("name", l_name):
             raise webapp.Forbidden("Can't change the name of a layer.")
 
         l_enabled = data.pop("enabled", True)
 
-
-        href = data["resource"]["href"]
-        try:
-            ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
-        except ValueError:
-            raise webapp.NotFound(message="ressource '%s' was not found." % href)
-
-        st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
-
-        ws = get_workspace(ws_name)
-        with webapp.mightNotFound(r_type, workspace=ws_name):
-            try:
-                model = ws.get_layermodel(r_type, st_name, r_name)
-            except ValueError:
-                raise KeyError(r_type)
-
         mf = mra.get_available()
         with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
+
+        # update resource if changed
+        href = data.get("resource", {}).get("href")
+        if href:
+            try:
+                ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
+            except ValueError:
+                raise webapp.NotFound(message="ressource '%s' was not found." % href)
+
+            st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
+
+            ws = get_workspace(ws_name)
+            with webapp.mightNotFound(r_type, workspace=ws_name):
+                try:
+                    model = ws.get_layermodel(r_type, st_name, r_name)
+                except ValueError:
+                    raise KeyError(r_type)
+
             if layer.get_mra_metadata("type") != r_type:
                 raise webapp.BadRequest("Can't change a '%s' layer into a '%s'."
-                                        % (layer.get_mra_metadata("type"), r_type))
+                                    % (layer.get_mra_metadata("type"), r_type))
+
             model.configure_layer(layer, l_enabled)
+
+        # If we have a defaultStyle apply it.
+        s_name = data.get("defaultStyle", {}).get("name")
+        if s_name:
+            with webapp.mightNotFound():
+                style = mra.get_style(s_name)
+            layer.add_style_sld(mf, s_name, style)
+
         mf.save()
 
     @HTTPCompatible()
@@ -778,28 +798,28 @@ class layerstyles(object):
                     } for s_name in layer.iter_styles()],
                 }
 
-    @HTTPCompatible()
-    def POST(self, l_name, format):
-        data = get_data(name="style", mandatory=["resource"],
-                        authorized=["name", "title", "abstract", "resource"])
+    # @HTTPCompatible()
+    # def POST(self, l_name, format):
+    #     data = get_data(name="style", mandatory=["resource"],
+    #                     authorized=["name", "title", "abstract", "resource"])
 
-        href = data["resource"]["href"]
-        try:
-            _, s_name = mra.href_parse(href, 2)
-        except ValueError:
-            raise webapp.NotFound(message="style '%s' was not found." % href)
+    #     href = data["resource"]["href"]
+    #     try:
+    #         _, s_name = mra.href_parse(href, 2)
+    #     except ValueError:
+    #         raise webapp.NotFound(message="style '%s' was not found." % href)
 
-        with webapp.mightNotFound():
-            style = mra.get_style(s_name)
+    #     with webapp.mightNotFound():
+    #         style = mra.get_style(s_name)
 
-        mf = mra.get_available()
-        with webapp.mightNotFound():
-            layer = mf.get_layer(l_name)
+    #     mf = mra.get_available()
+    #     with webapp.mightNotFound():
+    #         layer = mf.get_layer(l_name)
 
-        layer.add_style_sld(mf, s_name, style)
-        mf.save()
+    #     layer.add_style_sld(mf, s_name, style)
+    #     mf.save()
 
-        webapp.Created("%s/layers/%s/layerstyles/%s.%s" % (web.ctx.home, l_name, s_name, format))
+    #     webapp.Created("%s/layers/%s/layerstyles/%s.%s" % (web.ctx.home, l_name, s_name, format))
 
 
 class layerstyle(object):
