@@ -137,8 +137,6 @@ class Layer(MetadataMixin):
 
     def add_style_sld(self, mf, s_name, new_sld):
 
-
-
         # Because we do not want to apply the sld to real layers by mistake
         # we need to rename it to something we are sure is not used.
         sld_layer_name = "__mra_tmp_template"
@@ -150,7 +148,8 @@ class Layer(MetadataMixin):
         xmlsld = parseString(new_sld)
 
         try:
-            xmlsld.firstChild.getElementsByTagName("NamedLayer")[0].getElementsByTagName("Name")[0].firstChild.data = sld_layer_name
+            xmlsld.firstChild.getElementsByTagName("NamedLayer")[0]\
+                .getElementsByTagName("Name")[0].firstChild.data = sld_layer_name
         except:
             raise ValueError("Bad sld (No NamedLayer/Name)")
 

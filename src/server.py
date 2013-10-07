@@ -26,6 +26,8 @@
 
 import os.path
 
+import sys
+
 import web
 import json
 import urlparse
@@ -34,120 +36,69 @@ import mralogs
 import logging
 
 import mapfile
+from mra import MRA
+
 
 import webapp
 from webapp import HTTPCompatible, urlmap, get_data
 
 import tools
-from tools import get_mapfile, get_mapfile_workspace, get_config, href, assert_is_empty
+from tools import href, assert_is_empty
 
 from pyxml import Entries
 
 
 from extensions import plugins
 
-mralogs.setup(get_config("logging")["level"], get_config("logging")["file"],
-              get_config("logging")["format"])
+
+# Some helper functions first.
+def get_workspace(ws_name):
+    with webapp.mightNotFound():
+        return mra.get_workspace(ws_name)
+
+# Now the main classes that handle the REST API.
 
 class index(object):
-    def GET(self, format):
-        return "This is MRA."
-
-class mapfiles(object):
     @HTTPCompatible()
     def GET(self, format):
-        mapfiles = []
-        for path in tools.get_mapfile_paths():
-            try:
-                mf = mapfile.Mapfile(path)
-            except IOError, OSError:
-                continue
-            filename = mf.filename.replace(".map", "")
-            mapfiles.append({
-                "name": filename,
-                "href": "%s/maps/%s.%s" % (web.ctx.home, filename, format)
-              })
-
-        return {"mapfiles": mapfiles}
-
-    @HTTPCompatible()
-    def POST(self, format):
-        data = get_data(name="mapfile", mandatory=["name"], authorized=["name", "title", "abstract"])
-
-        map_name = data.pop("name")
-        path = tools.mk_mapfile_path(map_name)
-
-        with webapp.mightConflict(message="Mapfile '{exception}' already exists."):
-            mapfile.create_mapfile(path, map_name, data)
-
-        webapp.Created("%s/maps/%s%s" % (web.ctx.home, map_name, (".%s" % format) if format else ""))
-
-
-class named_mapfile(object):
-    @HTTPCompatible(authorize=["map"], default="html")
-    def GET(self, map_name, format, *args, **kwargs):
-
-        mf = get_mapfile(map_name)
-        with open(mf.path, "r") as f:
-            data = f.read()
-        return {"mapfile": ({
-                "name": map_name,
-                "href": "%s/maps/%s.map" % (web.ctx.home, map_name),
-                "workspaces": href("%s/maps/%s/workspaces.%s" % (web.ctx.home, map_name, format)),
-                "layers": href("%s/maps/%s/layers.%s" % (web.ctx.home, map_name, format)),
-                "layergroups": href("%s/maps/%s/layergroups.%s" % (web.ctx.home, map_name, format)),
-                "styles": href("%s/maps/%s/styles.%s" % (web.ctx.home, map_name, format)),
-                "wms_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WMS" % (
-                            get_config("mapserver")["url"], mf.path, get_config("mapserver")["wms_version"])),
-                "wfs_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WFS" % (
-                            get_config("mapserver")["url"], mf.path, get_config("mapserver")["wfs_version"])),
-                "wcs_capabilities": href("%smap=%s&REQUEST=GetCapabilities&VERSION=%s&SERVICE=WCS" % (
-                            get_config("mapserver")["url"], mf.path, get_config("mapserver")["wcs_version"])),
-                    })
-            } if format != "map" else data
-
-    @HTTPCompatible()
-    def PUT(self, map_name, format):
-        mf = get_mapfile(map_name)
-        path = tools.mk_mapfile_path(map_name)
-
-        data = get_data(name="mapfile", mandatory=["name"], authorized=["name", "title", "abstract"])
-        if map_name != data.pop("name"):
-            raise webapp.Forbidden("Can't change the name of a mapfile.")
-
-        mf.update(data)
-        mf.save()
-
-    @HTTPCompatible()
-    def DELETE(self, map_name, format):
-        mf = get_mapfile(map_name)
-
-        # TODO: We need to check if this mapfile is empty.
-        with webapp.mightNotFound("Mapfile", mapfile=map_name):
-            os.remove(mf.path)
+        return {
+            "workspaces": href("workspaces/"),
+            "styles": href("styles/"),
+            "layers": href("layers/"),
+            "layergroups": href("layergroups/"),
+            }
 
 
 class workspaces(object):
     @HTTPCompatible()
-    def GET(self, map_name, format, *args, **kwargs):
-        mf = get_mapfile(map_name)
+    def GET(self, format, *args, **kwargs):
         return {"workspaces": [{
-                    "name": ws.name,
-                    "href": "%s/maps/%s/workspaces/%s.%s" % (web.ctx.home, map_name, ws.name, format)
-                    } for ws in mf.iter_workspaces()]
+                    "name": ws_name,
+                    "href": "%s/workspaces/%s.%s" % (web.ctx.home, ws_name, format)
+                    } for ws_name in mra.list_workspaces()]
                 }
+
+    @HTTPCompatible()
+    def POST(self, format):
+        data = get_data(name="workspace", mandatory=["name"], authorized=["name"])
+        ws_name = data.pop("name")
+
+        with webapp.mightConflict():
+            mra.create_workspace(ws_name).save()
+
+        webapp.Created("%s/workspaces/%s.%s" % (web.ctx.home, ws_name, format))
 
 
 class workspace(object):
     @HTTPCompatible()
-    def GET(self, map_name, ws_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def GET(self, ws_name, format):
+        ws = get_workspace(ws_name)
         return {"workspace": ({
                     "name": ws.name,
                     "dataStores":
-                        href("%s/maps/%s/workspaces/%s/datastores.%s" % (web.ctx.home, map_name, ws.name, format)),
+                        href("%s/workspaces/%s/datastores.%s" % (web.ctx.home, ws.name, format)),
                     "coverageStores":
-                        href("%s/maps/%s/workspaces/%s/coveragestores.%s" % (web.ctx.home, map_name, ws.name, format)),
+                        href("%s/workspaces/%s/coveragestores.%s" % (web.ctx.home, ws.name, format)),
                     "wmsStores": "", # TODO
                     })
                 }
@@ -155,39 +106,40 @@ class workspace(object):
 
 class datastores(object):
     @HTTPCompatible()
-    def GET(self, map_name, ws_name, format, *args, **kwargs):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def GET(self, ws_name, format):
+        ws = get_workspace(ws_name)
         return {"dataStores": [{
                     "name": ds_name,
-                    "href": "%s/maps/%s/workspaces/%s/datastores/%s.%s" % (
-                        web.ctx.home, map_name, ws.name, ds_name, format)
+                    "href": "%s/workspaces/%s/datastores/%s.%s" % (
+                        web.ctx.home, ws.name, ds_name, format)
                     } for ds_name in ws.iter_datastore_names()]
                 }
 
     @HTTPCompatible()
-    def POST(self, map_name, ws_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def POST(self, ws_name, format):
+        ws = get_workspace(ws_name)
+
 
         data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         ds_name = data.pop("name")
 
         with webapp.mightConflict("dataStore", workspace=ws_name):
             ws.create_datastore(ds_name, data)
+
         ws.save()
 
-        webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s%s" % (
-                web.ctx.home, map_name, ws_name, ds_name, (".%s" % format) if format else ""))
+        webapp.Created("%s/workspaces/%s/datastores/%s.%s" % (
+                web.ctx.home, ws_name, ds_name, format))
 
 
 class datastore(object):
     @HTTPCompatible()
-    def GET(self, map_name, ws_name, ds_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def GET(self, ws_name, ds_name, format):
+        ws = get_workspace(ws_name)
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             info = ws.get_datastore_info(ds_name)
-            print "DS info:", info
-            connectionParameters = info["connectionParameters"]
+        connectionParameters = info.get("connectionParameters", {})
 
         return {"dataStore": {
                     "name": info["name"],
@@ -195,35 +147,35 @@ class datastore(object):
                     "__default": False, # TODO
                     "workspace": {
                         "name": ws.name,
-                        "href": "%s/maps/%s/workspaces/%s.%s" % (
-                            web.ctx.home, map_name, ws.name, format),
+                        "href": "%s/workspaces/%s.%s" % (
+                            web.ctx.home, ws.name, format),
                         },
-                    "featureTypes": href("%s/maps/%s/workspaces/%s/datastores/%s/featuretypes.%s" % (
-                                        web.ctx.home, map_name, ws.name, ds_name, format)
+                    "featureTypes": href("%s/workspaces/%s/datastores/%s/featuretypes.%s" % (
+                                        web.ctx.home, ws.name, ds_name, format)
                         ),
                     "connectionParameters": Entries(connectionParameters, tag_name="entry")
                     }
                 }
 
     @HTTPCompatible()
-    def PUT(self, map_name, ws_name, ds_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def PUT(self, ws_name, ds_name, format):
+        ws = get_workspace(ws_name)
 
         data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
+
         if ds_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a data store.")
-
-        print "Updating with: %s" % data
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             ws.update_datastore(ds_name, data)
         ws.save()
 
     @HTTPCompatible()
-    def DELETE(self, map_name, ws_name, ds_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def DELETE(self, ws_name, ds_name, format):
+        ws = get_workspace(ws_name)
 
-        # We need to check if this datatore is empty.
+        # TODO: check, this is not consistent between ds/cs.
+        # We need to check if this datastore is empty.
         assert_is_empty(ws.iter_featuretypemodels(ds_name=ds_name), "datastore", ds_name)
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
@@ -233,40 +185,56 @@ class datastore(object):
 
 class featuretypes(object):
     @HTTPCompatible()
-    def GET(self, map_name, ws_name, ds_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def GET(self, ws_name, ds_name, format):
+        ws = get_workspace(ws_name)
+
         return {"featureTypes": [{
                     "name": ft.name,
-                    "href": "%s/maps/%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
-                        web.ctx.home, map_name, ws.name, ds_name, ft.name, format)
+                    "href": "%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
+                        web.ctx.home, ws.name, ds_name, ft.name, format)
                     } for ft in ws.iter_featuretypemodels(ds_name)]
                 }
 
     @HTTPCompatible()
-    def POST(self, map_name, ws_name, ds_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def POST(self, ws_name, ds_name, format):
+        ws = get_workspace(ws_name)
 
-        data = get_data(name="featureType", mandatory=["name"], authorized=["name", "title", "abstract"])
+        data = get_data(name="featureType",
+                        mandatory=["name"],
+                        authorized=["name", "title", "abstract"])
+
+        # Creates first the feature type:
         with webapp.mightConflict("featureType", datastore=ds_name):
             with webapp.mightNotFound("featureType", datastore=ds_name):
-                ws.create_featuretypemodel(data["name"], ds_name, data)
+                ws.create_featuretypemodel(ds_name, data["name"], data)
         ws.save()
 
-        webapp.Created("%s/maps/%s/workspaces/%s/datastores/%s/featuretypes/%s%s" % (
-                web.ctx.home, map_name, ws.name, ds_name, data["name"], (".%s" % format) if format else ""))
+        # Then creates the associated layer by default:
+
+        model = ws.get_featuretypemodel(ds_name, data["name"])
+
+        mf = mra.get_available()
+
+        with webapp.mightConflict():
+            mf.create_layer(model, data["name"], True)
+        mf.save()
+
+        webapp.Created("%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
+                web.ctx.home, ws.name, ds_name, data["name"], format))
 
 
 class featuretype(object):
     @HTTPCompatible()
-    def GET(self, map_name, ws_name, ds_name, ft_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def GET(self, ws_name, ds_name, ft_name, format):
+        ws = get_workspace(ws_name)
 
         ds = ws.get_datastore(ds_name)
+
         with webapp.mightNotFound("dataStore", datastore=ds_name):
             dsft = ds[ft_name]
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
-            ft = ws.get_featuretypemodel(ft_name, ds_name)
+            ft = ws.get_featuretypemodel(ds_name, ft_name)
 
         extent = ft.get_extent()
         latlon_extent = ft.get_latlon_extent()
@@ -306,8 +274,8 @@ class featuretype(object):
                     "enabled": True, # TODO
                     "store": { # TODO: add key: class="dataStore"
                         "name": ds_name,
-                        "href": "%s/maps/%s/workspaces/%s/datastores/%s.%s" % (
-                            web.ctx.home, map_name, ws_name, ds_name, format)
+                        "href": "%s/workspaces/%s/datastores/%s.%s" % (
+                            web.ctx.home, ws_name, ds_name, format)
                         },
                     "maxFeatures": 0, # TODO
                     "numDecimals": 0, # TODO
@@ -315,8 +283,8 @@ class featuretype(object):
                 }
 
     @HTTPCompatible()
-    def PUT(self, map_name, ws_name, ds_name, ft_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def PUT(self, ws_name, ds_name, ft_name, format):
+        ws = get_workspace(ws_name)
 
         data = get_data(name="featureType", mandatory=["name"], authorized=["name", "title", "abstract"])
         if ft_name != data["name"]:
@@ -325,36 +293,37 @@ class featuretype(object):
         metadata = dict((k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
-            ws.update_featuretypemodel(ft_name, ds_name, metadata)
+            ws.update_featuretypemodel(ds_name, ft_name, metadata)
         ws.save()
 
     @HTTPCompatible()
-    def DELETE(self, map_name, ws_name, ds_name, ft_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def DELETE(self, ws_name, ds_name, ft_name, format):
+        ws = get_workspace(ws_name)
 
         # We need to check if there are any layers using this.
-        assert_is_empty(mf.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name, "type":"featuretype"}),"featuretype", ft_name)
+        assert_is_empty(ws.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name,
+                                            "type":"featuretype"}),"featuretype", ft_name)
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
-            ws.delete_featuretypemodel(ft_name, ds_name)
+            ws.delete_featuretypemodel(ds_name, ft_name)
         ws.save()
 
 
 class coveragestores(object):
     @HTTPCompatible()
-    def GET(self, map_name, ws_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def GET(self, ws_name, format):
+        ws = get_workspace(ws_name)
 
         return {"coverageStores": [{
                     "name": cs_name,
-                    "href": "%s/maps/%s/workspaces/%s/coveragestores/%s.%s" % (
-                        web.ctx.home, map_name, ws.name, cs_name, format)
+                    "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
+                        web.ctx.home, ws.name, cs_name, format)
                     } for cs_name in ws.iter_coveragestore_names()]
                 }
 
     @HTTPCompatible()
-    def POST(self, map_name, ws_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def POST(self, ws_name, format):
+        ws = get_workspace(ws_name)
 
         data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         cs_name = data.pop("name")
@@ -363,17 +332,18 @@ class coveragestores(object):
             ws.create_coveragestore(cs_name, data)
         ws.save()
 
-        webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s%s" % (
-                web.ctx.home, map_name, ws_name, cs_name, (".%s" % format) if format else ""))
+        webapp.Created("%s/workspaces/%s/coveragestores/%s.%s" % (
+                web.ctx.home, ws_name, cs_name, format))
 
 
 class coveragestore(object):
     @HTTPCompatible()
-    def GET(self, map_name, ws_name, cs_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def GET(self, ws_name, cs_name, format):
+        ws = get_workspace(ws_name)
 
         with webapp.mightNotFound("coverageStore", workspace=ws_name):
             info = ws.get_coveragestore_info(cs_name)
+        connectionParameters = info.get("connectionParameters", {})
 
         return {"coverageStore": {
                     "name": info["name"],
@@ -382,13 +352,13 @@ class coveragestore(object):
                     "__default": False, # TODO
                     "workspace": {
                         "name": ws.name,
-                        "href": "%s/maps/%s/workspaces/%s.%s" % (
-                            web.ctx.home, map_name, ws.name, format),
+                        "href": "%s/workspaces/%s.%s" % (
+                            web.ctx.home, ws.name, format),
                         },
-                    "coverages": href("%s/maps/%s/workspaces/%s/coveragestores/%s/coverages.%s" % (
-                                    web.ctx.home, map_name, ws.name, cs_name, format)
+                    "coverages": href("%s/workspaces/%s/coveragestores/%s/coverages.%s" % (
+                                    web.ctx.home, ws.name, cs_name, format)
                         ),
-                    "connectionParameters": Entries({
+                    "connectionParameters": connectionParameters and Entries({
                         "url": info["connectionParameters"]["url"],
                         "namespace": None, # TODO
                         }, tag_name="entry")
@@ -396,10 +366,9 @@ class coveragestore(object):
                 }
 
 
-
     @HTTPCompatible()
-    def PUT(self, map_name, ws_name, cs_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def PUT(self, ws_name, cs_name, format):
+        ws = get_workspace(ws_name)
 
         data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         if cs_name != data.pop("name"):
@@ -410,10 +379,11 @@ class coveragestore(object):
         ws.save()
 
     @HTTPCompatible()
-    def DELETE(self, map_name, ws_name, cs_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def DELETE(self, ws_name, cs_name, format):
+        ws = get_workspace(ws_name)
 
-        # We need to check if this datatore is empty.
+        # TODO: check, this is not consistent between ds/cs.
+        # We need to check if this datastore is empty.
         assert_is_empty(ws.iter_coverages(cs_name=cs_name), "coveragestore", ds_name)
 
         with webapp.mightNotFound("coverageStore", workspace=ws_name):
@@ -423,33 +393,35 @@ class coveragestore(object):
 
 class coverages(object):
     @HTTPCompatible()
-    def GET(self, map_name, ws_name, cs_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def GET(self, ws_name, cs_name, format):
+        ws = get_workspace(ws_name)
+
         return {"coverages": [{
                     "name": c.name,
-                    "href": "%s/maps/%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
-                        web.ctx.home, map_name, ws.name, cs_name, c.name, format)
+                    "href": "%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
+                        web.ctx.home, ws.name, cs_name, c.name, format)
                     } for c in ws.iter_coveragemodels(cs_name)]
                 }
 
     @HTTPCompatible()
-    def POST(self, map_name, ws_name, cs_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def POST(self, ws_name, cs_name, format):
+        ws = get_workspace(ws_name)
 
         data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
 
         with webapp.mightConflict("coverage", coveragestore=cs_name):
-            ws.create_coveragemodel(data["name"], cs_name, data)
+            with webapp.mightNotFound("coverage", coveragestore=cs_name):
+                ws.create_coveragemodel(data["name"], cs_name, data)
         ws.save()
 
-        webapp.Created("%s/maps/%s/workspaces/%s/coveragestores/%s/coverages/%s%s" % (
-                web.ctx.home, map_name, ws.name, cs_name, data["name"], (".%s" % format) if format else ""))
+        webapp.Created("%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
+                web.ctx.home, ws.name, cs_name, data["name"], format))
 
 
 class coverage(object):
     @HTTPCompatible()
-    def GET(self, map_name, ws_name, cs_name, c_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def GET(self, ws_name, cs_name, c_name, format):
+        ws = get_workspace(ws_name)
 
         # with webapp.mightNotFound("coveragestore", workspace=ws_name):
         #     cs = ws.get_coveragestore(cs_name)
@@ -487,8 +459,8 @@ class coverage(object):
                     "metadata": None, # TODO
                     "store": { # TODO: Add attr class="coverageStore"
                         "name": cs_name,
-                        "href": "%s/maps/%s/workspaces/%s/coveragestores/%s.%s" % (
-                            web.ctx.home, map_name, ws_name, cs_name, format)
+                        "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
+                            web.ctx.home, ws_name, cs_name, format)
                         },
                     "nativeFormat": None, # TODO
                     "grid": { # TODO: Add attr dimension
@@ -517,8 +489,8 @@ class coverage(object):
                 }
 
     @HTTPCompatible()
-    def PUT(self, map_name, ws_name, cs_name, c_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def PUT(self, ws_name, cs_name, c_name, format):
+        ws = get_workspace(ws_name)
 
         data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
         if c_name != data["name"]:
@@ -532,12 +504,12 @@ class coverage(object):
         ws.save()
 
     @HTTPCompatible()
-    def DELETE(self, map_name, ws_name, cs_name, c_name, format):
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+    def DELETE(self, ws_name, cs_name, c_name, format):
+        ws = get_workspace(ws_name)
 
         # We need to check if there are any layers using this.
-        assert_is_empty(mf.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name, "type":"coverage"}),
-                        "coverage", ft_name)
+        assert_is_empty(ws.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name,
+                                            "type":"coverage"}), "coverage", ft_name)
 
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
             ws.delete_coveragemodel(c_name, cs_name)
@@ -547,10 +519,8 @@ class coverage(object):
 class files(object):
 
     @HTTPCompatible(allow_all=True)
-    def PUT(self, map_name, ws_name, st_type, st_name, f_type, format):
+    def PUT(self, ws_name, st_type, st_name, f_type, format):
         import zipfile
-
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
 
         # TODO: According to geoserv's examples we might have to handle
         # directories as well as files, in that case we want to upload
@@ -565,12 +535,15 @@ class files(object):
         elif f_type == "external":
             raise webapp.NotImplemented()
 
+        ws = get_workspace(ws_name)
+
         # Now we make sure the store exists.
         try:
             ws.get_store_info(st_type, st_name)
         except KeyError:
             # Create the store if it seems legit and it does not exist.
             if st_type == "datastores" or st_type == "coveragestores":
+                st_type = st_type[:-1] # Remove trailing 's'
                 with webapp.mightConflict("dataStore", workspace=ws_name):
                     ws.create_store(st_type, st_name, {})
             # Finaly check if its OK now.
@@ -580,25 +553,24 @@ class files(object):
 
         # Then we store the file.
         ext = web.ctx.env.get('CONTENT_TYPE', '').split("/")[-1]
-        path = tools.mk_st_data_path(ws_name, st_type, st_name, st_name + (".%s" % ext) if ext else "")
-        with open(path, "w") as f:
-            f.write(data)
+        path = mra.create_file(st_name + (".%s" % ext) if ext else "", data=data)
+        dest = os.path.join(os.path.split(path)[0], st_name)
 
         # We also unzip it if its ziped.
         ctype = web.ctx.env.get('CONTENT_TYPE', None)
         if ctype == "application/zip":
             z = zipfile.ZipFile(path)
             for f in z.namelist():
-                fp = tools.mk_st_data_path(ws_name, st_type, st_name, f)
+                fp = mra.mk_path(mra.get_file_path(st_name, f))
 
                 # If the file has the correct target we might want it.
                 if format and fp.endswith(format) and not tools.is_hidden(fp):
                     path = fp
 
-                z.extract(f, path=tools.get_st_data_path(ws_name, st_type, st_name))
+                z.extract(f, path=dest)
 
         # Set new connection parameters:
-        ws.update_store(st_type, st_name, {"connectionParameters":{"url":"file:"+tools.no_res_root(path)}})
+        ws.update_store(st_type, st_name, {"connectionParameters":{"url":"file:"+mra.pub_file_path(path)}})
         ws.save()
 
         # Finally we might have to configure it.
@@ -610,56 +582,39 @@ class files(object):
         elif params.configure == "all":
             raise webapp.NotImplemented()
         else:
-            raise webapp.BadRequest(message="configure must be one of first, none or all.")
+            raise webapp.BadRequest(message="configure must be one of 'first', 'none' or 'all'.")
 
 
 class styles(object):
     @HTTPCompatible()
-    def GET(self, map_name, format):
-        mf = get_mapfile(map_name)
-
+    def GET(self, format):
         return {"styles": [{
-                    "name": os.path.basename(os.path.basename(s_name)),
-                    "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, os.path.basename(s_name), format)
-                    } for s_name in tools.iter_styles(mf)]
+                    "name": s_name,
+                    "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format)
+                    } for s_name in mra.list_styles()]
                 }
 
     @HTTPCompatible()
-    def POST(self, map_name, format):
-        mf = get_mapfile(map_name)
-
+    def POST(self, format):
         params = web.input(name=None)
         name = params.name
         if name == None:
             raise webapp.BadRequest(message="no parameter 'name' given.")
-        with webapp.mightConflict(message="style {exception} already exists."):
-            if name in tools.iter_styles(mf):
-                raise webapp.KeyExists(name)
 
         data = web.data()
-        path = tools.mk_style_path(name)
+        mra.create_style(name, data)
 
-        with open(path, "w") as f:
-            f.write(data)
+        webapp.Created("%s/styles/%s.%s" % (web.ctx.home, name, format))
 
 
 class style(object):
     @HTTPCompatible(authorize=["sld"])
-    def GET(self, map_name, s_name, format):
-        mf = get_mapfile(map_name)
+    def GET(self, s_name, format):
+        with webapp.mightNotFound():
+            style = mra.get_style(s_name)
 
         if format == "sld":
-            # We look for styles on disk and in the mapfiles.
-            try:
-                return open(tools.get_style_path(s_name)).read()
-            except IOError, OSError:
-                with webapp.mightNotFound("style", mapfile=map_name):
-                    return mf.get_style_sld(s_name)
-
-        # We still need to check if this actually exists...
-        with webapp.mightNotFound("style", mapfile=map_name):
-            if not os.path.exists(tools.get_style_path(s_name)) and not s_name in mf.iter_styles():
-                raise KeyError(s_name)
+            return style
 
         return {"style": {
                     "name": s_name,
@@ -669,98 +624,76 @@ class style(object):
                 }
 
     @HTTPCompatible()
-    def PUT(self, map_name, s_name, format):
-        path = tools.get_style_path(s_name)
-        try:
-            os.remove(path)
-        except OSError:
-            mf = get_mapfile(map_name)
-            if s_name in mf.iter_styles():
-                raise webapp.NotImplemented(message="Updating manually added styles is not implemented.")
-            else:
-                raise webapp.NotFound("style '%s' not found in mapfile '%s'." % (s_name, map_name))
-
+    def PUT(self, s_name, format):
+        #TODO: Also update layers using this style.
+        with webapp.mightNotFound():
+            mra.delete_style(s_name)
         data = web.data()
-        with open(path, "w") as f:
-            f.write(data)
-
+        mra.create_style(s_name, data)
 
     @HTTPCompatible()
-    def DELETE(self, map_name, s_name, format):
-        mf = get_mapfile(map_name)
-
-        # OK check any(class.group == s_name for class in layer.iter_classes)
-        layers_using = [layer.ms.name for layer in mf.iter_layers()
-                        if any(clazz.ms.group == s_name for clazz in layer.iter_classes())]
-
-        if layers_using:
-            raise webapp.Forbidden(message="Can't remove style '%s' because it is beeing used by the folowing layers: %s."
-                                   % (s_name, layers_using))
-
-        path = tools.get_style_path(s_name)
-        try:
-            os.remove(path)
-        except OSError:
-            mf = get_mapfile(map_name)
-            if s_name in mf.iter_styles():
-                raise webapp.NotImplemented(message="Deleting manually added styles is not implemented.")
-            else:
-                raise webapp.NotFound("style '%s' not found in mapfile '%s'." % (s_name, map_name))
+    def DELETE(self, s_name, format):
+        #TODO: Maybe check for layers using this style?
+        with webapp.mightNotFound():
+            mra.delete_style(s_name)
 
 
 class layers(object):
     @HTTPCompatible()
-    def GET(self, map_name, format):
-        mf = get_mapfile(map_name)
+    def GET(self, format):
+        mf = mra.get_available()
         return {"layers": [{
                     "name": layer.ms.name,
-                    "href": "%s/maps/%s/layers/%s.%s" % (web.ctx.home, map_name, layer.ms.name, format),
+                    "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
                     } for layer in mf.iter_layers()]
                 }
 
     @HTTPCompatible()
-    def POST(self, map_name, format):
+    def POST(self, format):
         data = get_data(name="layer",
                         mandatory=["name", "resource"],
-                        authorized=["name", "title", "abstract", "resource", "enabled"])
+                        authorized=["name", "title", "abstract", "resource", "enabled", "defaultStyle"])
 
         l_name = data.pop("name")
         l_enabled = data.pop("enabled", True)
 
-        # This means we can have one mapfile for each workspace
-        # and if eveything uses urls it should work *almost* as is.
-        url = urlparse.urlparse(data["resource"]["href"])
-        if url.path.startswith(web.ctx.homepath):
-            path = url.path[len(web.ctx.homepath):]
-        else:
-            raise webapp.BadRequest(message="Resource href is not handled by MRA.")
-
+        href = data["resource"]["href"]
         try:
-            _, map_name, _, ws_name, st_type, st_name, r_type, r_name = path.rsplit("/", 7)
+            ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
         except ValueError:
-            raise webapp.NotFound(message="ressource '%s' was not found." % path)
+            raise webapp.NotFound(message="ressource '%s' was not found." % href)
 
-        r_name = r_name.rsplit(".", 1)[0]
+        st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
 
-        mf, ws = get_mapfile_workspace(map_name, ws_name)
+        ws = get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
             try:
-                model = ws.get_model(r_name, r_type[:-1], st_name)
+                model = ws.get_layermodel(r_type, st_name, r_name)
             except ValueError:
-                raise webapp.NotFound("Invalid layer model '%s'" % r_type[:-1])
+                raise KeyError(r_type)
 
-        with webapp.mightConflict("layer", mapfile=map_name):
-            mf.create_layer(ws, model, l_name, l_enabled)
+        mf = mra.get_available()
+        with webapp.mightConflict():
+            mf.create_layer(model, l_name, l_enabled)
+
+        # If we have a defaultStyle apply it.
+        s_name = data.get("defaultStyle", {}).get("name")
+        if s_name:
+            with webapp.mightNotFound():
+                style = mra.get_style(s_name)
+                layer = mf.get_layer(l_name)
+            layer.add_style_sld(mf, s_name, style)
+
         mf.save()
 
-        webapp.Created("%s/maps/%s/layers/%s%s" % (web.ctx.home, map_name, l_name, (".%s" % format) if format else ""))
+        webapp.Created("%s/layers/%s.%s" % (web.ctx.home, l_name, format))
 
 
 class layer(object):
     @HTTPCompatible()
-    def GET(self, map_name, l_name, format):
-        mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layer", mapfile=map_name):
+    def GET(self, l_name, format):
+        mf = mra.get_available()
+        with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
 
         data_type, store_type = {
@@ -774,16 +707,16 @@ class layer(object):
                     "type": layer.get_type_name(),
                     "defaultStyle": {
                         "name": layer.ms.classgroup,
-                        "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, layer.ms.classgroup, format),
+                        "href": "%s/styles/%s.%s" % (web.ctx.home, layer.ms.classgroup, format),
                         },
                     "styles": [{ # TODO: Add attr class="linked-hash-set"
                             "name": s_name,
-                            "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, s_name, format),
+                            "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
                             } for s_name in layer.iter_styles()],
                     "resource": { # TODO: Add attr class="featureType|coverage"
                         "name": layer.get_mra_metadata("name"),
-                        "href": "%s/maps/%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
-                            web.ctx.home, map_name, layer.get_mra_metadata("workspace"),
+                        "href": "%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
+                            web.ctx.home, layer.get_mra_metadata("workspace"),
                             store_type, layer.get_mra_metadata("storage"), data_type, layer.get_mra_metadata("name"), format),
                         },
                     "enabled": bool(layer.ms.status),
@@ -795,56 +728,65 @@ class layer(object):
                 }
 
     @HTTPCompatible()
-    def PUT(self, map_name, l_name, format):
-        mf = get_mapfile(map_name)
+    def PUT(self, l_name, format):
+        mf = mra.get_available()
 
-        data = get_data(name="layer", mandatory=["name", "resource"],
-                        authorized=["name", "title", "abstract", "resource", "enabled"])
-        if l_name != data.pop("name"):
+        data = get_data(name="layer", mandatory=[],
+                        authorized=["name", "title", "abstract", "resource", "enabled", "defaultStyle"])
+        if l_name != data.get("name", l_name):
             raise webapp.Forbidden("Can't change the name of a layer.")
 
         l_enabled = data.pop("enabled", True)
 
-        # This means we can have one mapfile for each workspace
-        # and if eveything uses urls it should work *almost* as is.
-        r_href = data["resource"]["href"]
-        try:
-            _, map_name, _, ws_name, st_type, st_name, r_type, r_name = r_href.rsplit("/", 7)
-        except ValueError:
-            raise webapp.NotFound(message="ressource '%s' was not found." % r_href)
-
-        r_name = r_name.rsplit(".", 1)[0]
-
-        ws = mf.get_workspace(ws_name)
-        with webapp.mightNotFound(r_type, workspace=ws_name):
-            try:
-                model = ws.get_model(r_name, r_type[:-1], st_name)
-            except ValueError:
-                raise webapp.NotFound("Invalid layer model '%s'" % st_type)
-
-        with webapp.mightNotFound("layer", mapfile=map_name):
+        mf = mra.get_available()
+        with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
 
-            if layer.get_mra_metadata("type") != r_type:
-                raise webapp.BadRequest("Can't change a '%s' layer into a '%s'." % (
-                        layer.get_mra_metadata("type"), r_type))
+        # update resource if changed
+        href = data.get("resource", {}).get("href")
+        if href:
+            try:
+                ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
+            except ValueError:
+                raise webapp.NotFound(message="ressource '%s' was not found." % href)
 
-            model.configure_layer(ws, layer, l_enabled)
+            st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
+
+            ws = get_workspace(ws_name)
+            with webapp.mightNotFound(r_type, workspace=ws_name):
+                try:
+                    model = ws.get_layermodel(r_type, st_name, r_name)
+                except ValueError:
+                    raise KeyError(r_type)
+
+            if layer.get_mra_metadata("type") != r_type:
+                raise webapp.BadRequest("Can't change a '%s' layer into a '%s'."
+                                    % (layer.get_mra_metadata("type"), r_type))
+
+            model.configure_layer(layer, l_enabled)
+
+        # If we have a defaultStyle apply it.
+        s_name = data.get("defaultStyle", {}).get("name")
+        if s_name:
+            with webapp.mightNotFound():
+                style = mra.get_style(s_name)
+            layer.add_style_sld(mf, s_name, style)
+
         mf.save()
 
     @HTTPCompatible()
-    def DELETE(self, map_name, l_name, format):
-        mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layer", mapfile=map_name):
+    def DELETE(self, l_name, format):
+        mf = mra.get_available()
+        with webapp.mightNotFound():
             mf.delete_layer(l_name)
         mf.save()
 
 
 class layerstyles(object):
     @HTTPCompatible()
-    def GET(self, map_name, l_name, format):
-        mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layer", mapfile=map_name):
+    def GET(self, l_name, format):
+        mf = mra.get_available()
+        with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
 
         if format == "sld":
@@ -852,51 +794,39 @@ class layerstyles(object):
 
         return {"styles": [{
                     "name": s_name,
-                    "href": "%s/maps/%s/styles/%s.%s" % (web.ctx.home, map_name, s_name, format),
+                    "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
                     } for s_name in layer.iter_styles()],
                 }
 
-    @HTTPCompatible()
-    def POST(self, map_name, l_name, format):
-        data = get_data(name="style", mandatory=["resource"],
-                        authorized=["name", "title", "abstract", "resource"])
+    # @HTTPCompatible()
+    # def POST(self, l_name, format):
+    #     data = get_data(name="style", mandatory=["resource"],
+    #                     authorized=["name", "title", "abstract", "resource"])
 
-        url = urlparse.urlparse(data["resource"]["href"])
-        if url.path.startswith(web.ctx.homepath):
-            path = url.path[len(web.ctx.homepath):]
-        else:
-            raise webapp.BadRequest(message="Resource href (%s) is not handled by MRA." % url.path)
+    #     href = data["resource"]["href"]
+    #     try:
+    #         _, s_name = mra.href_parse(href, 2)
+    #     except ValueError:
+    #         raise webapp.NotFound(message="style '%s' was not found." % href)
 
-        try:
-            _, map_name, _, s_name = path.rsplit("/", 3)
-        except ValueError:
-            raise webapp.NotFound(message="ressource '%s' was not found." % path)
+    #     with webapp.mightNotFound():
+    #         style = mra.get_style(s_name)
 
-        s_name = s_name.rsplit(".", 1)[0]
+    #     mf = mra.get_available()
+    #     with webapp.mightNotFound():
+    #         layer = mf.get_layer(l_name)
 
-        # Get the new style.
-        mf = get_mapfile(map_name)
+    #     layer.add_style_sld(mf, s_name, style)
+    #     mf.save()
 
-        try:
-            style = open(tools.get_style_path(s_name)).read()
-        except IOError, OSError:
-            with webapp.mightNotFound("style", mapfile=map_name):
-                style = mf.get_style_sld(s_name)
-
-        with webapp.mightNotFound("layer", mapfile=map_name):
-            layer = mf.get_layer(l_name)
-
-        layer.add_style_sld(mf, s_name, style)
-        mf.save()
-
-        webapp.Created("%s/maps/%s/layers/%s/layerstyles/%s%s" % (web.ctx.home, map_name, l_name, s_name, (".%s" % format) if format else ""))
+    #     webapp.Created("%s/layers/%s/layerstyles/%s.%s" % (web.ctx.home, l_name, s_name, format))
 
 
 class layerstyle(object):
     @HTTPCompatible()
-    def DELETE(self, map_name, l_name, s_name, format):
-        mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layer", mapfile=map_name):
+    def DELETE(self, l_name, s_name, format):
+        mf = mra.get_available()
+        with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
         with webapp.mightNotFound("style", layer=l_name):
             layer.remove_style(s_name)
@@ -905,12 +835,12 @@ class layerstyle(object):
 
 class layerfields(object):
     @HTTPCompatible()
-    def GET(self, map_name, l_name, format):
-        mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layer", mapfile=map_name):
+    def GET(self, l_name, format):
+        mf = mra.get_available()
+        with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
 
-            return {"fields": [{
+        return {"fields": [{
                     "name": layer.get_metadata("gml_%s_alias" % field, None),
                     "fieldType": layer.get_metadata("gml_%s_type" % field, None),
                     } for field in layer.iter_fields()]
@@ -919,38 +849,39 @@ class layerfields(object):
 
 class layergroups(object):
     @HTTPCompatible()
-    def GET(self, map_name, format):
-        mf = get_mapfile(map_name)
+    def GET(self, format):
+        mf = mra.get_available()
 
         return {"layerGroups" : [{
                     "name": lg.name,
-                    "href": "%s/maps/%s/layergroups/%s.%s" % (web.ctx.home, map_name, lg.name, format)
+                    "href": "%s/layergroups/%s.%s" % (web.ctx.home, lg.name, format)
                     } for lg in mf.iter_layergroups()]
                 }
 
     @HTTPCompatible()
-    def POST(self, map_name, format):
-        mf = get_mapfile(map_name)
+    def POST(self, format):
+        mf = mra.get_available()
 
         data = get_data(name="layerGroup", mandatory=["name"], authorized=["name", "title", "abstract", "layers"])
         lg_name = data.pop("name")
-        layers = [mf.get_layer(l_name) for l_name in data.pop("layers", [])]
+        with webapp.mightNotFound():
+            layers = [mf.get_layer(l_name) for l_name in data.pop("layers", [])]
 
-        with webapp.mightConflict("layerGroup", mapfile=map_name):
+        with webapp.mightConflict():
             lg = mf.create_layergroup(lg_name, data)
         lg.add(*layers)
 
         mf.save()
 
-        webapp.Created("%s/maps/%s/layergroups/%s%s" % (web.ctx.home, map_name, lg.name, (".%s" % format) if format else ""))
+        webapp.Created("%s/layergroups/%s.%s" % (web.ctx.home, lg.name, format))
 
 
 class layergroup(object):
 
     @HTTPCompatible()
-    def GET(self, map_name, lg_name, format):
-        mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layerGroup", mapfile=map_name):
+    def GET(self, lg_name, format):
+        mf = mra.get_available()
+        with webapp.mightNotFound():
             lg = mf.get_layergroup(lg_name)
 
         latlon_extent = lg.get_latlon_extent()
@@ -960,7 +891,7 @@ class layergroup(object):
                     "mode": None, # TODO
                     "publishables": [{
                             "name": layer.ms.name,
-                            "href": "%s/maps/%s/layers/%s.%s" % (web.ctx.home, map_name, layer.ms.name, format),
+                            "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
                             } for layer in lg.iter_layers()],
                     "bounds": {
                         "minx": latlon_extent.minX(),
@@ -974,10 +905,10 @@ class layergroup(object):
                 }
 
     @HTTPCompatible()
-    def PUT(self, map_name, lg_name, format):
-        mf = get_mapfile(map_name)
+    def PUT(self, lg_name, format):
+        mf = mra.get_available()
 
-        with webapp.mightNotFound("layerGroup", mapfile=map_name):
+        with webapp.mightNotFound():
             lg = mf.get_layergroup(lg_name)
 
         data = get_data(name="layerGroup", mandatory=["name"], authorized=["name", "title", "abstract", "layers"])
@@ -994,64 +925,136 @@ class layergroup(object):
         mf.save()
 
     @HTTPCompatible()
-    def DELETE(self, map_name, lg_name, format):
+    def DELETE(self, lg_name, format):
 
-        mf = get_mapfile(map_name)
-        with webapp.mightNotFound("layerGroup", mapfile=map_name):
+        mf = mra.get_available()
+        with webapp.mightNotFound():
             mf.delete_layergroup(lg_name)
         mf.save()
 
 
+class OWSGlobalSettings(object):
+
+    @HTTPCompatible()
+    def GET(self, ows, format):
+        mf = mra.get_available()
+        try:
+            if mf.get_metadata("%s_enable_request" % ows) == "*":
+                is_enabled = True
+        except:
+            is_enabled = False
+
+        return {
+            ows: {
+                "enabled": is_enabled,
+                "name": ows,
+                "schemaBaseURL": mf.get_metadata("ows_schemas_location", "http://schemas.opengis.net"),
+                }
+            }
+
+    @HTTPCompatible()
+    def PUT(self, ows, format):
+        mf = mra.get_available()
+        data = get_data(name=ows, mandatory=["enabled"], authorized=["enabled"])
+        is_enabled = data.pop("enabled")
+        values = {True: "*", "true": "*", False: "", "false": ""}
+        if is_enabled not in values:
+            raise KeyError("'%s' is not valid" % is_enabled)
+        mf.set_metadata("%s_enable_request" % ows, values[is_enabled])
+        mf.save()
+
+
+class OWSSettings(object):
+
+    @HTTPCompatible()
+    def GET(self, ows, ws_name, format):
+        ws = get_workspace(ws_name)
+        try:
+            if ws.get_metadata("%s_enable_request" % ows) == "*":
+                is_enabled = True
+        except:
+            is_enabled = False
+
+        return {
+            ows: {
+                "enabled": is_enabled,
+                "name": ows,
+                "schemaBaseURL": ws.get_metadata("ows_schemas_location", "http://schemas.opengis.net"),
+                }
+            }
+
+    @HTTPCompatible()
+    def PUT(self, ows, ws_name, format):
+        ws = get_workspace(ws_name)
+        data = get_data(name=ows, mandatory=["enabled"], authorized=["enabled"])
+        is_enabled = data.pop("enabled")
+        values = {True: "*", "true": "*", False: "", "false": ""}
+        if is_enabled not in values:
+            raise KeyError("'%s' is not valid" % is_enabled)
+        ws.set_metadata("%s_enable_request" % ows, values[is_enabled])
+        ws.save()
+
+    @HTTPCompatible()
+    def DELETE(self, ows, ws_name, format):
+        ws = get_workspace(ws_name)
+        ws.set_metadata("%s_enable_request" % ows, "")
+        ws.save()
+
 # Index:
 urlmap(index, "")
 
-# Mapfiles:
-urlmap(mapfiles, "maps")
-urlmap(named_mapfile, "maps", ())
-
 # Workspaces:
-urlmap(workspaces, "maps", (), "workspaces")
-urlmap(workspace, "maps", (), "workspaces", ())
+urlmap(workspaces, "workspaces")
+urlmap(workspace, "workspaces", ())
 
 # Datastores:
-urlmap(datastores, "maps", (), "workspaces", (), "datastores")
-urlmap(datastore, "maps", (), "workspaces", (), "datastores", ())
+urlmap(datastores, "workspaces", (), "datastores")
+urlmap(datastore, "workspaces", (), "datastores", ())
 # Featuretypes:
-urlmap(featuretypes, "maps", (), "workspaces", (), "datastores", (), "featuretypes")
-urlmap(featuretype, "maps", (), "workspaces", (), "datastores", (), "featuretypes", ())
+urlmap(featuretypes, "workspaces", (), "datastores", (), "featuretypes")
+urlmap(featuretype, "workspaces", (), "datastores", (), "featuretypes", ())
 
 # Coveragestores:
-urlmap(coveragestores, "maps", (), "workspaces", (), "coveragestores")
-urlmap(coveragestore, "maps", (), "workspaces", (), "coveragestores", ())
+urlmap(coveragestores, "workspaces", (), "coveragestores")
+urlmap(coveragestore, "workspaces", (), "coveragestores", ())
 # Coverages:
-urlmap(coverages, "maps", (), "workspaces", (), "coveragestores", (), "coverages")
-urlmap(coverage, "maps", (), "workspaces", (), "coveragestores", (), "coverages", ())
+urlmap(coverages, "workspaces", (), "coveragestores", (), "coverages")
+urlmap(coverage, "workspaces", (), "coveragestores", (), "coverages", ())
 
 # Files:
-urlmap(files, "maps", (), "workspaces", (), "(datastores|coveragestores)", (), "(file|url|external)")
+urlmap(files, "workspaces", (), "(datastores|coveragestores)", (), "(file|url|external)")
 
 # Styles:
-urlmap(styles, "maps", (), "styles")
-urlmap(style, "maps", (), "styles", ())
+urlmap(styles, "styles")
+urlmap(style, "styles", ())
 
 # Layers, layer styles and data fields:
-urlmap(layers, "maps", (), "layers")
-urlmap(layer, "maps", (), "layers", ())
-urlmap(layerstyles, "maps", (), "layers", (), "styles")
-urlmap(layerstyle, "maps", (), "layers", (), "styles", ())
-urlmap(layerfields, "maps", (), "layers", (), "fields")
+urlmap(layers, "layers")
+urlmap(layer, "layers", ())
+urlmap(layerstyles, "layers", (), "styles")
+urlmap(layerstyle, "layers", (), "styles", ())
+urlmap(layerfields, "layers", (), "fields")
 
 # Layergroups:
-urlmap(layergroups, "maps", (), "layergroups")
-urlmap(layergroup, "maps", (), "layergroups", ())
+urlmap(layergroups, "layergroups")
+urlmap(layergroup, "layergroups", ())
+
+# OGC Web Services:
+urlmap(OWSGlobalSettings, "services", "(wms|wfs|wcs)", "settings")
+urlmap(OWSSettings, "services", "(wms|wfs|wcs)", (), "settings")
 
 urls = tuple(urlmap)
 
-web.config.debug = get_config("debug").get("web_debug", False)
-webapp.exceptionManager.raise_all = get_config("debug").get("raise_all", False)
-HTTPCompatible.return_logs = get_config("logging").get("web_logs", False)
+mra = MRA(os.path.join(sys.path[0], "mra.yaml"))
 
-for pdir in get_config("plugins").get("loadpaths", []):
+mralogs.setup(mra.config["logging"]["level"], mra.config["logging"]["file"],
+              mra.config["logging"]["format"])
+
+web.config.debug = mra.config["debug"].get("web_debug", False)
+webapp.exceptionManager.raise_all = mra.config["debug"].get("raise_all", False)
+HTTPCompatible.return_logs = mra.config["logging"].get("web_logs", False)
+
+for pdir in mra.config["plugins"].get("loadpaths", []):
     plugins.load_plugins_dir(pdir)
 
 app = web.application(urls, globals())

@@ -217,14 +217,38 @@ def obj(xml):
     If none of the above the object is considered to be a list.
     """
 
+    def trans(tag):
+        """
+        This function is pure bullshit.
+        Stupid ugly hack to acomodate geoserver/mra.
+        """
+
+        if tag.startswith("{") and tag.endswith("}link"):
+            return "href"
+        if tag == "published":
+            return "publishable"
+        return tag
+
+    be_list = ["publishables"]
+
+    xml.tag = trans(xml.tag)
+
     children = xml.getchildren()
+
+    if "href" in xml.attrib:
+        return xml.attrib["href"]
 
     if xml.text and not children:
         return xml.text.strip()
 
     tags = set(c.tag for c in children)
 
+    # No questions asked.
+    if xml.tag in be_list:
+        return list(obj(c) for c in children)
+
     # TODO: check this and make it better.
+
     if singular(xml.tag) != xml.tag and len(tags) == 1 and xml.tag.startswith(next(iter(tags))):
         common_keys = set.intersection(*(set(c.attrib) for c in children)) if children else []
         if not common_keys:
@@ -236,10 +260,9 @@ def obj(xml):
             return dict((c.attrib[next(iter(common_keys))], obj(c)) for c in children)
 
     if len(tags) == len(children):
-        return dict((c.tag, obj(c)) for c in children)
+        return dict((trans(c.tag), obj(c)) for c in children)
     else:
         return list(obj(c) for c in children)
-
 
 def loads(s, retname=False, *args, **kwargs):
     """Returns an object coresponding to what is described in the xml."""
