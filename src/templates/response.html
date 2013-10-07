@@ -22,7 +22,7 @@ $def with (base, path, links, code)
     </div>
 
     <ul class="breadcrumb">
-      <li><a href="$base">mra</a></li>
+      <li><a href="$base/">mra</a></li>
       $for name in path[:-1]: <li><a href="$base$('/'.join(path[:loop.index]))">$name </a><span class="divider">/</span></li>
       <li class="active">$path[-1]</li>
     </ul>

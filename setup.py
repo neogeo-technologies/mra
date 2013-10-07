@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -33,7 +33,7 @@ setup(
     author='Neogeo Technologies',
     author_email='contact@neogeo-online.net',
     description='A RESTFul interface for MapServer',
-    long_description=file('README.rst','rb').read(),
+    long_description=file('README.md','rb').read(),
     keywords='neogeo mapserver rest restful',
     license="GPLv3",
     #url='',
