@@ -661,7 +661,7 @@ class layers(object):
         try:
             ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
         except ValueError:
-            raise webapp.NotFound(message="ressource '%s' was not found." % href)
+            raise webapp.NotFound(message="resource '%s' was not found." % href)
 
         st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
 
@@ -748,7 +748,7 @@ class layer(object):
             try:
                 ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
             except ValueError:
-                raise webapp.NotFound(message="ressource '%s' was not found." % href)
+                raise webapp.NotFound(message="resource '%s' was not found." % href)
 
             st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
 

@@ -281,12 +281,17 @@ class Mapfile(MetadataMixin):
         else:
             self.ms = mapscript.mapObj(self.path)
 
+        # adding some default values...
+        self.ms.name = self.name
+        self.ms.setProjection("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+        self.ms.setExtent(-180,-90,180,90)
+        self.ms.units = mapscript.MS_DD
+
     def save(self, path=None):
         self.ms.save(path or self.path)
 
     def rawtext(self):
-        open(self.path, "r").read()
-
+        open(self.path, "r").read() 
 
     # Layers:
 
@@ -332,13 +337,10 @@ class Mapfile(MetadataMixin):
         dflt_metadata = {
             "wms_title": l_name,
             "wms_abstract": l_name,
-            "wms_bbox_extended": "true",
-            # TODO: Add other default values as above:
-            # wms_keywordlist, wms_keywordlist_vocabulary, wms_keywordlist_<vocabulary>_items
-            # wms_srs, wms_dataurl_(format|href), ows_attribution_(title|onlineresource)
-            # ows_attribution_logourl_(href|format|height|width), ows_identifier_(authority|value)
-            # ows_authorityurl_(name|href), ows_metadataurl_(type|href|format)
+            "wms_srs": "EPSG:4326",
+            "wms_bbox_extended": "false"
             }
+
         for k, v in dflt_metadata.iteritems():
             l_metadata.setdefault(k, v)
         l_metadata["wms_name"] = l_name
