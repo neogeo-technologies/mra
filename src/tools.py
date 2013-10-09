@@ -28,7 +28,6 @@ import os
 import yaml
 import sys
 
-import mapfile
 import pyxml
 
 import webapp

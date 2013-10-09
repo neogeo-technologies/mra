@@ -35,7 +35,6 @@ import urlparse
 import mralogs
 import logging
 
-import mapfile
 from mra import MRA
 
 
