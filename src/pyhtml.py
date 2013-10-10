@@ -24,6 +24,11 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+"""
+    HTML interface of the REST API.
+
+"""
+
 import pyxml
 import StringIO
 import urlparse
@@ -34,6 +39,7 @@ from xml.sax.saxutils import unescape
 def should_be_url(s):
     """This is used to find out if it might be a good idea to
     consider a string is a URL.
+
     """
     parsed = urlparse.urlparse(s)
     return parsed.scheme and parsed.netloc
@@ -43,8 +49,8 @@ def dump_xml(xml, fp, indent=0, indent_depth=2, reinit=True):
     """Recursive function that transforms an ElementTree to html
     written to the file like stream fp.
     indent can be used to specify the amount of indentation wanted.
-    """
 
+    """
     def new_id():
         """Gets a new unique element ID."""
         global __dump_xml_max_element_id
@@ -95,6 +101,7 @@ def dump(obj, fp, indent=0, *args, **kwargs):
     """Writes the html represention of obj to the file-like object fp.
     This uses pyxml to first transform the object into xml.
     *args and **kwargs are forwarded to pyxml.xml()
+    
     """
     xml = pyxml.xml(obj, *args, **kwargs)
     dump_xml(xml, fp, indent)

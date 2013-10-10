@@ -24,22 +24,30 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+"""
+    Module for managing MapFiles in MRA conceptual model.
+
+    It deliberately follows a conceptual model close to GeoServer REST
+    API in order to ensure as much compatibility as possible. And thus 
+    allows to switch from first to second.
+    
+    But, the next should be (will be) more consistent with MapServer
+    while maintaining a certain proximity with GeoServer...
+
+"""
+
 import os
 import os.path
 import string
 import urlparse
 import functools
-
 import web
 import yaml
 import mapscript
-
 import tools
 from extensions import plugins
-
 import webapp
 from webapp import KeyExists
-
 import stores
 import metadata
 
@@ -48,9 +56,8 @@ class MetadataMixin(object):
     def __getattr__(self, attr):
         if hasattr(self, "ms") and hasattr(metadata, attr):
             return functools.partial(getattr(metadata, attr), self.ms)
-        raise AttributeError("'%s' object has no attribute '%s'" %
+        raise AttributeError("\"%s\" object has no attribute \"%s\"." %
                              (type(self).__name__, attr))
-
 
 class Layer(MetadataMixin):
     def __init__(self, backend):
@@ -59,14 +66,13 @@ class Layer(MetadataMixin):
     def update(self, name, enabled, metadata):
         self.ms.name = name
         self.ms.template = "foo.html" # TODO: Support html format response
-
         self.enable(enabled)
         self.update_metadatas(metadata)
 
     def enable(self, enabled=True):
         requests = ["GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic"]
         self.ms.status = mapscript.MS_ON if enabled else mapscript.MS_OFF
-        self.set_metadata("wms_enable_request", " ".join(('%s' if enabled else "!%s") % c for c in requests))
+        self.set_metadata("wms_enable_request", " ".join(("%s" if enabled else "!%s") % c for c in requests))
 
     def get_type_name(self):
         return {
@@ -99,7 +105,7 @@ class Layer(MetadataMixin):
     def get_latlon_extent(self):
         rect = mapscript.rectObj(*self.get_extent())
         res = rect.project(mapscript.projectionObj(self.get_proj4()),
-                           mapscript.projectionObj('+init=epsg:4326'))
+                           mapscript.projectionObj("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
         return stores.Extent(rect.minx, rect.miny, rect.maxx, rect.maxy)
 
     def get_fields(self):
@@ -130,9 +136,7 @@ class Layer(MetadataMixin):
     def get_SLD(self):
         return self.ms.generateSLD().decode("LATIN1").encode("UTF8")
 
-
     def add_style_sld(self, mf, s_name, new_sld):
-
         # Because we do not want to apply the sld to real layers by mistake
         # we need to rename it to something we are sure is not used.
         sld_layer_name = "__mra_tmp_template"
@@ -171,19 +175,18 @@ class Layer(MetadataMixin):
         mf.ms.removeLayer(ms_template_layer.index)
 
     def set_default_style(self, mf):
-
         if self.ms.type == mapscript.MS_LAYER_POINT:
             self.ms.tolerance = 8
             self.ms.toleranceunits = 6
-            s_name = 'default_point'
+            s_name = "default_point"
         elif self.ms.type == mapscript.MS_LAYER_LINE:
             self.ms.tolerance = 8
             self.ms.toleranceunits = 6
-            s_name = 'default_line'
+            s_name = "default_line"
         elif self.ms.type == mapscript.MS_LAYER_POLYGON:
             self.ms.tolerance = 0
             self.ms.toleranceunits = 6
-            s_name = 'default_polygon'
+            s_name = "default_polygon"
         else:
             return
 
@@ -204,7 +207,6 @@ class Layer(MetadataMixin):
         else:
             raise KeyError(s_name)
 
-
 class LayerGroup(object):
 
     def __init__(self, name, mapfile):
@@ -212,7 +214,7 @@ class LayerGroup(object):
         self.mapfile = mapfile
 
     def iter_layers(self):
-        return self.mapfile.iter_layers(meta={"wms_group_name":self.name})
+        return self.mapfile.iter_layers(meta={"wms_group_name": self.name})
 
     def get_layers(self):
         return list(self.iter_layers())
@@ -260,7 +262,6 @@ class LayerGroup(object):
             extent.addY(e.minY(), e.maxY())
 
         return extent
-
 
 class Mapfile(MetadataMixin):
 
@@ -334,6 +335,7 @@ class Mapfile(MetadataMixin):
         # Create the layer.
         layer = Layer(mapscript.layerObj(self.ms))
 
+        # Add some default metadata.
         dflt_metadata = {
             "wms_title": l_name,
             "wms_abstract": l_name,
@@ -365,7 +367,6 @@ class Mapfile(MetadataMixin):
     def move_layer_down(self, l_name):
         layer = self.get_layer(l_name)
         self.ms.moveLayerDown(layer.ms.index)
-
 
     # Layergroups
 
@@ -401,12 +402,8 @@ class Mapfile(MetadataMixin):
         with self.mra_metadata("layergroups", {}) as layergroups:
             del layergroups[lg_name]
 
-
-
-
 # Workspaces are special Mapfiles that are composed of LayerModels
 # which are layers that can be used to configure other layers.
-
 
 class LayerModel(Layer):
     def __init__(self, ws, *args, **kwargs):
@@ -415,7 +412,6 @@ class LayerModel(Layer):
         self.name = self.get_mra_metadata("name", None)
 
 class FeatureTypeModel(LayerModel):
-
     def update(self, ds_name, ft_name, metadata):
         ws = self.ws
 
@@ -463,7 +459,6 @@ class FeatureTypeModel(LayerModel):
         self.update_mra_metadatas(metadata)
         self.update_mra_metadatas({"name": ft_name, "type": "featuretype", "storage": ds_name})
 
-
     def configure_layer(self, layer, enabled=True):
         ws = self.ws
 
@@ -471,7 +466,6 @@ class FeatureTypeModel(LayerModel):
 
         # We must also update all our personal attributes (type, ...)
         # because we might not have been cloned.
-
         layer.ms.type = self.ms.type
         layer.ms.setProjection(self.ms.getProjection())
         layer.ms.setExtent(self.ms.extent.minx, self.ms.extent.miny,
@@ -495,7 +489,7 @@ class FeatureTypeModel(LayerModel):
 
         if enabled:
             layer.set_metadata("wfs_enable_request",
-                               "GetCapabilities GetFeature DescribeFeatureType")
+                               "GetCapabilities DescribeFeatureType GetFeature")
 
         # Configure the layer based on information from the store.
         ds = ws.get_datastore(self.get_mra_metadata("storage"))
@@ -532,7 +526,6 @@ class FeatureTypeModel(LayerModel):
 
         plugins.extend("post_configure_vector_layer", self, ws, ds, ft, layer)
 
-
 class CoverageModel(LayerModel):
 
     def update(self, cs_name, c_name, metadata):
@@ -547,7 +540,7 @@ class CoverageModel(LayerModel):
         self.ms.type = mapscript.MS_LAYER_RASTER
         self.ms.setProjection(cs.get_proj4())
         self.ms.setExtent(*cs.get_extent())
-        self.ms.setProcessingKey("RESAMPLE","AVERAGE")
+        self.ms.setProcessingKey("RESAMPLE", "AVERAGE")
 
         # Configure the connection to the store.
         # This is a little hacky as we have to translate stuff...
@@ -560,7 +553,7 @@ class CoverageModel(LayerModel):
         self.ms.data = self.ws.mra.get_file_path(url.path)
             # TODO: strip extention.
         #else:
-        #    raise ValueError("Unhandled type '%s'" % cparam["dbtype"])
+        #    raise ValueError("Unhandled type \"%s\"." % cparam["dbtype"])
 
         # Deactivate wms and wcs requests, because we are a virtual layer.
         self.set_metadatas({
@@ -598,18 +591,15 @@ class CoverageModel(LayerModel):
                 })
 
         layer.set_metadatas({
-                "wfs_name": layer.get_metadata("wms_name"),
-                "wfs_title": layer.get_metadata("wms_title"),
-                "wfs_abstract": layer.get_metadata("wms_abstract"),
-                # TODO: wfs_keywordlist, wcs_srs, wcs_getfeature_formatlist...
+                "wcs_name": layer.get_metadata("wms_name"),
+                "wcs_label": layer.get_metadata("wms_title"),
+                "wcs_description": layer.get_metadata("wms_abstract")
                 })
 
         if enabled:
-            layer.set_metadata("wcs_enable_request", "GetCapabilities GetCoverage DescribeCoverage")
+            layer.set_metadata("wcs_enable_request", "GetCapabilities DescribeCoverage GetCoverage")
 
         plugins.extend("post_configure_raster_layer", self, ws, layer)
-
-
 
 class Workspace(Mapfile):
 
@@ -633,7 +623,7 @@ class Workspace(Mapfile):
         elif st_type == "coveragestore":
             return stores.Coveragestore(cparam)
         else:
-            raise AssertionError("Unknown st_type '%s'." % st_type)
+            raise AssertionError("Unknown st_type \"%s\"." % st_type)
 
     def get_store_info(self, st_type, name):
         info = self.get_mra_metadata("%ss" % st_type, {})[name].copy()
@@ -664,72 +654,86 @@ class Workspace(Mapfile):
 
     def get_datastore(self, name):
         """Returns a store.Datastore object from the workspace."""
+
         return self.get_store("datastore", name)
 
     def get_datastore_info(self, name):
         """Returns info for a datastore from the workspace."""
+
         return self.get_store_info("datastore", name)
 
     def iter_datastore_names(self):
         """Return an iterator over the datastore names."""
+
         return self.iter_store_names("datastore")
 
     def iter_datastores(self):
         """Return an iterator over the datastore (names, configuration)."""
+
         return self.iter_stores("datastore")
 
     def create_datastore(self, name, configuration):
         """Creates a new datastore."""
+
         return self.create_store("datastore", name, configuration)
 
     def update_datastore(self, name, configuration):
         """Update a datastore."""
+
         return self.update_store("datastore", name, configuration)
 
     def delete_datastore(self, name):
         """Delete a datastore."""
+
         try:
             next(self.iter_featuretypemodels(name))
         except StopIteration:
             pass # No layers use our store, all OK.
         else:
-            raise ValueError("The datastore '%s' can't be delete because it is used." % name)
+            raise ValueError("The datastore \"%s\" can't be delete because it is used." % name)
         return self.delete_store("datastore", name)
 
     # Coveragestores (this is c/p from datastores):
 
     def get_coveragestore(self, name):
         """Returns a store.Coveragestore object from the workspace."""
+
         return self.get_store("coveragestore", name)
 
     def get_coveragestore_info(self, name):
         """Returns info for a coveragestore from the workspace."""
+
         return self.get_store_info("coveragestore", name)
 
     def iter_coveragestore_names(self):
         """Return an iterator over the coveragestore names."""
+
         return self.iter_store_names("coveragestore")
 
     def iter_coveragestores(self):
         """Return an iterator over the coveragestore (names, configuration)."""
+
         return self.iter_stores("coveragestore")
 
     def create_coveragestore(self, name, configuration):
         """Creates a new coveragestore."""
+
         return self.create_store("coveragestore", name, configuration)
 
     def update_coveragestore(self, name, configuration):
         """Update a coveragestore."""
+
         return self.update_store("coveragestore", name, configuration)
 
     def delete_coveragestore(self, name):
         """Delete a coveragestore."""
+
         try:
             next(self.iter_coveragemodels(name))
         except StopIteration:
             pass # No layers use our store, all OK.
         else:
-            raise ValueError("The coveragestore '%s' can't be delete because it is used." % name)
+            raise ValueError("The coveragestore \"%s\" can't be delete because it is used." % name)
         return self.delete_store("coveragestore", name)
 
     # LayerModels:
@@ -740,7 +744,7 @@ class Workspace(Mapfile):
         elif st_type == "coverage":
             prefix = "c"
         else:
-            raise ValueError("Unknown layer model type '%s'." % st_type)
+            raise ValueError("Unknown layer model type \"%s\"." % st_type)
         return "%s:%s:%s" % (prefix, store, name)
 
     def __ms2model(self, ms_layer, st_type=None):
@@ -749,7 +753,7 @@ class Workspace(Mapfile):
         elif st_type == "coverage" or not st_type and ms_layer.name.startswith("c:"):
             return CoverageModel(self, ms_layer)
         else:
-            raise ValueError("Badly named Layer Model '%s'." % ms_layer.name)
+            raise ValueError("Badly named Layer Model \"%s\"." % ms_layer.name)
 
     def iter_layermodels(self, st_type=None, store=None, **kwargs):
         if st_type:
@@ -761,7 +765,7 @@ class Workspace(Mapfile):
 
     def get_layermodel(self, st_type, store, name):
         try:
-            return next(self.iter_layermodels(attr={"name":self.__model_name(st_type, store, name)}))
+            return next(self.iter_layermodels(attr={"name": self.__model_name(st_type, store, name)}))
         except StopIteration:
             raise KeyError((st_type, store, name))
 
@@ -788,9 +792,8 @@ class Workspace(Mapfile):
     def delete_layermodel(self, st_type, ds_name, ft_name):
         model = self.get_layermodel(st_type, ds_name, ft_name)
         if model.get_mra_metadata("layers", []):
-            raise ValueError("The %s '%s' can't be delete because it is used." % (st_type, ft_name))
+            raise ValueError("The %s \"%s\" can't be delete because it is used." % (st_type, ft_name))
         self.ms.removeLayer(model.ms.index)
-
 
     # Featuretypes
 
@@ -832,7 +835,6 @@ class Workspace(Mapfile):
     def delete_coveragemodel(self, ds_name, ft_name):
         return self.delete_layermodel("coverage", ds_name, ft_name)
 
-
 # Finaly the global context:
 
 class MRA(object):
@@ -845,7 +847,7 @@ class MRA(object):
     def safe_path_join(self, root, *args):
         full_path = os.path.realpath(os.path.join(root, *args))
         if not full_path.startswith(os.path.realpath(root)):
-            raise webapp.Forbidden(message="path '%s' outside root directory." % (args))
+            raise webapp.Forbidden(message="Path \"%s\" outside root directory." % (args))
         return full_path
 
     def mk_path(self, path):
@@ -881,14 +883,13 @@ class MRA(object):
         todo = ["default_point.sld", "default_line.sld", "default_polygon.sld"]
         for (_, _, files) in os.walk(self.get_style_path()):
             for f in files:
-                if f.endswith(".sld") and not f.startswith('.'):
+                if f.endswith(".sld") and not f.startswith("."):
                     yield f[:-4]
                 if f in todo:
                     todo.remove(f)
 
         for f in todo:
             yield f[:-4]
-
 
     def create_style(self, name, data):
         path = self.get_style_path("%s.sld" % name)
@@ -945,7 +946,7 @@ class MRA(object):
     def list_workspaces(self):
         for (_, _, files) in os.walk(self.get_available_path()):
             for f in files:
-                if f.endswith(".ws.map") and not f.startswith('.'):
+                if f.endswith(".ws.map") and not f.startswith("."):
                     yield f[:-7]
 
     def create_workspace(self, name):
@@ -961,7 +962,6 @@ class MRA(object):
 
     def delete_workspace(self, name):
         path = self.get_available_path("%s.ws.map" % name)
-
 
     # Services:
 
@@ -1004,4 +1004,4 @@ class MRA(object):
                 raise ValueError("Only local files are suported.")
             return self.get_file_path(url.path)
         else:
-            raise ValueError("Unhandled type '%s'" % cparam.get("dbtype", "<unknown>"))
+            raise ValueError("Unhandled type \"%s\"." % cparam.get("dbtype", "<unknown>"))

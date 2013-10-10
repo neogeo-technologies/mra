@@ -24,6 +24,11 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+"""
+    Module for managing the logs.
+
+"""
+
 import sys
 import string
 import inspect
@@ -44,14 +49,14 @@ def setup(log_level, log_file=None, format="%(asctime)s %(levelname)7s: %(messag
 class Reccord(logging.Handler):
     """A logging.Handler class which stores the records.
     You'll probably want to iterate on this class to get the results.
-    """
 
+    """
     def __init__(self, level=logging.DEBUG, logger=""):
         """Sets up a logging.Handler class which stores the records.
         level is the logging level and defaults to loggong.DEBUG, logger
         is by default the root loger.
-        """
 
+        """
         logging.Handler.__init__(self)
         self.level = level
         self.records = []
@@ -82,6 +87,7 @@ def short_str(obj, length=15, delta=5, tail="..."):
     """Returns a short version of str(obj) of length +/- delta.
     It tries to cut on characters from string.punctuation.
     If cut tail is appended. (defaults to '...')
+
     """
     s = str(obj)
     if len(s) < length:
@@ -95,13 +101,14 @@ def logIn(level="debug", filter=(lambda *a, **kw:True)):
     filter can be used to specify a function that should be used to
     check if we want to log or not. It will be passed the same arguments
     as the decorated function.
+
     """
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             if filter(*args, **kwargs):
                 arguments = inspect.getcallargs(getattr(f, "original_function", f), *args, **kwargs)
-                getattr(logging, level, "error")("function '%s' was called with args: %s" %
+                getattr(logging, level, "error")("function \"%s\" was called with args: %s" %
                                                  (f.__name__, dict([(a, short_str(v)) for a, v
                                                                     in arguments.iteritems()])))
             return f(*args, **kwargs)
@@ -120,13 +127,14 @@ def logOut(level="debug", filter=(lambda *a, **kw:True)):
     check if we want to log or not. It will be passed the same arguments
     as the decorated function, except for the fact the return value shall
     be inserted as first argument.
+
     """
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             ret = f(*args, **kwargs)
             if filter(ret, *args, **kwargs):
-                getattr(logging, level, "error")("function '%s' returned: %s" % (f.__name__, short_str(ret)))
+                getattr(logging, level, "error")("function \"%s\" returned: %s" % (f.__name__, short_str(ret)))
             return ret
         wrapper.original_function = f
         return wrapper

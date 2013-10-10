@@ -24,20 +24,20 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-import web
+"""
+    ...
 
+"""
+
+import web
 import json
 import pyxml
 import pyhtml
-
 import inspect
 import functools
-
 import os.path
 import itertools
-
 import mralogs
-
 
 class KeyExists(KeyError):
     pass
@@ -49,21 +49,20 @@ def Created(location):
     web.ctx.status = "201 Created"
     web.header("Location", location)
 
-
 class BadRequest(web.webapi.HTTPError):
     """`400 Bad Request` error."""
     def __init__(self, message="bad request"):
         self.message = message
-        status = '400 Bad Request'
-        headers = {'Content-Type': 'text/html'}
+        status = "400 Bad Request"
+        headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
 
 class NotFound(web.webapi.HTTPError):
     """`404 Not Found` error."""
     def __init__(self, message="not found"):
         self.message = message
-        status = '404 Not Found'
-        headers = {'Content-Type': 'text/html'}
+        status = "404 Not Found"
+        headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
 
 class Unauthorized(web.webapi.HTTPError):
@@ -71,34 +70,31 @@ class Unauthorized(web.webapi.HTTPError):
     def __init__(self, message="unauthorized"):
         self.message = message
         status = "401 Unauthorized"
-        headers = {'Content-Type': 'text/html'}
+        headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
-
 
 class Forbidden(web.webapi.HTTPError):
     """`403 Forbidden` error."""
     def __init__(self, message="forbidden"):
         self.message = message
         status = "403 Forbidden"
-        headers = {'Content-Type': 'text/html'}
+        headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
-
 
 class Conflict(web.webapi.HTTPError):
     """`409 Conflict` error."""
     def __init__(self, message="conflict"):
         self.message = message
         status = "409 Conflict"
-        headers = {'Content-Type': 'text/html'}
+        headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
-
 
 class NotAcceptable(web.webapi.HTTPError):
     """`406 Not Acceptable` error."""
     def __init__(self, message="not acceptable"):
         self.message = message
         status = "406 Not Acceptable"
-        headers = {'Content-Type': 'text/html'}
+        headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
 
 class NotImplemented(web.webapi.HTTPError):
@@ -106,9 +102,8 @@ class NotImplemented(web.webapi.HTTPError):
     def __init__(self, message="not implemented"):
         self.message = message
         status = "501 Not Implemented"
-        headers = {'Content-Type': 'text/html'}
+        headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
-
 
 # The folowing helpers are for managing exceptions and transforming them into http errors:
 
@@ -125,7 +120,6 @@ class exceptionManager(object):
         if not self.raise_all and exc_type in self.exceptions:
             return not self.handle(exc_type, exc_value, traceback)
 
-
 class exceptionsToHTTPError(exceptionManager):
     def __init__(self, message=None, exceptions=None, **kwargs):
         if message != None:
@@ -138,12 +132,11 @@ class exceptionsToHTTPError(exceptionManager):
         raise self.HTTPError(message=msg)
 
 class nargString(list):
-    """
-    This object only implements format, which it redirects to one
+    """This object only implements format, which it redirects to one
     of the strings given to its __init__ according to how many
     arguments are given to format.
-    """
 
+    """
     def __init__(self, *args):
         list.__init__(self, args)
 
@@ -152,7 +145,6 @@ class nargString(list):
             raise TypeError("To many arguments for string formatting.")
         return self[len(args) + len(kwargs)].format(*args, **kwargs)
 
-
 class mightFailLookup(exceptionsToHTTPError):
     def __init__(self, name=None, message=None, exceptions=None, **kwargs):
         if len(kwargs) == 1:
@@ -160,7 +152,6 @@ class mightFailLookup(exceptionsToHTTPError):
         if name:
             kwargs["name"] = name
         exceptionsToHTTPError.__init__(self, message, exceptions, **kwargs)
-
 
 class mightNotFound(mightFailLookup):
     exceptions = (KeyError, IndexError)
@@ -194,12 +185,13 @@ class URLMap(object):
 
     *args defines the path to be used. See help(URLMap.__call__) for
     further information.
-    """
 
+    """
     def __init__(self, var="/([^/]+)", endvar="/((?:[^.^/]+\.?(?=.*\..*[^/]$))*[^.^/]+)"):
         """Instanciates a URLMap object.
         The argument var is used instead of () when it is passed to the
         mapper. It should be a regex defining the default 'variable' component.
+
         """
         self.map = []
         self.var = var
@@ -213,8 +205,8 @@ class URLMap(object):
         a list then a regex is generated to allow for any of the values in the
         list. Else the value is used. The final values of the components are
         always separated by a "/" in the final path.
-        """
 
+        """
         last_is_var = False
 
         components = []
@@ -234,7 +226,6 @@ class URLMap(object):
             else:
                 components.append("/%s" % arg)
 
-
         # format = kwargs.get("format", True)
         # if format:
         #     components.append(format if isinstance(format, basestring) else "(?:(\.[^/^.]+)?|/$)")
@@ -249,6 +240,7 @@ class URLMap(object):
     def __getattr__(self, name):
         """Maps all attributes to a wrapper function calling self(name, *args, **kwargs),
         see help(URLMap.__call__).
+
         """
         def wrapper(*args, **kwargs):
             return self(name, *args, **kwargs)
@@ -259,6 +251,7 @@ class URLMap(object):
         Also cleans that list because it should only be called once
         anyway, if you don't want it to be cleared you can simply
         use iter(self.map).
+
         """
         map = self.map
         self.map = []
@@ -276,15 +269,14 @@ def default_renderer(format, authorized, content, name_hint):
         url = web.ctx.path + web.ctx.query
         if url.endswith(".html"):
             url = url[:-5]
-        urls = [(x, "%s.%s" % (url, x)) for x in authorized if x != 'html']
-        templates = os.path.join(os.path.dirname(__file__), 'templates/')
+        urls = [(x, "%s.%s" % (url, x)) for x in authorized if x != "html"]
+        templates = os.path.join(os.path.dirname(__file__), "templates/")
         render = web.template.render(templates)
         return render.response(web.ctx.home, web.ctx.path.split("/"), urls, pyhtml.dumps(content, obj_name=name_hint, indent=4))
     elif format == "json":
         return json.dumps(content)
     else:
         return str(content)
-
 
 class HTTPCompatible(object):
     """Decorator factory used to transform the output of a backend function
@@ -293,8 +285,8 @@ class HTTPCompatible(object):
     Renders the ouput according to a renderer function.
     Sets correct Content-Type according to the format.
     Maps exceptions to coresponding HTTP error codes.
-    """
 
+    """
     return_logs = False
 
     known_mimes = {
@@ -326,8 +318,8 @@ class HTTPCompatible(object):
 
         name_hint is used if the output format requires the outer-most level to have a name.
         If it set to None it will be expected the return is a one element dict.
-        """
 
+        """
         self.default = default
         self.renderer = renderer
 
@@ -353,8 +345,8 @@ class HTTPCompatible(object):
     def __call__(self, f):
         """Returns a wrapper around f in order to make its return value suitable
         for the web.
-        """
 
+        """
         if self.render == None:
             # We must guess if we want to render or not.
             self.render = f.__name__ in ["GET"]
@@ -450,40 +442,39 @@ class HTTPCompatible(object):
         self.original_function = f
         return wrapper
 
-
 def get_data(name=None, mandatory=[], authorized=[], forbidden=[]):
     data = web.data()
 
     if not data:
-        raise web.badrequest('You must suply some data. (mandatory: %s, authorized: %s)' % (mandatory, authorized))
+        raise web.badrequest("You must suply some data. (mandatory: %s, authorized: %s)" % (mandatory, authorized))
 
-    if not 'CONTENT_TYPE' in web.ctx.env:
-        raise web.badrequest('You must specify a Content-Type.')
+    if not "CONTENT_TYPE" in web.ctx.env:
+        raise web.badrequest("You must specify a Content-Type.")
 
-    ctype = web.ctx.env.get('CONTENT_TYPE')
+    ctype = web.ctx.env.get("CONTENT_TYPE")
 
     try:
-        if 'text/xml' in ctype or  'application/xml' in ctype:
+        if "text/xml" in ctype or  "application/xml" in ctype:
             data, dname = pyxml.loads(data, retname=True)
-            print "received '%s'" % dname
+            print "received \"%s\"" % dname
             print data
             if name and dname != name: data = None
-        elif 'application/json' in ctype:
+        elif "application/json" in ctype:
             data = json.loads(data)
             if name: data = data.get(name, None)
         else:
-            raise web.badrequest('Content-type \'%s\' is not allowed.' % ctype)
+            raise web.badrequest("Content-type \"%s\" is not allowed." % ctype)
     except (AttributeError, ValueError):
-        raise web.badrequest('Could not decode input data (%s).' % data)
+        raise web.badrequest("Could not decode input data (%s)." % data)
 
     if name and data == None:
-        raise web.badrequest('The object you are sending does not contain a \'%s\' entry.' % name)
+        raise web.badrequest("The object you are sending does not contain a \"%s\" entry." % name)
 
     if not all(x in data for x in mandatory):
-        raise web.badrequest('The following elements are missing, %s' % [x for x in mandatory if x not in data])
+        raise web.badrequest("The following elements are missing, \"%s\"" % [x for x in mandatory if x not in data])
     if any(x in data for x in forbidden):
-        raise web.badrequest('You are not allowed to send any of %s' % [x for x in forbidden if x in data])
+        raise web.badrequest("You are not allowed to send any of \"%s\"" % [x for x in forbidden if x in data])
     if authorized and any(x not in authorized for x in data):
-        raise web.badrequest('You are not allowed to send any of %s' % ([x for x in data if x not in authorized]))
+        raise web.badrequest("You are not allowed to send any of \"%s\"" % ([x for x in data if x not in authorized]))
 
     return data

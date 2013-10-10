@@ -24,6 +24,11 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+"""
+    XML interface of the REST API.
+
+"""
+
 import xml.etree.ElementTree as etree
 from xml.etree.ElementTree import Element
 from xml.sax.saxutils import escape
@@ -85,6 +90,7 @@ def default_xml_dict_mapper(obj_name, key_name="key"):
     """Maps to xml_dict and tries to deduce the entry naming from obj_name.
     If obj_name is plural then entries's tag will the singular and a key_name
     attribute will hold the key, otherwises the tag will be the key.
+
     """
     singular_name = singular(obj_name)
     if singular_name != obj_name:
@@ -95,6 +101,7 @@ def default_xml_dict_mapper(obj_name, key_name="key"):
 def default_xml_list_mapper(obj_name, entry_name="entry"):
     """Always maps to xml_list but tries to name its entries after the
     singular of obj_name if possible. If not they are named after entry_name.
+
     """
     singular_name = singular(obj_name)
     if singular_name != obj_name:
@@ -116,6 +123,7 @@ def default_xml_mapper(obj, obj_name,
 
     Otherwise the name is checked for known special cases such as "href",
     and otherwise it is assumed to be a string.
+
     """
     if obj == None:
         return None, None
@@ -146,8 +154,8 @@ def xml(obj, obj_name=None, parent=None,
     appends the element that would normaly be returned to the parent and
     returns the parent. If a new element is returned it's tag is set to
     obj_name. The mapping is done according to the xxx_mappers.
-    """
 
+    """
     # Findout the object's name.
     if obj_name == None:
         obj_name = parent.tag if parent != None else "object"
@@ -177,7 +185,9 @@ def xml_string(parent, obj, _=None, xml_mapper=default_xml_mapper,
 def xml_dict(parent, obj, hint=None, xml_mapper=default_xml_mapper,
              dict_mapper=default_xml_dict_mapper, list_mapper=default_xml_list_mapper):
     """Adds obj to parent as if it is a dictionary.
+
     The entries are of the form: <key>value</key> or <hint[0] hint[1]=key>value</hint[0]>
+
     """
     for k, v in obj.iteritems():
         if hint:
@@ -190,7 +200,9 @@ def xml_dict(parent, obj, hint=None, xml_mapper=default_xml_mapper,
 def xml_list(parent, obj, hint, xml_mapper=default_xml_mapper,
              dict_mapper=default_xml_dict_mapper, list_mapper=default_xml_list_mapper):
     """Adds obj to parent as if it is a list.
+
     The entries are of the form: <hint>value</hint>
+
     """
     for v in obj:
         child = etree.Element(tag=hint, attrib={})
@@ -215,14 +227,13 @@ def obj(xml):
     Otherwise if all the tags of the children are unique then it is also considered
     a dictionary but mapping the tags and the conntents.
     If none of the above the object is considered to be a list.
+
     """
-
     def trans(tag):
-        """
-        This function is pure bullshit.
+        """This function is pure bullshit.
         Stupid ugly hack to acomodate geoserver/mra.
-        """
 
+        """
         if tag.startswith("{") and tag.endswith("}link"):
             return "href"
         if tag == "published":
@@ -277,6 +288,7 @@ def loads(s, retname=False, *args, **kwargs):
 def load(fp, retname=False, *args, **kwargs):
     """Returns an object coresponding to what is described in the xml
     read from the file-like object fp.
+    
     """
     try:
         xml = etree.parse(fp)

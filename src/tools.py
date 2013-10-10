@@ -24,14 +24,16 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+"""
+    Miscellaneous functions.
+
+"""
+
 import os
 import yaml
 import sys
-
 import pyxml
-
 import webapp
-
 import xml.etree.ElementTree as etree
 from osgeo import osr
 
@@ -43,15 +45,15 @@ def assert_is_empty(generator, tname, iname):
     except StopIteration:
         pass # Everything is ok.
     else:
-        raise webapp.Forbidden(message="Can't remove '%s' because it is an non-empty %s." % (iname, tname))
+        raise webapp.Forbidden(message="Can't remove \"%s\" because it is an non-empty %s." % (iname, tname))
 
 def href(url):
-    return pyxml.Entries({'href': url})
+    return pyxml.Entries({"href": url})
 
 def safe_path_join(root, *args):
     full_path = os.path.realpath(os.path.join(root, *args))
     if not full_path.startswith(os.path.realpath(root)):
-        raise webapp.Forbidden(message="path '%s' outside root directory." % (args))
+        raise webapp.Forbidden(message="Path \"%s\" outside root directory." % (args))
     return full_path
 
 def is_hidden(path):
@@ -60,24 +62,29 @@ def is_hidden(path):
     return os.path.basename(path).startswith(".")
 
 def wkt_to_proj4(wkt):
+    """Return Proj4 definition from WKT definition."""
+
     srs = osr.SpatialReference()
     srs.ImportFromWkt(wkt)
     return srs.ExportToProj4()
 
 def proj4_to_wkt(proj4):
+    """Return WKT definition from Proj4 definition."""
+
     srs = osr.SpatialReference()
     srs.ImportFromProj4(proj4)
     return srs.ExportToWkt()
 
 def wkt_to_authority(wkt):
+    """Return authority name and authority code from WKT definition."""
+
     srs = osr.SpatialReference()
     srs.ImportFromWkt(wkt)
 
-    # Are there really no other with osgeo? Oo
-
-    if srs.GetAuthorityCode('PROJCS') != None:
-        return srs.GetAuthorityName('PROJCS'), srs.GetAuthorityCode('PROJCS')
-    elif srs.GetAuthorityCode('GEOGCS') != None :
-        return srs.GetAuthorityName('GEOGCS'), srs.GetAuthorityCode('GEOGCS')
+    # Are there really no other way with osgeo?
+    if srs.GetAuthorityCode("PROJCS") != None:
+        return srs.GetAuthorityName("PROJCS"), srs.GetAuthorityCode("PROJCS")
+    elif srs.GetAuthorityCode("GEOGCS") != None :
+        return srs.GetAuthorityName("GEOGCS"), srs.GetAuthorityCode("GEOGCS")
     else:
-        return "Unknown", "Unknown"
+        return "Unknown", "Unknown" # :s it could be improved... (TODO)

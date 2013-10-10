@@ -24,6 +24,11 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+"""
+    Module for managing add-ons (experimental).
+
+"""
+
 import sys
 import os.path
 import logging
@@ -47,9 +52,9 @@ class ExtensionManager(object):
         try:
             self.load_plugins(pkg)
         except ImportError:
-            logging.error("Could not load plugin package '%s' from %s" % (pkg, path))
+            logging.error("Could not load plugin package \"%s\" from %s" % (pkg, path))
         else:
-            logging.info("Loaded plugin package '%s' from %s" % (pkg, path))
+            logging.info("Loaded plugin package \"%s\" from %s" % (pkg, path))
         sys.path.remove(path)
 
     def extend(self, name, *args, **kwargs):

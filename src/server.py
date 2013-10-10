@@ -24,31 +24,27 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+"""
+    URL mapping infrastructure and HTTP methods used by the REST API.
+
+    MRA is following the model: <container> --- <element>
+
+"""
+
 import os.path
-
 import sys
-
 import web
 import json
 import urlparse
-
-import mralogs
 import logging
-
+import mralogs
 from mra import MRA
-
-
 import webapp
 from webapp import HTTPCompatible, urlmap, get_data
-
 import tools
 from tools import href, assert_is_empty
-
 from pyxml import Entries
-
-
 from extensions import plugins
-
 
 # Some helper functions first.
 def get_workspace(ws_name):
@@ -67,10 +63,16 @@ class index(object):
             "layergroups": href("layergroups/"),
             }
 
-
 class workspaces(object):
+    """Workspaces container.
+
+    See 'workspace' class documentation for definition of a 'workspace'.
+
+    """
     @HTTPCompatible()
     def GET(self, format, *args, **kwargs):
+        """List all workspaces."""
+
         return {"workspaces": [{
                     "name": ws_name,
                     "href": "%s/workspaces/%s.%s" % (web.ctx.home, ws_name, format)
@@ -79,6 +81,8 @@ class workspaces(object):
 
     @HTTPCompatible()
     def POST(self, format):
+        """Create a new workspace."""
+
         data = get_data(name="workspace", mandatory=["name"], authorized=["name"])
         ws_name = data.pop("name")
 
@@ -87,10 +91,24 @@ class workspaces(object):
 
         webapp.Created("%s/workspaces/%s.%s" % (web.ctx.home, ws_name, format))
 
-
 class workspace(object):
+    """A workspace is a grouping of data stores and coverage stores.
+    
+    In fact, a workspace is assimilated to one mapfile (<workspace_name>.ws.map) 
+    which contains some unactivated layers. These layers allows to configure 
+    connections to data (data store or coverage store) then data 
+    itself (featuretype for vector type or coverage for raster type).
+
+    These layers should not be published as OGC service as such. 
+    However, in the near future (TODO), it should be possible to publish 
+    a workspace as permitted GeoServer.
+    And this workspace should be identified as a usual MapFile.
+
+    """
     @HTTPCompatible()
     def GET(self, ws_name, format):
+        """Return workspace <ws>."""
+
         ws = get_workspace(ws_name)
         return {"workspace": ({
                     "name": ws.name,
@@ -104,8 +122,15 @@ class workspace(object):
 
 
 class datastores(object):
+    """Data stores container.
+
+    See 'datastore' class documentation for definition of a 'datastore'.
+
+    """
     @HTTPCompatible()
     def GET(self, ws_name, format):
+        """List all data stores in workspace <ws>."""
+
         ws = get_workspace(ws_name)
         return {"dataStores": [{
                     "name": ds_name,
@@ -116,8 +141,9 @@ class datastores(object):
 
     @HTTPCompatible()
     def POST(self, ws_name, format):
-        ws = get_workspace(ws_name)
+        """Create a new data store."""
 
+        ws = get_workspace(ws_name)
 
         data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         ds_name = data.pop("name")
@@ -132,8 +158,16 @@ class datastores(object):
 
 
 class datastore(object):
+    """A data store is a source of spatial data that is vector based.
+
+    A data store is a connection to a data source as implied by OGR library.
+    It could be a shapefile, a PostGIS database or any other data type supported by OGR.
+
+    """
     @HTTPCompatible()
     def GET(self, ws_name, ds_name, format):
+        """Return data store <ds>."""
+
         ws = get_workspace(ws_name)
 
         with webapp.mightNotFound("dataStore", workspace=ws_name):
@@ -158,6 +192,8 @@ class datastore(object):
 
     @HTTPCompatible()
     def PUT(self, ws_name, ds_name, format):
+        """Modify data store <ds>."""
+
         ws = get_workspace(ws_name)
 
         data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
@@ -171,6 +207,8 @@ class datastore(object):
 
     @HTTPCompatible()
     def DELETE(self, ws_name, ds_name, format):
+        """Delete data store <ds>."""
+
         ws = get_workspace(ws_name)
 
         # TODO: check, this is not consistent between ds/cs.
@@ -183,10 +221,16 @@ class datastore(object):
 
 
 class featuretypes(object):
+    """Feature types container.
+
+    See 'featuretype' class documentation for definition of a 'featuretype'.
+
+    """
     @HTTPCompatible()
     def GET(self, ws_name, ds_name, format):
-        ws = get_workspace(ws_name)
+        """List all feature types in selected data store <ds>."""
 
+        ws = get_workspace(ws_name)
         return {"featureTypes": [{
                     "name": ft.name,
                     "href": "%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
@@ -196,8 +240,11 @@ class featuretypes(object):
 
     @HTTPCompatible()
     def POST(self, ws_name, ds_name, format):
-        ws = get_workspace(ws_name)
+        """Create a new feature type. It create the associated layer by defaut.
+        This layer is added in the mapfile: <layer.map>
 
+        """
+        ws = get_workspace(ws_name)
         data = get_data(name="featureType",
                         mandatory=["name"],
                         authorized=["name", "title", "abstract"])
@@ -209,11 +256,8 @@ class featuretypes(object):
         ws.save()
 
         # Then creates the associated layer by default:
-
         model = ws.get_featuretypemodel(ds_name, data["name"])
-
         mf = mra.get_available()
-
         with webapp.mightConflict():
             mf.create_layer(model, data["name"], True)
         mf.save()
@@ -223,8 +267,15 @@ class featuretypes(object):
 
 
 class featuretype(object):
+    """A feature type is a data set that originates from a data store.
+    
+    A feature type is considered as a layer under MapServer which is still unactivated.
+
+    """
     @HTTPCompatible()
     def GET(self, ws_name, ds_name, ft_name, format):
+        """Return feature type <ft>."""
+
         ws = get_workspace(ws_name)
 
         ds = ws.get_datastore(ds_name)
@@ -283,6 +334,8 @@ class featuretype(object):
 
     @HTTPCompatible()
     def PUT(self, ws_name, ds_name, ft_name, format):
+        """Modify feature type <ft>."""
+
         ws = get_workspace(ws_name)
 
         data = get_data(name="featureType", mandatory=["name"], authorized=["name", "title", "abstract"])
@@ -297,6 +350,8 @@ class featuretype(object):
 
     @HTTPCompatible()
     def DELETE(self, ws_name, ds_name, ft_name, format):
+        """Delete feature type <ft>."""
+
         ws = get_workspace(ws_name)
 
         # We need to check if there are any layers using this.
@@ -309,10 +364,16 @@ class featuretype(object):
 
 
 class coveragestores(object):
+    """Coverage stores container.
+
+    See 'coveragestore' class documentation for definition of a 'coveragestore'.
+
+    """
     @HTTPCompatible()
     def GET(self, ws_name, format):
-        ws = get_workspace(ws_name)
+        """List all coverage stores in workspace."""
 
+        ws = get_workspace(ws_name)
         return {"coverageStores": [{
                     "name": cs_name,
                     "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
@@ -322,8 +383,9 @@ class coveragestores(object):
 
     @HTTPCompatible()
     def POST(self, ws_name, format):
-        ws = get_workspace(ws_name)
+        """Create new coverage store.""" 
 
+        ws = get_workspace(ws_name)
         data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         cs_name = data.pop("name")
 
@@ -331,15 +393,28 @@ class coveragestores(object):
             ws.create_coveragestore(cs_name, data)
         ws.save()
 
+        # Then creates the associated layer by default:
+        # model = ws.get_coveragetypemodel(cs_name, data["name"])
+        # mf = mra.get_available()
+        # with webapp.mightConflict():
+        #     mf.create_layer(model, data["name"], True)
+        # mf.save()
+
         webapp.Created("%s/workspaces/%s/coveragestores/%s.%s" % (
                 web.ctx.home, ws_name, cs_name, format))
 
 
 class coveragestore(object):
+    """A coverage store is a source of spatial data that is raster based.
+
+    A coverage store is a connection to a raster data source as implied by GDAL library.
+
+    """
     @HTTPCompatible()
     def GET(self, ws_name, cs_name, format):
-        ws = get_workspace(ws_name)
+        """Return coverage store <cs>."""
 
+        ws = get_workspace(ws_name)
         with webapp.mightNotFound("coverageStore", workspace=ws_name):
             info = ws.get_coveragestore_info(cs_name)
         connectionParameters = info.get("connectionParameters", {})
@@ -367,8 +442,9 @@ class coveragestore(object):
 
     @HTTPCompatible()
     def PUT(self, ws_name, cs_name, format):
+        """Modify coverage store <ds>."""
+        
         ws = get_workspace(ws_name)
-
         data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
         if cs_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a coverage store.")
@@ -379,8 +455,9 @@ class coveragestore(object):
 
     @HTTPCompatible()
     def DELETE(self, ws_name, cs_name, format):
-        ws = get_workspace(ws_name)
+        """Delete coverage store <ds>."""
 
+        ws = get_workspace(ws_name)
         # TODO: check, this is not consistent between ds/cs.
         # We need to check if this datastore is empty.
         assert_is_empty(ws.iter_coverages(cs_name=cs_name), "coveragestore", ds_name)
@@ -391,10 +468,16 @@ class coveragestore(object):
 
 
 class coverages(object):
+    """Coverages container.
+
+    See 'coverage' class documentation for definition of a 'coverage'.
+
+    """
     @HTTPCompatible()
     def GET(self, ws_name, cs_name, format):
-        ws = get_workspace(ws_name)
+        """List all coverages in selected coverages store <cs>."""
 
+        ws = get_workspace(ws_name)
         return {"coverages": [{
                     "name": c.name,
                     "href": "%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
@@ -404,10 +487,10 @@ class coverages(object):
 
     @HTTPCompatible()
     def POST(self, ws_name, cs_name, format):
+        """Create a new coverage."""
+
         ws = get_workspace(ws_name)
-
         data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
-
         with webapp.mightConflict("coverage", coveragestore=cs_name):
             with webapp.mightNotFound("coverage", coveragestore=cs_name):
                 ws.create_coveragemodel(data["name"], cs_name, data)
@@ -418,13 +501,18 @@ class coverages(object):
 
 
 class coverage(object):
+    """A coverage is a raster based data set that originates from a coverage store.
+
+    A coverage is considered as a layer under MapServer which is still unactivated.
+
+    """
     @HTTPCompatible()
     def GET(self, ws_name, cs_name, c_name, format):
-        ws = get_workspace(ws_name)
+        """Return coverage <c>."""
 
+        ws = get_workspace(ws_name)
         # with webapp.mightNotFound("coveragestore", workspace=ws_name):
         #     cs = ws.get_coveragestore(cs_name)
-
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
             c = ws.get_coveragemodel(c_name, cs_name)
 
@@ -489,6 +577,8 @@ class coverage(object):
 
     @HTTPCompatible()
     def PUT(self, ws_name, cs_name, c_name, format):
+        """Modify coverage <c>."""
+        
         ws = get_workspace(ws_name)
 
         data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
@@ -504,8 +594,9 @@ class coverage(object):
 
     @HTTPCompatible()
     def DELETE(self, ws_name, cs_name, c_name, format):
-        ws = get_workspace(ws_name)
+        """Delete coverage <c>."""
 
+        ws = get_workspace(ws_name)
         # We need to check if there are any layers using this.
         assert_is_empty(ws.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name,
                                             "type":"coverage"}), "coverage", ft_name)
@@ -516,9 +607,11 @@ class coverage(object):
 
 
 class files(object):
+    """Uploads a file from a local source. The body of the request is the file itself."""
 
     @HTTPCompatible(allow_all=True)
     def PUT(self, ws_name, st_type, st_name, f_type, format):
+
         import zipfile
 
         # TODO: According to geoserv's examples we might have to handle
@@ -585,8 +678,12 @@ class files(object):
 
 
 class styles(object):
+    """SLD styles container."""
+
     @HTTPCompatible()
     def GET(self, format):
+        """List all SLD styles."""
+
         return {"styles": [{
                     "name": s_name,
                     "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format)
@@ -595,6 +692,10 @@ class styles(object):
 
     @HTTPCompatible()
     def POST(self, format):
+        """Create a new SLD style. Add the 'name' parameter in order to specify 
+        the name to be given to the new style.
+
+        """
         params = web.input(name=None)
         name = params.name
         if name == None:
@@ -607,8 +708,19 @@ class styles(object):
 
 
 class style(object):
+    """A style describes how a resource (a feature type or a coverage) should be 
+    symbolized or rendered by a Web Map Service.
+    
+    Styles are specified with SLD and translated into the mapfile (with CLASS and
+    STYLE blocs) to be applied.
+    An extension may be considered to manage all style possibilities offered by MapServer.
+    This should be made with the module 'extensions.py'.
+
+    """
     @HTTPCompatible(authorize=["sld"])
     def GET(self, s_name, format):
+        """Return style <s>."""
+
         with webapp.mightNotFound():
             style = mra.get_style(s_name)
 
@@ -624,6 +736,8 @@ class style(object):
 
     @HTTPCompatible()
     def PUT(self, s_name, format):
+        """Modify style <s>."""
+
         #TODO: Also update layers using this style.
         with webapp.mightNotFound():
             mra.delete_style(s_name)
@@ -632,14 +746,20 @@ class style(object):
 
     @HTTPCompatible()
     def DELETE(self, s_name, format):
+        """Delete style <s>."""
+        
         #TODO: Maybe check for layers using this style?
         with webapp.mightNotFound():
             mra.delete_style(s_name)
 
 
 class layers(object):
+    """Layers container."""
+
     @HTTPCompatible()
     def GET(self, format):
+        """List all layers."""
+
         mf = mra.get_available()
         return {"layers": [{
                     "name": layer.ms.name,
@@ -649,6 +769,8 @@ class layers(object):
 
     @HTTPCompatible()
     def POST(self, format):
+        """Create a new layers."""
+
         data = get_data(name="layer",
                         mandatory=["name", "resource"],
                         authorized=["name", "title", "abstract", "resource", "enabled", "defaultStyle"])
@@ -689,8 +811,15 @@ class layers(object):
 
 
 class layer(object):
+    """A layer is a published resource (feature type or coverage) from a MapFile.
+
+    All layers are added in one single MapFile which should be activate as OGC service.
+
+    """
     @HTTPCompatible()
     def GET(self, l_name, format):
+        """Return layer <l>."""
+
         mf = mra.get_available()
         with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
@@ -728,6 +857,8 @@ class layer(object):
 
     @HTTPCompatible()
     def PUT(self, l_name, format):
+        """Modify layer <l>."""
+
         mf = mra.get_available()
 
         data = get_data(name="layer", mandatory=[],
@@ -775,6 +906,8 @@ class layer(object):
 
     @HTTPCompatible()
     def DELETE(self, l_name, format):
+        """Delete layer <l>."""
+
         mf = mra.get_available()
         with webapp.mightNotFound():
             mf.delete_layer(l_name)
@@ -782,8 +915,12 @@ class layer(object):
 
 
 class layerstyles(object):
+    """Styles container associated to one layer."""
+
     @HTTPCompatible()
     def GET(self, l_name, format):
+        """Return all style from layer <l>."""
+
         mf = mra.get_available()
         with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
@@ -797,33 +934,13 @@ class layerstyles(object):
                     } for s_name in layer.iter_styles()],
                 }
 
-    # @HTTPCompatible()
-    # def POST(self, l_name, format):
-    #     data = get_data(name="style", mandatory=["resource"],
-    #                     authorized=["name", "title", "abstract", "resource"])
-
-    #     href = data["resource"]["href"]
-    #     try:
-    #         _, s_name = mra.href_parse(href, 2)
-    #     except ValueError:
-    #         raise webapp.NotFound(message="style '%s' was not found." % href)
-
-    #     with webapp.mightNotFound():
-    #         style = mra.get_style(s_name)
-
-    #     mf = mra.get_available()
-    #     with webapp.mightNotFound():
-    #         layer = mf.get_layer(l_name)
-
-    #     layer.add_style_sld(mf, s_name, style)
-    #     mf.save()
-
-    #     webapp.Created("%s/layers/%s/layerstyles/%s.%s" % (web.ctx.home, l_name, s_name, format))
-
-
 class layerstyle(object):
+    """Style associated to layer <l>."""
+
     @HTTPCompatible()
     def DELETE(self, l_name, s_name, format):
+        """Remove style <s> from layer <l>."""
+
         mf = mra.get_available()
         with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
@@ -833,6 +950,8 @@ class layerstyle(object):
 
 
 class layerfields(object):
+    """Attributes (Fields) container associated to layer <l>."""
+
     @HTTPCompatible()
     def GET(self, l_name, format):
         mf = mra.get_available()
@@ -847,8 +966,12 @@ class layerfields(object):
 
 
 class layergroups(object):
+    """Layergroups container."""
+
     @HTTPCompatible()
     def GET(self, format):
+        """List all layer groups."""
+
         mf = mra.get_available()
 
         return {"layerGroups" : [{
@@ -859,6 +982,8 @@ class layergroups(object):
 
     @HTTPCompatible()
     def POST(self, format):
+        """Create a new layer group."""
+
         mf = mra.get_available()
 
         data = get_data(name="layerGroup", mandatory=["name"], authorized=["name", "title", "abstract", "layers"])
@@ -876,9 +1001,14 @@ class layergroups(object):
 
 
 class layergroup(object):
+    """A layergroup is a grouping of layers and styles that can be accessed 
+    as a single layer in a WMS GetMap request.
 
+    """
     @HTTPCompatible()
     def GET(self, lg_name, format):
+        """Return layergroup <lg>."""
+
         mf = mra.get_available()
         with webapp.mightNotFound():
             lg = mf.get_layergroup(lg_name)
@@ -905,6 +1035,8 @@ class layergroup(object):
 
     @HTTPCompatible()
     def PUT(self, lg_name, format):
+        """Modify layergroup <lg>."""
+
         mf = mra.get_available()
 
         with webapp.mightNotFound():
@@ -925,6 +1057,7 @@ class layergroup(object):
 
     @HTTPCompatible()
     def DELETE(self, lg_name, format):
+        """Delete layergroup <lg>."""
 
         mf = mra.get_available()
         with webapp.mightNotFound():
@@ -1001,43 +1134,35 @@ class OWSSettings(object):
 
 # Index:
 urlmap(index, "")
-
 # Workspaces:
 urlmap(workspaces, "workspaces")
 urlmap(workspace, "workspaces", ())
-
 # Datastores:
 urlmap(datastores, "workspaces", (), "datastores")
 urlmap(datastore, "workspaces", (), "datastores", ())
 # Featuretypes:
 urlmap(featuretypes, "workspaces", (), "datastores", (), "featuretypes")
 urlmap(featuretype, "workspaces", (), "datastores", (), "featuretypes", ())
-
 # Coveragestores:
 urlmap(coveragestores, "workspaces", (), "coveragestores")
 urlmap(coveragestore, "workspaces", (), "coveragestores", ())
 # Coverages:
 urlmap(coverages, "workspaces", (), "coveragestores", (), "coverages")
 urlmap(coverage, "workspaces", (), "coveragestores", (), "coverages", ())
-
 # Files:
 urlmap(files, "workspaces", (), "(datastores|coveragestores)", (), "(file|url|external)")
-
 # Styles:
 urlmap(styles, "styles")
 urlmap(style, "styles", ())
-
 # Layers, layer styles and data fields:
 urlmap(layers, "layers")
 urlmap(layer, "layers", ())
 urlmap(layerstyles, "layers", (), "styles")
 urlmap(layerstyle, "layers", (), "styles", ())
 urlmap(layerfields, "layers", (), "fields")
-
 # Layergroups:
 urlmap(layergroups, "layergroups")
 urlmap(layergroup, "layergroups", ())
-
 # OGC Web Services:
 urlmap(OWSGlobalSettings, "services", "(wms|wfs|wcs)", "settings")
 urlmap(OWSSettings, "services", "(wms|wfs|wcs)", (), "settings")

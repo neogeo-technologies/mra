@@ -24,6 +24,14 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+"""
+    Wrapper for managing metadata of mapfiles.
+
+    MRA requires the use of its own metadata, which appear as "mra" in mapfiles.
+    This module is to simplify their use.
+
+"""
+
 import yaml
 import contextlib
 from mapscript import MapServerError
@@ -33,8 +41,8 @@ METADATA_NAME="mra"
 def get_metadata(obj, key, *args):
     """Returns Metadata for a mapObj or a layerObj.
     get_metadata(obj, key, [default]) -> value
-    """
 
+    """
     if len(args) > 1:
         return TypeError("get_metadata expected at most 3 arguments, got %d" % (2 + len(args)))
 
@@ -87,6 +95,7 @@ def del_metadata(obj, key):
 def metadata(obj, key, *args):
     """Context manager that exposes the metadata and saves it again.
     Warning: This is only usefull if the metadata is mutable!
+
     """
     metadata = get_metadata(obj, key, *args)
     yield metadata
@@ -100,16 +109,14 @@ def __get_mra(obj):
     try:
         metadata = yaml.load(text)
     except yaml.parser.ParserError:
-        raise IOError("File has corrupted MRA metadata for entry '%s'." % key)
+        raise IOError("File has corrupted MRA metadata for entry \"%s\"." % key)
     return metadata
 
 def __save_mra(obj, mra_metadata):
     set_metadata(obj, METADATA_NAME, yaml.safe_dump(mra_metadata))
 
 def get_mra_metadata(obj, key, *args):
-    """
-    get_metadata(obj, key, [default]) -> value
-    """
+    """get_metadata(obj, key, [default]) -> value"""
 
     if len(args) > 1:
         return TypeError("get_mra_metadata expected at most 3 arguments, got %d" % (2 + len(args)))
@@ -150,8 +157,8 @@ def mra_metadata(obj, *args):
     Warning: This is only usefull if the metadata is mutable!
     If no key is provided the metadata dict itobj is exposed.
     Usage: with mra_metadata(obj, [key, [dflt, setdefault] ]) as metadata
-    """
 
+    """
     if not args:
         mra_metadata = __get_mra(obj)
         yield mra_metadata

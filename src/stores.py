@@ -24,6 +24,12 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+"""
+    A field implementation of georeferenced data (both vector and raster)
+    backed by the GDAL/OGR library.
+
+"""
+
 from osgeo import ogr, osr, gdal
 import mapscript
 import tools
@@ -57,7 +63,6 @@ class Extent(list):
             self[1] = min(self[1], y)
             self[3] = max(self[3], y)
 
-
 class Field(object):
     """A Field implementation backed by ogr."""
 
@@ -68,8 +73,7 @@ class Field(object):
         ogr.FieldDefn.GetFieldTypeName(ogr.FieldDefn(), 0)
 
     def __init__(self, backend, layer):
-        """backend should be a ogr.FieldDefn object which will be used to retrieve data.
-        """
+        """Backend should be a ogr.FieldDefn object which will be used to retrieve data."""
 
         self.backend = backend
         self.layer = layer
@@ -93,17 +97,17 @@ class Field(object):
     def get_type_gml(self):
         type = self.get_type()
         if type in (0, 1):
-            return 'Integer'
+            return "Integer"
         if type in (2, 3):
-            return 'Real'
+            return "Real"
         if type in (4, 5):
-            return 'Character'
+            return "Character"
         if type in (6, 7):
-            return 'Unknown' #:)
+            return "Unknown" #:)
         if type in (9, 10):
-            return 'Date'
+            return "Date"
         else:
-            return 'Unknown'
+            return "Unknown"
 
     def get_width(self):
         return self.backend.GetWidth()
@@ -111,13 +115,11 @@ class Field(object):
     def is_nullable(self):
         return self.nullable
 
-
 class Feature(object):
     """A Feature implementation backed by ogr."""
 
     def __init__(self, backend, layer):
-        """backend should be a ogr.Feature object which will be used to retrieve data.
-        """
+        """Backend should be a ogr.Feature object which will be used to retrieve data."""
 
         self.backend = backend
         self.layer
@@ -137,7 +139,6 @@ class Feature(object):
     def get_field(self):
         return Field(self.backend.GetFieldDefn(), layer)
 
-
 class Featuretype(object):
     """A featuretype implementation backed by ogr."""
 
@@ -146,8 +147,7 @@ class Featuretype(object):
         return ogr.GeometryTypeToName(i)
 
     def __init__(self, backend, ds, no_aditional_info=False):
-        """backend should be a ogr.Layer object which will be used to retrieve data.
-        """
+        """Backend should be a ogr.Layer object which will be used to retrieve data."""
 
         self.backend = backend
         self.ds = ds
@@ -155,7 +155,6 @@ class Featuretype(object):
         self.nullables = {}
         if not no_aditional_info:
             self.get_aditional_info()
-
 
     def __len__(self):
         return self.nbfeatures()
@@ -195,31 +194,31 @@ class Featuretype(object):
 
     def get_geomtype_mapscript(self):
         ogr_geometry = self.get_geomtype_name()
-        if ogr_geometry in ('POINT', 'MULTIPOINT'):
+        if ogr_geometry in ("POINT", "MULTIPOINT"):
             return mapscript.MS_LAYER_POINT
-        if ogr_geometry in ('LINESTRING','MULTILINESTRING'):
+        if ogr_geometry in ("LINESTRING", "MULTILINESTRING"):
             return mapscript.MS_LAYER_LINE
-        if ogr_geometry in ('MULTIPOLYGON','POLYGON'):
+        if ogr_geometry in ("MULTIPOLYGON", "POLYGON"):
             return mapscript.MS_LAYER_POLYGON
         else:
-            raise KeyError('Unrecognized geometry \'%s\'' % ogr_geometry)
+            raise KeyError("Unrecognized geometry: \"%s\"" % ogr_geometry)
 
     def get_geomtype_gml(self):
         ogr_geometry = self.get_geomtype_name()
-        if ogr_geometry == 'POINT':
+        if ogr_geometry == "POINT":
             return ogr_geometry.lower()
-        if ogr_geometry == 'MULTIPOINT':
+        if ogr_geometry == "MULTIPOINT":
             return ogr_geometry.lower()
-        if ogr_geometry == 'LINESTRING':
-            return 'line'
-        if ogr_geometry == 'MULTILINESTRING':
-            return 'multiline'
-        if ogr_geometry == 'POLYGON':
+        if ogr_geometry == "LINESTRING":
+            return "line"
+        if ogr_geometry == "MULTILINESTRING":
+            return "multiline"
+        if ogr_geometry == "POLYGON":
             return ogr_geometry.lower()
-        if ogr_geometry == 'MULTIPOLYGON':
+        if ogr_geometry == "MULTIPOLYGON":
             return ogr_geometry.lower()
         else:
-            raise KeyError('Unrecognized geometry \'%s\'' % ogr_geometry)
+            raise KeyError("Unrecognized geometry: \"%s\"" % ogr_geometry)
 
     def get_geomtype_wkb(self):
         return Featuretype.geomtype_name(self.get_geomtype())
@@ -248,8 +247,7 @@ class Featuretype(object):
     def get_latlon_extent(self):
         rect = mapscript.rectObj(*self.get_extent())
         res = rect.project(mapscript.projectionObj(self.get_proj4()),
-                           mapscript.projectionObj('+init=epsg:4326'))
-
+                           mapscript.projectionObj("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
         return Extent(rect.minx, rect.miny, rect.maxx, rect.maxy)
 
     def get_native(self):
@@ -276,28 +274,25 @@ class Featuretype(object):
 
     def iterfeatures(self, what=[], when={}):
         if what != [] or when != {}:
-            raise NotImplementedError("iterfeature doesn't support filters yet.")
+            raise NotImplementedError("Iterfeature doesn't support filters yet.")
         for i in xrange(self.backend.GetFeatureCount()):
             yield Feature(self.backend.GetFeature(i), self)
 
     def get_aditional_info(self):
-
-        tokens = self.get_name().split('.', 2)
+        tokens = self.get_name().split(".", 2)
         if len(tokens) < 2:
-            tokens.insert(0, 'public')
+            tokens.insert(0, "public")
         schema, table = tokens
 
         result = self.ds.backend.ExecuteSQL("SELECT column_name, is_nullable FROM INFORMATION_SCHEMA.COLUMNS "
                                          "WHERE table_schema = '%s' AND table_name = '%s'" %
                                          (schema, table))
-
         if not result: return
 
         for i in xrange(result.GetFeatureCount()):
             feature = result.GetFeature(i)
             name, nullable = feature.GetField(0), feature.GetField(1)
             self.nullables[name] = nullable
-
 
 class Datastore(object):
     """A datastore implementation backed by ogr."""
@@ -307,11 +302,12 @@ class Datastore(object):
         or something more complex used by gdal/ogr to access databases for example.
 
         The first argument to __init__ can also directly be a gdal/ogr object.
+
         """
         self.schema = schema
         self.backend = path if isinstance(path, ogr.DataSource) else ogr.Open(path)
         if self.backend == None:
-            raise ValueError("Datastore backend could not be opened using '%s'." % path)
+            raise ValueError("Datastore backend could not be opened using \"%s\"." % path)
 
     def __len__(self):
         return self.nblayers()
@@ -329,11 +325,11 @@ class Datastore(object):
     def __getitem__(self, key):
         if isinstance(key, int):
             item = self.backend.GetLayerByIndex(key)
-            if item == None: raise IndexError("No layer '%s'" % key)
+            if item == None: raise IndexError("No layer \"%s\"" % key)
         else:
             if self.schema:
                 key = "%s.%s" % (self.schema, key)
-            item = self.backend.GetLayerByName(key.encode('ascii', 'ignore'))
+            item = self.backend.GetLayerByName(key.encode("ascii", "ignore"))
             if item == None: raise KeyError(key)
         return Featuretype(item, self)
 
@@ -344,16 +340,13 @@ class Datastore(object):
         for i in xrange(self.backend.GetLayerCount()):
             yield Featuretype(self.backend.GetLayerByIndex(i), self)
 
-
 class Band(object):
     """A band immplementation backed by gdal."""
 
     def __init__(self, backend):
-        """backend should be a gdal.Band object which will be used to retrieve data.
-        """
+        """backend should be a gdal.Band object which will be used to retrieve data."""
 
         self.backend = backend
-
 
 class Coveragestore(object):
     """A coveragestore implementation backed by gdal."""
@@ -361,13 +354,13 @@ class Coveragestore(object):
     def __init__(self, path):
         """Path will be used to open the store, it can be a simple filesystem path
         or something more complex used by gdal/ogr to access databases for example.
-
+        
         The first argument to __init__ can also directly be a gdal/ogr object.
+        
         """
-
         self.backend = path if isinstance(path, gdal.Dataset) else gdal.Open(path)
         if self.backend == None:
-            raise ValueError("Coveragestore backend could not be opened. '%s'." % path)
+            raise ValueError("Coveragestore backend could not be opened. \"%s\"." % path)
 
     def __len__(self):
         return self.nbbands()
@@ -406,7 +399,7 @@ class Coveragestore(object):
     def get_latlon_extent(self):
         rect = mapscript.rectObj(*self.get_extent())
         res = rect.project(mapscript.projectionObj(self.get_proj4()),
-                           mapscript.projectionObj('+init=epsg:4326'))
+                           mapscript.projectionObj("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
 
         return Extent(rect.minx, rect.miny, rect.maxx, rect.maxy)
 
