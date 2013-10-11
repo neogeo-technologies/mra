@@ -52,12 +52,18 @@ import stores
 import metadata
 
 class MetadataMixin(object):
-
     def __getattr__(self, attr):
         if hasattr(self, "ms") and hasattr(metadata, attr):
             return functools.partial(getattr(metadata, attr), self.ms)
         raise AttributeError("\"%s\" object has no attribute \"%s\"." %
                              (type(self).__name__, attr))
+
+class Clazz(object):
+    def __init__(self, backend):
+        self.ms = backend
+
+    def index(self):
+        return self.index
 
 class Layer(MetadataMixin):
     def __init__(self, backend):
@@ -124,11 +130,13 @@ class Layer(MetadataMixin):
         return iter(self.get_fields())
 
     def iter_classes(self):
-        for i in xrange(self.ms.numclasses):
-            yield Class(self.ms.getClass(i))
+        for i in reversed(xrange(self.ms.numclasses)):
+            c = Clazz(self.ms.getClass(i))
+            c.index = i
+            yield c
 
     def get_styles(self):
-        return set(self.ms.getClass(i).group for i in xrange(self.ms.numclasses))
+        return set(self.ms.getClass(i).group for i in reversed(xrange(self.ms.numclasses)))
 
     def iter_styles(self):
         return iter(self.get_styles())
@@ -175,18 +183,16 @@ class Layer(MetadataMixin):
         mf.ms.removeLayer(ms_template_layer.index)
 
     def set_default_style(self, mf):
+        s_name = tools.get_dflt_sld_name(self.ms.type)
         if self.ms.type == mapscript.MS_LAYER_POINT:
             self.ms.tolerance = 8
             self.ms.toleranceunits = 6
-            s_name = "default_point"
         elif self.ms.type == mapscript.MS_LAYER_LINE:
             self.ms.tolerance = 8
             self.ms.toleranceunits = 6
-            s_name = "default_line"
         elif self.ms.type == mapscript.MS_LAYER_POLYGON:
             self.ms.tolerance = 0
             self.ms.toleranceunits = 6
-            s_name = "default_polygon"
         else:
             return
 
@@ -199,16 +205,14 @@ class Layer(MetadataMixin):
         self.ms.classgroup = s_name
 
     def remove_style(self, s_name):
-        for c_index in reversed(xrange(self.ms.numclasses)):
-            c = self.ms.getClass(c_index)
-            if c.group == s_name:
-                self.ms.removeClass(c_index)
-                break
-        else:
-            raise KeyError(s_name)
-
         if self.ms.classgroup == s_name:
-            self.ms.classgroup = None # Should never be 'None'
+            self.ms.classgroup = None
+
+        for c in self.iter_classes():
+            if c.ms.group == s_name:
+                self.ms.removeClass(c.index)
+            else:
+                pass
 
 class LayerGroup(object):
 

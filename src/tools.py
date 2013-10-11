@@ -61,6 +61,17 @@ def is_hidden(path):
     # MacOSX has at least four ways to hide files...
     return os.path.basename(path).startswith(".")
 
+def get_dflt_sld_name(type):
+    # TODO: Names should be changed...
+    if type == 0: # point
+        return "default_point"
+    elif type == 1: # line
+        return "default_line"
+    elif type == 2: # polygon
+        return "default_polygon"
+    else:
+        return None
+
 def wkt_to_proj4(wkt):
     """Return Proj4 definition from WKT definition."""
 

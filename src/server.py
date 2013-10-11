@@ -843,7 +843,7 @@ class layers(object):
 
             # Remove the automatic default style.
             for s_name in layer.iter_styles():
-                if s_name in ("default_polygon", "default_line", "default_point"):
+                if s_name == tools.get_dflt_sld_name(layer.ms.type):
                     layer.remove_style(s_name)
 
         mf.save()
@@ -955,7 +955,7 @@ class layer(object):
             
             # Remove the automatic default style.
             for s_name in layer.iter_styles():
-                if s_name in ("default_polygon", "default_line", "default_point"):
+                if s_name == tools.get_dflt_sld_name(layer.ms.type):
                     layer.remove_style(s_name)
 
         mf.save()
