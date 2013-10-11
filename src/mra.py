@@ -211,8 +211,6 @@ class Layer(MetadataMixin):
         for c in self.iter_classes():
             if c.ms.group == s_name:
                 self.ms.removeClass(c.index)
-            else:
-                pass
 
 class LayerGroup(object):
 
