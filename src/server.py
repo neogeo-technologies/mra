@@ -891,7 +891,7 @@ class layer(object):
                     "styles": [{ # TODO: Add attr class="linked-hash-set"
                             "name": s_name,
                             "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
-                            } for s_name in layer.iter_styles()],
+                            } for s_name in layer.iter_styles() if s_name != dflt_style],
                     "resource": { # TODO: Add attr class="featureType|coverage"
                         "name": layer.get_mra_metadata("name"),
                         "href": "%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
