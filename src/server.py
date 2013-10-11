@@ -27,7 +27,7 @@
 """
     URL mapping infrastructure and HTTP methods used by the REST API.
 
-    MRA is following the model: <container> --- <element>
+    MRA is following the model: <container> --- <element>.
 
 """
 
@@ -54,6 +54,9 @@ def get_workspace(ws_name):
 # Now the main classes that handle the REST API.
 
 class index(object):
+    """Index of the API (e.g. http://hostname/mra/)
+
+    """
     @HTTPCompatible()
     def GET(self, format):
         return {
@@ -66,6 +69,8 @@ class index(object):
 class workspaces(object):
     """Workspaces container.
 
+    http://hostname/mra/workspaces
+    
     See 'workspace' class documentation for definition of a 'workspace'.
 
     """
@@ -93,6 +98,8 @@ class workspaces(object):
 
 class workspace(object):
     """A workspace is a grouping of data stores and coverage stores.
+
+    http://hostname/mra/workspaces/<ws>
     
     In fact, a workspace is assimilated to one mapfile (<workspace_name>.ws.map) 
     which contains some unactivated layers. These layers allows to configure 
@@ -123,6 +130,8 @@ class workspace(object):
 
 class datastores(object):
     """Data stores container.
+
+    http://hostname/mra/workspaces/<ws>/datastores
 
     See 'datastore' class documentation for definition of a 'datastore'.
 
@@ -159,6 +168,8 @@ class datastores(object):
 
 class datastore(object):
     """A data store is a source of spatial data that is vector based.
+
+    http://hostname/mra/workspaces/<ws>/datastores/<ds>
 
     A data store is a connection to a data source as implied by OGR library.
     It could be a shapefile, a PostGIS database or any other data type supported by OGR.
@@ -223,6 +234,8 @@ class datastore(object):
 class featuretypes(object):
     """Feature types container.
 
+    http://hostname/mra/workspaces/<ws>/datastores/<ds>/featuretypes
+
     See 'featuretype' class documentation for definition of a 'featuretype'.
 
     """
@@ -268,6 +281,8 @@ class featuretypes(object):
 
 class featuretype(object):
     """A feature type is a data set that originates from a data store.
+
+    http://hostname/mra/workspaces/<ws>/datastores/<ds>/featuretypes/<ft>
     
     A feature type is considered as a layer under MapServer which is still unactivated.
 
@@ -366,6 +381,8 @@ class featuretype(object):
 class coveragestores(object):
     """Coverage stores container.
 
+    http://hostname/mra/workspaces/<ws>/coveragestores
+
     See 'coveragestore' class documentation for definition of a 'coveragestore'.
 
     """
@@ -406,6 +423,8 @@ class coveragestores(object):
 
 class coveragestore(object):
     """A coverage store is a source of spatial data that is raster based.
+
+    http://hostname/mra/workspaces/<ws>/coveragestores/<cs>
 
     A coverage store is a connection to a raster data source as implied by GDAL library.
 
@@ -470,6 +489,8 @@ class coveragestore(object):
 class coverages(object):
     """Coverages container.
 
+    http://hostname/mra/workspaces/<ws>/coveragestores/<cs>/coverage
+
     See 'coverage' class documentation for definition of a 'coverage'.
 
     """
@@ -502,6 +523,8 @@ class coverages(object):
 
 class coverage(object):
     """A coverage is a raster based data set that originates from a coverage store.
+
+    http://hostname/mra/workspaces/<ws>/coveragestores/<cs>/coverage/<c>
 
     A coverage is considered as a layer under MapServer which is still unactivated.
 
@@ -607,10 +630,15 @@ class coverage(object):
 
 
 class files(object):
-    """Uploads a file from a local source. The body of the request is the file itself."""
+    """
+    http://hostname/mra/workspaces/<ws>/datastores/<cs>/file.<extension>
+    
+    http://hostname/mra/workspaces/<ws>/coveragestores/<cs>/file.<extension>
 
+    """
     @HTTPCompatible(allow_all=True)
     def PUT(self, ws_name, st_type, st_name, f_type, format):
+        """Uploads a file from a local source. The body of the request is the file itself."""
 
         import zipfile
 
@@ -678,8 +706,11 @@ class files(object):
 
 
 class styles(object):
-    """SLD styles container."""
+    """SLD styles container.
 
+    http://hostname/mra/styles
+
+    """
     @HTTPCompatible()
     def GET(self, format):
         """List all SLD styles."""
@@ -710,6 +741,8 @@ class styles(object):
 class style(object):
     """A style describes how a resource (a feature type or a coverage) should be 
     symbolized or rendered by a Web Map Service.
+
+    http://hostname/mra/styles/<s>
     
     Styles are specified with SLD and translated into the mapfile (with CLASS and
     STYLE blocs) to be applied.
@@ -754,8 +787,11 @@ class style(object):
 
 
 class layers(object):
-    """Layers container."""
+    """Layers container.
 
+    http://hostname/mra/layers
+
+    """
     @HTTPCompatible()
     def GET(self, format):
         """List all layers."""
@@ -812,6 +848,8 @@ class layers(object):
 
 class layer(object):
     """A layer is a published resource (feature type or coverage) from a MapFile.
+
+    http://hostname/mra/layers/<l>
 
     All layers are added in one single MapFile which should be activate as OGC service.
 
@@ -915,8 +953,11 @@ class layer(object):
 
 
 class layerstyles(object):
-    """Styles container associated to one layer."""
+    """Styles container associated to one layer.
 
+    http://hostname/mra/layers/<l>/styles
+
+    """
     @HTTPCompatible()
     def GET(self, l_name, format):
         """Return all style from layer <l>."""
@@ -935,8 +976,11 @@ class layerstyles(object):
                 }
 
 class layerstyle(object):
-    """Style associated to layer <l>."""
+    """Style associated to layer <l>.
 
+    http://hostname/mra/layers/<l>/styles/<s>
+
+    """
     @HTTPCompatible()
     def DELETE(self, l_name, s_name, format):
         """Remove style <s> from layer <l>."""
@@ -950,8 +994,11 @@ class layerstyle(object):
 
 
 class layerfields(object):
-    """Attributes (Fields) container associated to layer <l>."""
+    """Attributes (Fields) container associated to layer <l>.
 
+    http://hostname/mra/layers/<l>/fields
+
+    """
     @HTTPCompatible()
     def GET(self, l_name, format):
         mf = mra.get_available()
@@ -966,8 +1013,11 @@ class layerfields(object):
 
 
 class layergroups(object):
-    """Layergroups container."""
+    """Layergroups container.
 
+    http://hostname/mra/layergroups
+
+    """
     @HTTPCompatible()
     def GET(self, format):
         """List all layer groups."""
@@ -1003,6 +1053,8 @@ class layergroups(object):
 class layergroup(object):
     """A layergroup is a grouping of layers and styles that can be accessed 
     as a single layer in a WMS GetMap request.
+
+    http://hostname/mra/layergroups/<lg>
 
     """
     @HTTPCompatible()
