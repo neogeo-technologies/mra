@@ -632,7 +632,7 @@ class coverage(object):
 class files(object):
     """
     http://hostname/mra/workspaces/<ws>/datastores/<cs>/file.<extension>
-    
+
     http://hostname/mra/workspaces/<ws>/coveragestores/<cs>/file.<extension>
 
     """
@@ -805,7 +805,7 @@ class layers(object):
 
     @HTTPCompatible()
     def POST(self, format):
-        """Create a new layers."""
+        """Create a new layer."""
 
         data = get_data(name="layer",
                         mandatory=["name", "resource"],
@@ -818,7 +818,7 @@ class layers(object):
         try:
             ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
         except ValueError:
-            raise webapp.NotFound(message="resource '%s' was not found." % href)
+            raise webapp.NotFound(message="resource \"%s\" was not found." % href)
 
         st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
 
@@ -840,6 +840,11 @@ class layers(object):
                 style = mra.get_style(s_name)
                 layer = mf.get_layer(l_name)
             layer.add_style_sld(mf, s_name, style)
+
+            # Remove the automatic default style.
+            for s_name in layer.iter_styles():
+                if s_name in ("default_polygon", "default_line", "default_point"):
+                    layer.remove_style(s_name)
 
         mf.save()
 
@@ -867,13 +872,21 @@ class layer(object):
             "coverage": ("coverage", "coveragestore")
             }[layer.get_mra_metadata("type")]
 
+        # Check CLASSGROUP
+        dflt_style = layer.ms.classgroup
+        if dflt_style == None:
+            # If is 'None': take the first style as would MapServer.
+            for s_name in layer.iter_styles():
+                dflt_style = s_name
+                break
+
         return {"layer" : {
                     "name": l_name,
                     "path": "/", # TODO
                     "type": layer.get_type_name(),
                     "defaultStyle": {
-                        "name": layer.ms.classgroup,
-                        "href": "%s/styles/%s.%s" % (web.ctx.home, layer.ms.classgroup, format),
+                        "name": dflt_style,
+                        "href": "%s/styles/%s.%s" % (web.ctx.home, dflt_style, format),
                         },
                     "styles": [{ # TODO: Add attr class="linked-hash-set"
                             "name": s_name,
@@ -939,6 +952,11 @@ class layer(object):
             with webapp.mightNotFound():
                 style = mra.get_style(s_name)
             layer.add_style_sld(mf, s_name, style)
+            
+            # Remove the automatic default style.
+            for s_name in layer.iter_styles():
+                if s_name in ("default_polygon", "default_line", "default_point"):
+                    layer.remove_style(s_name)
 
         mf.save()
 

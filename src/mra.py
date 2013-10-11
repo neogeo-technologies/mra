@@ -207,6 +207,9 @@ class Layer(MetadataMixin):
         else:
             raise KeyError(s_name)
 
+        if self.ms.classgroup == s_name:
+            self.ms.classgroup = None # Should never be 'None'
+
 class LayerGroup(object):
 
     def __init__(self, name, mapfile):
