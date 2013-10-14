@@ -76,9 +76,11 @@ class Layer(MetadataMixin):
         self.update_metadatas(metadata)
 
     def enable(self, enabled=True):
-        requests = ["GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic"]
         self.ms.status = mapscript.MS_ON if enabled else mapscript.MS_OFF
-        self.set_metadata("wms_enable_request", " ".join(("%s" if enabled else "!%s") % c for c in requests))
+
+        # TODO: later...
+        # requests = ["GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic"]
+        # self.set_metadata("wms_enable_request", " ".join(("%s" if enabled else "!%s") % c for c in requests))
 
     def get_type_name(self):
         return {
@@ -284,14 +286,15 @@ class Mapfile(MetadataMixin):
 
         if create:
             self.ms = mapscript.mapObj()
+            # and adding some default values...
+            self.ms.name = self.name
+            self.ms.setProjection("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+            self.ms.setExtent(-180,-90,180,90)
+            self.ms.units = mapscript.MS_DD
+            for ows in ("wms", "wfs", "wcs"):
+                self.set_metadata("%s_enable_request" % ows, "")
         else:
             self.ms = mapscript.mapObj(self.path)
-
-        # adding some default values...
-        self.ms.name = self.name
-        self.ms.setProjection("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-        self.ms.setExtent(-180,-90,180,90)
-        self.ms.units = mapscript.MS_DD
 
     def save(self, path=None):
         self.ms.save(path or self.path)
@@ -444,9 +447,9 @@ class FeatureTypeModel(LayerModel):
             connection += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
             self.ms.connection = connection
             self.ms.data = "%s FROM %s.%s" % (ds[ft_name].get_geometry_column(), cparam["schema"], ft_name)
-            self.set_metadata("ows_extent", "%s %s %s %s" %
-                (ft.get_extent().minX(), ft.get_extent().minY(),
-                ft.get_extent().maxX(), ft.get_extent().maxY()))
+            # self.set_metadata("ows_extent", "%s %s %s %s" %
+            #     (ft.get_extent().minX(), ft.get_extent().minY(),
+            #     ft.get_extent().maxX(), ft.get_extent().maxY()))
         #elif cpram["dbtype"] in ["shp", "shapefile"]:
         # TODO: clean up this fallback.
         else:
@@ -455,10 +458,10 @@ class FeatureTypeModel(LayerModel):
             self.ms.data = self.ws.mra.get_file_path(url.path)
 
         # Deactivate wms and wfs requests, because we are a virtual layer.
-        self.set_metadatas({
-            "wms_enable_request": "!GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic",
-            "wfs_enable_request": "!GetCapabilities !DescribeFeatureType !GetFeature",
-            })
+        # self.set_metadatas({
+        #     "wms_enable_request": "!GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic",
+        #     "wfs_enable_request": "!GetCapabilities !DescribeFeatureType !GetFeature",
+        #     })
 
         # Update mra metadata, and make sure the mandatory ones are left untouched.
         self.update_mra_metadatas(metadata)
@@ -492,9 +495,8 @@ class FeatureTypeModel(LayerModel):
                 "wfs_abstract": layer.get_metadata("wms_abstract"),
                 })
 
-        if enabled:
-            layer.set_metadata("wfs_enable_request",
-                               "GetCapabilities DescribeFeatureType GetFeature")
+        # if enabled:
+        #     layer.set_metadata("wfs_enable_request", "GetCapabilities DescribeFeatureType GetFeature")
 
         # Configure the layer based on information from the store.
         ds = ws.get_datastore(self.get_mra_metadata("storage"))
@@ -561,10 +563,10 @@ class CoverageModel(LayerModel):
         #    raise ValueError("Unhandled type \"%s\"." % cparam["dbtype"])
 
         # Deactivate wms and wcs requests, because we are a virtual layer.
-        self.set_metadatas({
-            "wms_enable_request": "!GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic",
-            "wcs_enable_request": "!GetCapabilities !DescribeCoverage !GetCoverage",
-            })
+        # self.set_metadatas({
+        #     "wms_enable_request": "!GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic",
+        #     "wcs_enable_request": "!GetCapabilities !DescribeCoverage !GetCoverage",
+        #     })
 
         # Update mra metadatas, and make sure the mandatory ones are left untouched.
         self.update_mra_metadatas(metadata)
@@ -601,8 +603,8 @@ class CoverageModel(LayerModel):
                 "wcs_description": layer.get_metadata("wms_abstract")
                 })
 
-        if enabled:
-            layer.set_metadata("wcs_enable_request", "GetCapabilities DescribeCoverage GetCoverage")
+        # if enabled:
+        #     layer.set_metadata("wcs_enable_request", "GetCapabilities DescribeCoverage GetCoverage")
 
         plugins.extend("post_configure_raster_layer", self, ws, layer)
 
