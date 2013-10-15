@@ -71,6 +71,7 @@ That way, your own configuration won't be discarded by a further update.
     * **resources**
 	* **styles**
     * **data**
+    * **fonts** and **fontset**
 
 * **mapserver**
 
