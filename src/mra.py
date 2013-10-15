@@ -877,6 +877,46 @@ class MRA(object):
     def pub_resource_path(self, path):
         return os.path.relpath(path, self.get_resource_path())
 
+    # Fonts:
+
+    def get_fontset_path(self, *args):
+        root = self.config["storage"].get("fontset",
+                    "/".join([self.get_resource_path("fonts"), "fonts.txt"]))
+        return self.get_resource_path(root, *args)
+
+    def list_fontset(self):
+        try:
+            return [line.split()[0] for line in open(self.get_fontset_path(), "r")]
+        except:
+            return []
+
+    def update_fontset(self):
+        fontset = open(self.get_fontset_path(), "w")
+        for font, path in self.list_fonts():
+            fontset.write("%s\t%s\n" % (font, path))
+        fontset.close
+
+    def get_font_path(self, *args):
+        root = self.config["storage"].get("fonts", self.get_resource_path("fonts"))
+        return self.get_resource_path(root, *args)
+
+    def create_font(self, name, data=None):
+        fp = self.mk_path(self.get_font_path(name))
+        with open(fp, "w") as f:
+            if data:
+                f.write(data)
+        return fp
+
+    def pub_font_path(self, path):
+        return os.path.relpath(path, self.get_font_path())
+
+    def list_fonts(self):
+        print self.get_font_path()
+        for (root, _, files) in os.walk(self.get_font_path()):
+            for f in files:
+                if f.endswith(".ttf") and not f.startswith("."):
+                    yield f[:-4], os.path.join(os.path.relpath(root, self.get_font_path()), f)
+
     # Styles:
 
     def get_style_path(self, *args):

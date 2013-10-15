@@ -12,6 +12,7 @@ storage:
 
     ## Folowing the same principle, the folowing two directories will
     ## default to resources/sub_directory_name
+    # fonts: ""
     # styles: ""
     # data: ""
 
