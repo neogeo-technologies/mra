@@ -98,6 +98,13 @@ class fonts(object):
 
         mra.update_fontset()
 
+        # Then updates (the) mapfile(s) only 
+        # if the fontset path is not specified.
+        # Should it be done here...
+        mf = mra.get_available()
+        if mf.ms.fontset.filename == None:
+            mf.ms.setFontSet(mra.get_fontset_path())
+            mf.save()
 
 class workspaces(object):
     """Workspaces container.
@@ -763,7 +770,7 @@ class styles(object):
         params = web.input(name=None)
         name = params.name
         if name == None:
-            raise webapp.BadRequest(message="no parameter 'name' given.")
+            raise webapp.BadRequest(message="no parameter \"name\" given.")
 
         data = web.data()
         mra.create_style(name, data)
@@ -962,7 +969,7 @@ class layer(object):
             try:
                 ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
             except ValueError:
-                raise webapp.NotFound(message="resource '%s' was not found." % href)
+                raise webapp.NotFound(message="resource \"%s\" was not found." % href)
 
             st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
 
@@ -974,7 +981,7 @@ class layer(object):
                     raise KeyError(r_type)
 
             if layer.get_mra_metadata("type") != r_type:
-                raise webapp.BadRequest("Can't change a '%s' layer into a '%s'."
+                raise webapp.BadRequest("Can't change a \"%s\" layer into a \"%s\"."
                                     % (layer.get_mra_metadata("type"), r_type))
 
             model.configure_layer(layer, l_enabled)
@@ -1196,7 +1203,8 @@ class OWSGlobalSettings(object):
         data = get_data(name=ows, mandatory=["enabled"], authorized=["enabled"])
         is_enabled = data.pop("enabled")
         # TODO: That would be cool to be able to control each operation...
-        values = {True: "*", "True": "*", "true": "*", False: "", "False": "", "false": ""}
+        values = {True: "*", "True": "*", "true": "*", 
+                  False: "", "False": "", "false": ""}
         if is_enabled not in values:
             raise KeyError("\"%s\" is not valid" % is_enabled)
         mf.set_metadata("%s_enable_request" % ows, values[is_enabled])
