@@ -274,7 +274,7 @@ def default_renderer(format, authorized, content, name_hint):
         render = web.template.render(templates)
         return render.response(web.ctx.home, web.ctx.path.split("/"), urls, pyhtml.dumps(content, obj_name=name_hint, indent=4))
     elif format == "json":
-        return json.dumps(content)
+        return json.dumps({name_hint:content})
     else:
         return str(content)
 
