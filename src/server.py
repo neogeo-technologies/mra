@@ -61,10 +61,10 @@ class index(object):
     @HTTPCompatible()
     def GET(self, format):
         return {
-            "workspaces": href("workspaces/"),
-            "styles": href("styles/"),
-            "layers": href("layers/"),
-            "layergroups": href("layergroups/"),
+            "workspaces": href("workspaces"),
+            "styles": href("styles"),
+            "layers": href("layers"),
+            "layergroups": href("layergroups"),
             "services/wms/settings": href("services/wms/settings"),
             "services/wcs/settings": href("services/wcs/settings"),
             "services/wfs/settings": href("services/wfs/settings"),
@@ -100,7 +100,7 @@ class fonts(object):
 
         # Then updates (the) mapfile(s) only 
         # if the fontset path is not specified.
-        # Should it be done here...
+        # Should it be done here ?...
         mf = mra.get_available()
         if mf.ms.fontset.filename == None:
             mf.ms.setFontSet(mra.get_fontset_path())
@@ -163,10 +163,8 @@ class workspace(object):
                         href("%s/workspaces/%s/datastores.%s" % (web.ctx.home, ws.name, format)),
                     "coverageStores":
                         href("%s/workspaces/%s/coveragestores.%s" % (web.ctx.home, ws.name, format)),
-                    "wmsStores": "", # TODO
                     })
                 }
-
 
 class datastores(object):
     """Data stores container.
@@ -205,7 +203,6 @@ class datastores(object):
         webapp.Created("%s/workspaces/%s/datastores/%s.%s" % (
                 web.ctx.home, ws_name, ds_name, format))
 
-
 class datastore(object):
     """A data store is a source of spatial data that is vector based.
 
@@ -227,8 +224,8 @@ class datastore(object):
 
         return {"dataStore": {
                     "name": info["name"],
-                    "enabled": True, # TODO
-                    "__default": False, # TODO
+                    "enabled": True, # Always enabled => TODO
+                    "__default": False, # Always disabled => TODO
                     "workspace": {
                         "name": ws.name,
                         "href": "%s/workspaces/%s.%s" % (
@@ -269,7 +266,6 @@ class datastore(object):
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             ws.delete_datastore(ds_name)
         ws.save()
-
 
 class featuretypes(object):
     """Feature types container.
@@ -318,7 +314,6 @@ class featuretypes(object):
         webapp.Created("%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
                 web.ctx.home, ws.name, ds_name, data["name"], format))
 
-
 class featuretype(object):
     """A feature type is a data set that originates from a data store.
 
@@ -347,10 +342,10 @@ class featuretype(object):
         return {"featureType": ({
                     "name": ft.name,
                     "nativeName": ft.name,
-                    "namespace": None, # TODO
+                    # "namespace": None, # TODO
                     "title": ft.get_mra_metadata("title", ft.name),
                     "abstract": ft.get_mra_metadata("abstract", None),
-                    "keywords": ft.get_mra_metadata("keywords", []),
+                    # "keywords": ft.get_mra_metadata("keywords", []),
                     "srs": "%s:%s" % (ft.get_authority()[0], ft.get_authority()[1]),
                     "nativeCRS": ft.get_wkt(),
                     "attributes": [{
@@ -361,6 +356,7 @@ class featuretype(object):
                             "binding": f.get_type_name(),
                             "length": f.get_width(),
                             } for f in dsft.iterfields()],
+                            # TODO Must contain the geometry attribut
                     "nativeBoundingBox": {
                         "minx": extent.minX(),
                         "miny": extent.minY(),
@@ -375,15 +371,16 @@ class featuretype(object):
                         "maxy": latlon_extent.maxY(),
                         "crs": "EPSG:4326",
                         },
-                    "projectionPolicy": None, # TODO
-                    "enabled": True, # TODO
+                    "projectionPolicy": "NONE", # See GeoServer API for more details...
+                                                # In MRA always keep native CRS. (TODO later)
+                    "enabled": True, # Always enabled => TODO
                     "store": { # TODO: add key: class="dataStore"
                         "name": ds_name,
                         "href": "%s/workspaces/%s/datastores/%s.%s" % (
                             web.ctx.home, ws_name, ds_name, format)
                         },
-                    "maxFeatures": 0, # TODO
-                    "numDecimals": 0, # TODO
+                    # "maxFeatures": None, # TODO
+                    # "numDecimals": None, # TODO
                     })
                 }
 
@@ -416,7 +413,6 @@ class featuretype(object):
         with webapp.mightNotFound("featureType", datastore=ds_name):
             ws.delete_featuretypemodel(ds_name, ft_name)
         ws.save()
-
 
 class coveragestores(object):
     """Coverage stores container.
@@ -460,7 +456,6 @@ class coveragestores(object):
         webapp.Created("%s/workspaces/%s/coveragestores/%s.%s" % (
                 web.ctx.home, ws_name, cs_name, format))
 
-
 class coveragestore(object):
     """A coverage store is a source of spatial data that is raster based.
 
@@ -480,9 +475,9 @@ class coveragestore(object):
 
         return {"coverageStore": {
                     "name": info["name"],
-                    "type": None, # TODO
-                    "enabled": True, # TODO
-                    "__default": False, # TODO
+                    # "type": None, # TODO
+                    "enabled": True, # Always enabled => TODO
+                    "__default": False, # Always disabled => TODO
                     "workspace": {
                         "name": ws.name,
                         "href": "%s/workspaces/%s.%s" % (
@@ -493,11 +488,10 @@ class coveragestore(object):
                         ),
                     "connectionParameters": connectionParameters and Entries({
                         "url": info["connectionParameters"]["url"],
-                        "namespace": None, # TODO
+                        # "namespace": None, # TODO
                         }, tag_name="entry")
                     }
                 }
-
 
     @HTTPCompatible()
     def PUT(self, ws_name, cs_name, format):
@@ -524,7 +518,6 @@ class coveragestore(object):
         with webapp.mightNotFound("coverageStore", workspace=ws_name):
             ws.delete_coveragestore(cs_name)
         ws.save()
-
 
 class coverages(object):
     """Coverages container.
@@ -560,7 +553,6 @@ class coverages(object):
         webapp.Created("%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
                 web.ctx.home, ws.name, cs_name, data["name"], format))
 
-
 class coverage(object):
     """A coverage is a raster based data set that originates from a coverage store.
 
@@ -585,10 +577,10 @@ class coverage(object):
         return {"coverage": ({
                     "name": c.name,
                     "nativeName": c.name,
-                    "namespace": None, # TODO
+                    # "namespace": None, # TODO
                     "title": c.get_mra_metadata("title", c.name),
                     "abstract": c.get_mra_metadata("abstract", None),
-                    "keywords": c.get_mra_metadata("keywords", []),
+                    # "keywords": c.get_mra_metadata("keywords", []), # TODO
                     "nativeCRS": c.get_wkt(), # TODO: Add key class="projected" if projected...
                     "srs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()),
                     "nativeBoundingBox": {
@@ -605,36 +597,38 @@ class coverage(object):
                         "maxy": latlon_extent.maxY(),
                         "crs": "EPSG:4326"
                         },
-                    "enabled": True, # TODO
-                    "metadata": None, # TODO
+                    "enabled": True, # Always enabled => TODO
+                    # "metadata": None, # TODO
                     "store": { # TODO: Add attr class="coverageStore"
                         "name": cs_name,
                         "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
                             web.ctx.home, ws_name, cs_name, format)
                         },
-                    "nativeFormat": None, # TODO
-                    "grid": { # TODO: Add attr dimension
-                        "range": {
-                            "low": None, # TODO
-                            "high": None, # TODO
-                            },
-                        "transform": {
-                            "scaleX": None, # TODO
-                            "scaleY": None, # TODO
-                            "shearX": None, # TODO
-                            "shearY": None, # TODO
-                            "translateX": None, # TODO
-                            "translateY": None, # TODO
-                            },
-                        "crs": None,
-                        },
-                    "supportedFormats": [], # TODO
-                    "interpolationMethods": [], # TODO
-                    "defaultInterpolationMethod": None,
-                    "dimensions": [], # TODO
-                    "projectionPolicy": None, # TODO
-                    "requestSRS": None, # TODO
-                    "responseSRS": None, # TODO
+                    # TODO:
+                    # "nativeFormat": None,
+                    # "grid": {
+                    #     "range": {
+                    #         "low": None,
+                    #         "high": None,
+                    #         },
+                    #     "transform": {
+                    #         "scaleX": None,
+                    #         "scaleY": None,
+                    #         "shearX": None,
+                    #         "shearY": None,
+                    #         "translateX": None,
+                    #         "translateY": None,
+                    #         },
+                    #     "crs": None,
+                    #     },
+                    # "supportedFormats": [],
+                    # "interpolationMethods": [],
+                    # "defaultInterpolationMethod": None,
+                    # "dimensions": [],
+                    # "projectionPolicy": None,
+                    # "requestSRS": None,
+                    # "responseSRS": None,
+                    # "parameters": None,
                     })
                 }
 
@@ -667,7 +661,6 @@ class coverage(object):
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
             ws.delete_coveragemodel(c_name, cs_name)
         ws.save()
-
 
 class files(object):
     """
@@ -744,7 +737,6 @@ class files(object):
         else:
             raise webapp.BadRequest(message="configure must be one of 'first', 'none' or 'all'.")
 
-
 class styles(object):
     """SLD styles container.
 
@@ -776,7 +768,6 @@ class styles(object):
         mra.create_style(name, data)
 
         webapp.Created("%s/styles/%s.%s" % (web.ctx.home, name, format))
-
 
 class style(object):
     """A style describes how a resource (a feature type or a coverage) should be 
@@ -824,7 +815,6 @@ class style(object):
         #TODO: Maybe check for layers using this style?
         with webapp.mightNotFound():
             mra.delete_style(s_name)
-
 
 class layers(object):
     """Layers container.
@@ -890,7 +880,6 @@ class layers(object):
 
         webapp.Created("%s/layers/%s.%s" % (web.ctx.home, l_name, format))
 
-
 class layer(object):
     """A layer is a published resource (feature type or coverage) from a MapFile.
 
@@ -922,7 +911,7 @@ class layer(object):
 
         return {"layer" : {
                     "name": l_name,
-                    "path": "/", # TODO
+                    "path": None, # TODO
                     "type": layer.get_type_name(),
                     "defaultStyle": {
                         "name": dflt_style,
@@ -938,11 +927,8 @@ class layer(object):
                             web.ctx.home, layer.get_mra_metadata("workspace"),
                             store_type, layer.get_mra_metadata("storage"), data_type, layer.get_mra_metadata("name"), format),
                         },
-                    "enabled": bool(layer.ms.status),
-                    "attribution": { # TODO
-                        "logoWidth": 0,
-                        "logoHeight": 0,
-                        },
+                    "enabled": bool(layer.ms.status), # TODO because it's fictitious...
+                    "attribution": None, # TODO
                     }
                 }
 
@@ -1009,7 +995,6 @@ class layer(object):
             mf.delete_layer(l_name)
         mf.save()
 
-
 class layerstyles(object):
     """Styles container associated to one layer.
 
@@ -1050,7 +1035,6 @@ class layerstyle(object):
             layer.remove_style(s_name)
         mf.save()
 
-
 class layerfields(object):
     """Attributes (Fields) container associated to layer <l>.
 
@@ -1068,7 +1052,6 @@ class layerfields(object):
                     "fieldType": layer.get_metadata("gml_%s_type" % field, None),
                     } for field in layer.iter_fields()]
                 }
-
 
 class layergroups(object):
     """Layergroups container.
@@ -1106,7 +1089,6 @@ class layergroups(object):
         mf.save()
 
         webapp.Created("%s/layergroups/%s.%s" % (web.ctx.home, lg.name, format))
-
 
 class layergroup(object):
     """A layergroup is a grouping of layers and styles that can be accessed 
@@ -1173,7 +1155,6 @@ class layergroup(object):
         with webapp.mightNotFound():
             mf.delete_layergroup(lg_name)
         mf.save()
-
 
 class OWSGlobalSettings(object):
     """Control settings of the main OWS service, i.e. the mapfile: layers.map
