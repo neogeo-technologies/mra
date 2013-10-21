@@ -1107,21 +1107,23 @@ class layergroup(object):
 
         latlon_extent = lg.get_latlon_extent()
 
+        bounds = {"minx": latlon_extent.minX(),
+            "miny": latlon_extent.minY(),
+            "maxx": latlon_extent.maxX(),
+            "maxy": latlon_extent.maxY(),
+            "crs": "EPSG:4326",
+            }
+
         return {"layerGroup": ({
                     "name": lg.name,
-                    "mode": None, # TODO
-                    "publishables": [{
+                    "mode": "NAMED", # Only available mode in MRA.
+                    "publishables": Entries([{
                             "name": layer.ms.name,
                             "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
-                            } for layer in lg.iter_layers()],
-                    "bounds": {
-                        "minx": latlon_extent.minX(),
-                        "miny": latlon_extent.minY(),
-                        "maxx": latlon_extent.maxX(),
-                        "maxy": latlon_extent.maxY(),
-                        "crs": "EPSG:4326",
-                        },
-                    "styles": [],
+                            } for layer in lg.iter_layers()], tag_name="published"),
+                    "bounds": Entries(bounds),
+                    # TODO: Styles
+                    # "styles": [],
                     })
                 }
 
