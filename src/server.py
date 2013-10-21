@@ -58,7 +58,7 @@ class index(object):
     """Index of the API (e.g. http://hostname/mra/)
 
     """
-    @HTTPCompatible()
+    @HTTPCompatible(authorized=["html"])
     def GET(self, format):
         return {
             "workspaces": href("workspaces"),
