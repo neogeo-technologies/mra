@@ -35,9 +35,19 @@ import sys
 import pyxml
 import webapp
 import xml.etree.ElementTree as etree
-from osgeo import osr
 
 __config = None
+
+
+def ms_version():
+    """Return the current MapServer version used by MRA"""
+    import mapscript
+    return mapscript.MS_VERSION
+
+def gdal_version():
+    """Return the current GDAL version used by MRA"""
+    from osgeo import gdal
+    return gdal.VersionInfo("RELEASE_NAME")
 
 def assert_is_empty(generator, tname, iname):
     try:

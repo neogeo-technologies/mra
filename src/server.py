@@ -61,6 +61,7 @@ class index(object):
     @HTTPCompatible(authorized=["html"])
     def GET(self, format):
         return {
+            "about/version": href("about/version"),
             "workspaces": href("workspaces"),
             "styles": href("styles"),
             "layers": href("layers"),
@@ -70,6 +71,18 @@ class index(object):
             "services/wfs/settings": href("services/wfs/settings"),
             "fonts": href("fonts"),
             }
+
+class version(object):
+    """To know about used versions...
+
+    """
+    @HTTPCompatible()
+    def GET(self, format):
+        return {"about": {"resources": [
+                        {"name": "MapServer", "version": tools.ms_version()},
+                        {"name": "GDAL", "version": tools.gdal_version()},
+                    ]}
+                }
 
 class workspaces(object):
     """Workspaces container.
@@ -1238,8 +1251,8 @@ class OWSGlobalSettings(object):
 
 # Index:
 urlmap(index, "")
-# Fonts:
-urlmap(fonts, "fonts")
+# About version:
+urlmap(version, "about", "version")
 # Workspaces:
 urlmap(workspaces, "workspaces")
 urlmap(workspace, "workspaces", ())
@@ -1257,6 +1270,8 @@ urlmap(coverages, "workspaces", (), "coveragestores", (), "coverages")
 urlmap(coverage, "workspaces", (), "coveragestores", (), "coverages", ())
 # Files:
 urlmap(files, "workspaces", (), "(datastores|coveragestores)", (), "(file|url|external)")
+# Fonts:
+urlmap(fonts, "fonts")
 # Styles:
 urlmap(styles, "styles")
 urlmap(style, "styles", ())
