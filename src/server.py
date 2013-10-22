@@ -344,27 +344,29 @@ class featuretype(object):
         # MapServer in a GetFeature response...
         attributes = [{
             "name": f.get_name(),
-            "binding": f.get_type_name(), 
-            "binding": f.get_type_name(),
+            "type": f.get_type_name(),
             "length": f.get_width(),
             # "minOccurs": 0, "maxOccurs": 1, "nillable": f.is_nullable(),
+            # binding?
             } for f in dsft.iterfields()]
 
         if dsft.get_geometry_column() is not None:
             attributes.append({
                 "name": dsft.get_geometry_column(),
-                "binding": dsft.get_geomtype_gml(),
+                "type": dsft.get_geomtype_gml(),
                 "minOccurs": 0,
                 "maxOccurs": 1, 
                 # "nillable": True,
+                # binding?
                 })
         else:
             attributes.append({
                 "name": "geometry",
-                "binding": dsft.get_geomtype_gml(),
+                "type": dsft.get_geomtype_gml(),
                 "minOccurs": 0,
                 "maxOccurs": 1,
                 # "nillable": True,
+                # binding?
                 })
 
         return {"featureType": ({
