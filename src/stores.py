@@ -103,7 +103,7 @@ class Field(object):
         if type in (4, 5):
             return "Character"
         if type in (6, 7):
-            return "Unknown" #:)
+            return "Unknown" # :)
         if type in (9, 10):
             return "Date"
         else:
@@ -113,7 +113,12 @@ class Field(object):
         return self.backend.GetWidth()
 
     def is_nullable(self):
-        return self.nullable
+        if self.nullable in ("YES", True):
+            return True
+        elif self.nullable in ("NO", False):
+            return False
+        else:
+            return None
 
 class Feature(object):
     """A Feature implementation backed by ogr."""

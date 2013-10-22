@@ -192,7 +192,8 @@ class datastores(object):
 
         ws = get_workspace(ws_name)
 
-        data = get_data(name="dataStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
+        data = get_data(name="dataStore", mandatory=["name"], 
+                        authorized=["name", "title", "abstract", "connectionParameters"])
         ds_name = data.pop("name")
 
         with webapp.mightConflict("dataStore", workspace=ws_name):
@@ -224,8 +225,8 @@ class datastore(object):
 
         return {"dataStore": {
                     "name": info["name"],
-                    "enabled": True, # Always enabled => TODO
-                    "__default": False, # Always disabled => TODO
+                    "enabled": True, # Always enabled
+                                     # TODO: Handle enabled/disabled states
                     "workspace": {
                         "name": ws.name,
                         "href": "%s/workspaces/%s.%s" % (
@@ -234,7 +235,7 @@ class datastore(object):
                     "featureTypes": href("%s/workspaces/%s/datastores/%s/featuretypes.%s" % (
                                         web.ctx.home, ws.name, ds_name, format)
                         ),
-                    "connectionParameters": Entries(connectionParameters, tag_name="entry")
+                    "connectionParameters": Entries(connectionParameters, tag_name="entry"),
                     }
                 }
 
@@ -294,8 +295,7 @@ class featuretypes(object):
 
         """
         ws = get_workspace(ws_name)
-        data = get_data(name="featureType",
-                        mandatory=["name"],
+        data = get_data(name="featureType", mandatory=["name"],
                         authorized=["name", "title", "abstract"])
 
         # Creates first the feature type:
@@ -339,24 +339,43 @@ class featuretype(object):
         extent = ft.get_extent()
         latlon_extent = ft.get_latlon_extent()
 
+
+        # About attributs, we apply just values handled by 
+        # MapServer in a GetFeature response...
+        attributes = [{
+            "name": f.get_name(),
+            "binding": f.get_type_name(), 
+            "binding": f.get_type_name(),
+            "length": f.get_width(),
+            # "minOccurs": 0, "maxOccurs": 1, "nillable": f.is_nullable(),
+            } for f in dsft.iterfields()]
+
+        if dsft.get_geometry_column() is not None:
+            attributes.append({
+                "name": dsft.get_geometry_column(),
+                "binding": dsft.get_geomtype_gml(),
+                "minOccurs": 0,
+                "maxOccurs": 1, 
+                # "nillable": True,
+                })
+        else:
+            attributes.append({
+                "name": "geometry",
+                "binding": dsft.get_geomtype_gml(),
+                "minOccurs": 0,
+                "maxOccurs": 1,
+                # "nillable": True,
+                })
+
         return {"featureType": ({
+                    # Why the name would it be different from nativeName?
                     "name": ft.name,
                     "nativeName": ft.name,
-                    # "namespace": None, # TODO
                     "title": ft.get_mra_metadata("title", ft.name),
                     "abstract": ft.get_mra_metadata("abstract", None),
-                    # "keywords": ft.get_mra_metadata("keywords", []),
-                    "srs": "%s:%s" % (ft.get_authority()[0], ft.get_authority()[1]),
+                    # TODO: keywords
                     "nativeCRS": ft.get_wkt(),
-                    "attributes": [{
-                            "name": f.get_name(),
-                            "minOccurs": 0 if f.is_nullable() else 1,
-                            "maxOccurs": 1,
-                            "nillable": f.is_nullable(),
-                            "binding": f.get_type_name(),
-                            "length": f.get_width(),
-                            } for f in dsft.iterfields()],
-                            # TODO Must contain the geometry attribut
+                    "attributes": attributes,
                     "nativeBoundingBox": {
                         "minx": extent.minX(),
                         "miny": extent.minY(),
@@ -371,16 +390,21 @@ class featuretype(object):
                         "maxy": latlon_extent.maxY(),
                         "crs": "EPSG:4326",
                         },
-                    "projectionPolicy": "NONE", # See GeoServer API for more details...
-                                                # In MRA always keep native CRS. (TODO later)
+                    # "srs": "%s:%s" % (ft.get_authority()[0], ft.get_authority()[1]),
+                    "projectionPolicy": "NONE",
+                    # About srs & projectionPolicy: (TODO: Handle the other cases)
+                    # In MRA, it is easier (or more logical?) to keep native CRS,
+                    # Or there is a problem of understanding on our part.
+                    # So, i prefer to comment 'srs' entry cause we force the
+                    # value of 'projectionPolicy' to 'NONE'... but it is something 
+                    # we should investigate...
                     "enabled": True, # Always enabled => TODO
                     "store": { # TODO: add key: class="dataStore"
                         "name": ds_name,
                         "href": "%s/workspaces/%s/datastores/%s.%s" % (
                             web.ctx.home, ws_name, ds_name, format)
                         },
-                    # "maxFeatures": None, # TODO
-                    # "numDecimals": None, # TODO
+                    # TODO: maxFeatures
                     })
                 }
 
@@ -475,9 +499,8 @@ class coveragestore(object):
 
         return {"coverageStore": {
                     "name": info["name"],
-                    # "type": None, # TODO
-                    "enabled": True, # Always enabled => TODO
-                    "__default": False, # Always disabled => TODO
+                    "enabled": True, # Always enabled
+                                     # TODO: Handle enabled/disabled states
                     "workspace": {
                         "name": ws.name,
                         "href": "%s/workspaces/%s.%s" % (
@@ -489,7 +512,8 @@ class coveragestore(object):
                     "connectionParameters": connectionParameters and Entries({
                         "url": info["connectionParameters"]["url"],
                         # "namespace": None, # TODO
-                        }, tag_name="entry")
+                        }, tag_name="entry"),
+                    # TODO: type
                     }
                 }
 
@@ -577,10 +601,9 @@ class coverage(object):
         return {"coverage": ({
                     "name": c.name,
                     "nativeName": c.name,
-                    # "namespace": None, # TODO
                     "title": c.get_mra_metadata("title", c.name),
                     "abstract": c.get_mra_metadata("abstract", None),
-                    # "keywords": c.get_mra_metadata("keywords", []), # TODO
+                    # TODO: Keywords
                     "nativeCRS": c.get_wkt(), # TODO: Add key class="projected" if projected...
                     "srs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()),
                     "nativeBoundingBox": {
@@ -598,7 +621,6 @@ class coverage(object):
                         "crs": "EPSG:4326"
                         },
                     "enabled": True, # Always enabled => TODO
-                    # "metadata": None, # TODO
                     "store": { # TODO: Add attr class="coverageStore"
                         "name": cs_name,
                         "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
@@ -641,7 +663,6 @@ class coverage(object):
         data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
         if c_name != data["name"]:
             raise webapp.Forbidden("Can't change the name of a coverage.")
-
 
         metadata = dict((k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
 
@@ -911,24 +932,26 @@ class layer(object):
 
         return {"layer" : {
                     "name": l_name,
-                    "path": None, # TODO
                     "type": layer.get_type_name(),
                     "defaultStyle": {
                         "name": dflt_style,
                         "href": "%s/styles/%s.%s" % (web.ctx.home, dflt_style, format),
                         },
-                    "styles": [{ # TODO: Add attr class="linked-hash-set"
+                    "styles": [{ 
+                            # TODO: Add attr class="linked-hash-set"
                             "name": s_name,
                             "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
                             } for s_name in layer.iter_styles() if s_name != dflt_style],
-                    "resource": { # TODO: Add attr class="featureType|coverage"
+                    "resource": { 
+                        # TODO: Add attr class="featureType|coverage"
                         "name": layer.get_mra_metadata("name"),
                         "href": "%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
                             web.ctx.home, layer.get_mra_metadata("workspace"),
                             store_type, layer.get_mra_metadata("storage"), data_type, layer.get_mra_metadata("name"), format),
                         },
                     "enabled": bool(layer.ms.status), # TODO because it's fictitious...
-                    "attribution": None, # TODO
+                    # "attribution" => TODO?
+                    # "path" => TODO?
                     }
                 }
 
@@ -1047,11 +1070,27 @@ class layerfields(object):
         with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
 
-        return {"fields": [{
-                    "name": layer.get_metadata("gml_%s_alias" % field, None),
-                    "fieldType": layer.get_metadata("gml_%s_type" % field, None),
-                    } for field in layer.iter_fields()]
-                }
+        fields = [{
+            "name": layer.get_metadata("gml_%s_alias" % field, None),
+            "type": layer.get_metadata("gml_%s_type" % field, None),
+            } for field in layer.iter_fields()]
+
+        geom = layer.get_metadata("gml_geometries", False)
+        if geom:
+            type = layer.get_metadata("gml_%s_type" % geom, "undefined")
+            occurs = layer.get_metadata("gml_%s_occurances" % geom, "0,1").split(",")
+            min_occurs, max_occurs = int(occurs[0]), int(occurs[1])
+        else:
+            geom, type, min_occurs, max_occurs = "undefined", "undefined", 0, 1
+        
+        fields.append({
+            "name": geom,
+            "type": type,
+            "minOccurs": min_occurs,
+            "maxOccurs": max_occurs,
+            })
+
+        return {"fields": fields}
 
 class layergroups(object):
     """Layergroups container.
