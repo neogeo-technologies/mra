@@ -431,7 +431,8 @@ class featuretype(object):
         ws = get_workspace(ws_name)
 
         # We need to check if there are any layers using this.
-        assert_is_empty(ws.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name,
+        mf = mra.get_available()
+        assert_is_empty(mf.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name,
                                             "type":"featuretype"}),"featuretype", ft_name)
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
@@ -676,7 +677,8 @@ class coverage(object):
 
         ws = get_workspace(ws_name)
         # We need to check if there are any layers using this.
-        assert_is_empty(ws.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name,
+        mf = mra.get_available()
+        assert_is_empty(mf.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name,
                                             "type":"coverage"}), "coverage", ft_name)
 
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
