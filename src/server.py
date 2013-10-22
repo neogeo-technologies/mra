@@ -71,41 +71,6 @@ class index(object):
             "fonts": href("fonts"),
             }
 
-class fonts(object):
-    """Configure available fonts.
-
-    http://hostname/mra/fonts
-
-    """
-    @HTTPCompatible()
-    def GET(self, format):
-        """Returns the list of available fonts."""
-
-        return {"fonts": [f_name
-            for f_name in mra.list_fontset()]}
-
-    @HTTPCompatible()
-    def PUT(self, format):
-        """Uploads fonts from a local source."""
-
-        import zipfile
-        ctype = web.ctx.env.get("CONTENT_TYPE", None)
-        if ctype == "application/zip":
-            path = mra.create_font("archive.zip", data=web.data())
-            with zipfile.ZipFile(path, "r") as z:
-                z.extractall(mra.get_font_path())
-            os.remove(path)
-
-        mra.update_fontset()
-
-        # Then updates (the) mapfile(s) only 
-        # if the fontset path is not specified.
-        # Should it be done here ?...
-        mf = mra.get_available()
-        if mf.ms.fontset.filename == None:
-            mf.ms.setFontSet(mra.get_fontset_path())
-            mf.save()
-
 class workspaces(object):
     """Workspaces container.
 
@@ -761,6 +726,41 @@ class files(object):
             raise webapp.NotImplemented()
         else:
             raise webapp.BadRequest(message="configure must be one of 'first', 'none' or 'all'.")
+
+class fonts(object):
+    """Configure available fonts.
+
+    http://hostname/mra/fonts
+
+    """
+    @HTTPCompatible()
+    def GET(self, format):
+        """Returns the list of available fonts."""
+
+        return {"fonts": [f_name
+            for f_name in mra.list_fontset()]}
+
+    @HTTPCompatible()
+    def PUT(self, format):
+        """Uploads fonts from a local source."""
+
+        import zipfile
+        ctype = web.ctx.env.get("CONTENT_TYPE", None)
+        if ctype == "application/zip":
+            path = mra.create_font("archive.zip", data=web.data())
+            with zipfile.ZipFile(path, "r") as z:
+                z.extractall(mra.get_font_path())
+            os.remove(path)
+
+        mra.update_fontset()
+
+        # Then updates (the) mapfile(s) only 
+        # if the fontset path is not specified.
+        # Should it be done here ?...
+        mf = mra.get_available()
+        if mf.ms.fontset.filename == None:
+            mf.ms.setFontSet(mra.get_fontset_path())
+            mf.save()
 
 class styles(object):
     """SLD styles container.
