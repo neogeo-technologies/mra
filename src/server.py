@@ -27,7 +27,6 @@
 """
     URL mapping infrastructure and HTTP methods used by the REST API.
 
-    MRA is following the model: <container> --- <element>.
 
 """
 
@@ -143,6 +142,9 @@ class workspace(object):
                         href("%s/workspaces/%s/coveragestores.%s" % (web.ctx.home, ws.name, format)),
                     })
                 }
+
+    # TODO: def PUT(...
+    # TODO: def DELETE(...
 
 class datastores(object):
     """Data stores container.
@@ -503,7 +505,9 @@ class coveragestore(object):
         """Modify coverage store <ds>."""
         
         ws = get_workspace(ws_name)
-        data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
+        data = get_data(name="coverageStore", 
+                        mandatory=["name"], 
+                        authorized=["name", "title", "abstract", "connectionParameters"])
         if cs_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a coverage store.")
 
@@ -513,12 +517,12 @@ class coveragestore(object):
 
     @HTTPCompatible()
     def DELETE(self, ws_name, cs_name, format):
-        """Delete coverage store <ds>."""
+        """Delete coverage store <cs>."""
 
         ws = get_workspace(ws_name)
         # TODO: check, this is not consistent between ds/cs.
         # We need to check if this datastore is empty.
-        assert_is_empty(ws.iter_coverages(cs_name=cs_name), "coveragestore", ds_name)
+        assert_is_empty(ws.iter_coveragemodels(cs_name=cs_name), "coveragestore", cs_name)
 
         with webapp.mightNotFound("coverageStore", workspace=ws_name):
             ws.delete_coveragestore(cs_name)
@@ -554,6 +558,13 @@ class coverages(object):
             with webapp.mightNotFound("coverage", coveragestore=cs_name):
                 ws.create_coveragemodel(data["name"], cs_name, data)
         ws.save()
+
+        # Then creates the associated layer by default:
+        model = ws.get_coveragemodel(cs_name, data["name"])
+        mf = mra.get_available()
+        with webapp.mightConflict():
+            mf.create_layer(model, data["name"], True)
+        mf.save()
 
         webapp.Created("%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
                 web.ctx.home, ws.name, cs_name, data["name"], format))
@@ -659,7 +670,7 @@ class coverage(object):
         # We need to check if there are any layers using this.
         mf = mra.get_available()
         assert_is_empty(mf.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name,
-                                            "type":"coverage"}), "coverage", ft_name)
+                                            "type":"coverage"}), "coverage", c_name)
 
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
             ws.delete_coveragemodel(c_name, cs_name)
@@ -700,7 +711,7 @@ class files(object):
             # Create the store if it seems legit and it does not exist.
             if st_type == "datastores" or st_type == "coveragestores":
                 st_type = st_type[:-1] # Remove trailing 's'
-                with webapp.mightConflict("dataStore", workspace=ws_name):
+                with webapp.mightConflict("Workspace", workspace=ws_name):
                     ws.create_store(st_type, st_name, {})
             # Finaly check if its OK now.
             with webapp.mightNotFound(message="Store {exception} does not exist "
@@ -823,7 +834,7 @@ class style(object):
     def GET(self, s_name, format):
         """Return style <s>."""
 
-        with webapp.mightNotFound():
+        with webapp.mightNotFound(message="Style \"%s\" does not exist." % s_name):
             style = mra.get_style(s_name)
 
         if format == "sld":
@@ -840,19 +851,13 @@ class style(object):
     def PUT(self, s_name, format):
         """Modify style <s>."""
 
-        #TODO: Also update layers using this style.
-        with webapp.mightNotFound():
+        # TODO: Also update layers using this style.
+        with webapp.mightNotFound(message="Style \"%s\" does not exist." % s_name):
             mra.delete_style(s_name)
         data = web.data()
         mra.create_style(s_name, data)
 
-    @HTTPCompatible()
-    def DELETE(self, s_name, format):
-        """Delete style <s>."""
-        
-        #TODO: Maybe check for layers using this style?
-        with webapp.mightNotFound():
-            mra.delete_style(s_name)
+    # TODO: def DELETE(...
 
 class layers(object):
     """Layers container.
@@ -939,6 +944,22 @@ class layer(object):
             "coverage": ("coverage", "coveragestore")
             }[layer.get_mra_metadata("type")]
 
+        response = {"layer": {
+                    "name": l_name,
+                    "type": layer.get_type_name(),
+                    "resource": { 
+                        # TODO: Add attr class="featureType|coverage"
+                        "name": layer.get_mra_metadata("name"),
+                        "href": "%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
+                            web.ctx.home, layer.get_mra_metadata("workspace"),
+                            store_type, layer.get_mra_metadata("storage"), 
+                            data_type, layer.get_mra_metadata("name"), format),
+                        },
+                    "enabled": bool(layer.ms.status), # TODO because it's fictitious...
+                    # "attribution" => TODO?
+                    # "path" => TODO?
+                    }}
+
         # Check CLASSGROUP
         dflt_style = layer.ms.classgroup
         if dflt_style == None:
@@ -946,31 +967,19 @@ class layer(object):
             for s_name in layer.iter_styles():
                 dflt_style = s_name
                 break
+        if dflt_style == None:
+            return response
 
-        return {"layer" : {
-                    "name": l_name,
-                    "type": layer.get_type_name(),
-                    "defaultStyle": {
-                        "name": dflt_style,
-                        "href": "%s/styles/%s.%s" % (web.ctx.home, dflt_style, format),
-                        },
-                    "styles": [{ 
-                            # TODO: Add attr class="linked-hash-set"
-                            "name": s_name,
-                            "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
-                            } for s_name in layer.iter_styles() if s_name != dflt_style],
-                    "resource": { 
-                        # TODO: Add attr class="featureType|coverage"
-                        "name": layer.get_mra_metadata("name"),
-                        "href": "%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
-                            web.ctx.home, layer.get_mra_metadata("workspace"),
-                            store_type, layer.get_mra_metadata("storage"), data_type, layer.get_mra_metadata("name"), format),
-                        },
-                    "enabled": bool(layer.ms.status), # TODO because it's fictitious...
-                    # "attribution" => TODO?
-                    # "path" => TODO?
-                    }
-                }
+        response.update({"defaultStyle": {"name": dflt_style,
+                                          "href": "%s/styles/%s.%s" % (web.ctx.home, dflt_style, format)},})
+      
+        styles = [{"name": s_name,
+                   "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
+                   } for s_name in layer.iter_styles() if s_name != dflt_style]
+        if not styles:
+            return response
+
+        return response.update({"styles": styles})
 
     @HTTPCompatible()
     def PUT(self, l_name, format):
@@ -1086,6 +1095,9 @@ class layerfields(object):
         mf = mra.get_available()
         with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
+
+        if layer.get_type_name() == "RASTER":
+            return {"fields": []}
 
         fields = [{
             "name": layer.get_metadata("gml_%s_alias" % field, None),

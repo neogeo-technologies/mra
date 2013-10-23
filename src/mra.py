@@ -824,23 +824,23 @@ class Workspace(Mapfile):
 
     # Coverages
 
-    def iter_coveragemodels(self, ds_name=None, **kwargs):
-        return self.iter_layermodels("coverage", ds_name, **kwargs)
+    def iter_coveragemodels(self, cs_name=None, **kwargs):
+        return self.iter_layermodels("coverage", cs_name, **kwargs)
 
-    def get_coveragemodel(self, ds_name, ft_name):
-        return self.get_layermodel("coverage", ds_name, ft_name)
+    def get_coveragemodel(self, cs_name, c_name):
+        return self.get_layermodel("coverage", cs_name, c_name)
 
-    def has_coveragemodel(self, ds_name, ft_name):
-        return self.has_layermodel("coverage", ds_name, ft_name)
+    def has_coveragemodel(self, cs_name, c_name):
+        return self.has_layermodel("coverage", cs_name, c_name)
 
-    def create_coveragemodel(self, ds_name, ft_name, metadata={}):
-        return self.create_layermodel("coverage", ds_name, ft_name, metadata)
+    def create_coveragemodel(self, cs_name, c_name, metadata={}):
+        return self.create_layermodel("coverage", cs_name, c_name, metadata)
 
-    def update_coveragemodel(self, ds_name, ft_name, metadata={}):
-        return self.update_layermodel("coverage", ds_name, ft_name, metadata={})
+    def update_coveragemodel(self, cs_name, c_name, metadata={}):
+        return self.update_layermodel("coverage", cs_name, c_name, metadata={})
 
-    def delete_coveragemodel(self, ds_name, ft_name):
-        return self.delete_layermodel("coverage", ds_name, ft_name)
+    def delete_coveragemodel(self, cs_name, c_name):
+        return self.delete_layermodel("coverage", cs_name, c_name)
 
 # Finaly the global context:
 
@@ -952,7 +952,7 @@ class MRA(object):
             raise KeyError(name)
 
     def delete_style(self, name):
-        path = self.get_style_path(s_name)
+        path = self.get_style_path(name)
         try:
             os.remove(path)
         except (OSError, IOError):
