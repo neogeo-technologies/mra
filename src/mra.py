@@ -911,7 +911,6 @@ class MRA(object):
         return os.path.relpath(path, self.get_font_path())
 
     def list_fonts(self):
-        print self.get_font_path()
         for (root, _, files) in os.walk(self.get_font_path()):
             for f in files:
                 if f.endswith(".ttf") and not f.startswith("."):
