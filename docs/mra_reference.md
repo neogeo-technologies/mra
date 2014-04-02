@@ -22,7 +22,7 @@ For this format file, the coverage is unique and corresponds to the coverage sto
 
 Resource | Description
 ---------|------------
-**GET    workspaces** | Returns a list containing workspaces.
+[**GET    workspaces**](get/workspaces.md) | Returns a list containing workspaces.an example
 **POST   workspaces** | Creates a new workspace.
 **GET    workspaces/_{ws}_** | Returns the given workspace.
 **GET    workspaces/_{ws}_/datastores** | Returns a list containing data stores in the given workspace.
