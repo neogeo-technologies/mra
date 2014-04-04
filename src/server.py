@@ -969,9 +969,9 @@ class layer(object):
                 break
         if dflt_style == None:
             return response
-
-        response.update({"defaultStyle": {"name": dflt_style,
-                                          "href": "%s/styles/%s.%s" % (web.ctx.home, dflt_style, format)},})
+       
+        response["layer"].update({"defaultStyle": {"name": dflt_style,
+                                            "href": "%s/styles/%s.%s" % (web.ctx.home, dflt_style, format)},})
       
         styles = [{"name": s_name,
                    "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
@@ -979,7 +979,7 @@ class layer(object):
         if not styles:
             return response
 
-        return response.update({"styles": styles})
+        return response["layer"].update({"styles": styles})
 
     @HTTPCompatible()
     def PUT(self, l_name, format):
@@ -1000,7 +1000,6 @@ class layer(object):
 
         # update resource if changed
         href = data.get("resource", {}).get("href")
-        print href
         if href:
             try:
                 ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)
