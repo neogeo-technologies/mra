@@ -946,6 +946,8 @@ class layer(object):
 
         response = {"layer": {
                     "name": l_name,
+                    "title": layer.get_metadata("ows_title", None),
+                    "abstract": layer.get_metadata("ows_abstract", None),
                     "type": layer.get_type_name(),
                     "resource": { 
                         # TODO: Add attr class="featureType|coverage"
@@ -988,11 +990,11 @@ class layer(object):
         mf = mra.get_available()
 
         data = get_data(name="layer", mandatory=[],
-                        authorized=["name", "title", "abstract", "resource", "enabled", "defaultStyle"])
+                        authorized=["name", "resource", "defaultStyle"])
         if l_name != data.get("name", l_name):
             raise webapp.Forbidden("Can't change the name of a layer.")
 
-        l_enabled = data.pop("enabled", True)
+        l_enabled = True # TODO: => data.pop("enabled", True)
 
         mf = mra.get_available()
         with webapp.mightNotFound():
@@ -1018,8 +1020,7 @@ class layer(object):
             if layer.get_mra_metadata("type") != r_type:
                 raise webapp.BadRequest("Can't change a \"%s\" layer into a \"%s\"."
                                     % (layer.get_mra_metadata("type"), r_type))
-
-            model.configure_layer(layer, l_enabled)
+        model.configure_layer(layer, l_enabled)
 
         # If we have a defaultStyle apply it.
         s_name = data.get("defaultStyle", {}).get("name")

@@ -345,15 +345,14 @@ class Mapfile(MetadataMixin):
 
         # Add some default metadata.
         dflt_metadata = {
-            "wms_title": l_name,
-            "wms_abstract": l_name,
-            "wms_srs": "EPSG:4326",
-            "wms_bbox_extended": "false"
+            "ows_title": l_name,
+            "ows_abstract": l_name,
+            "wms_srs": "EPSG:4326"
             }
 
         for k, v in dflt_metadata.iteritems():
             l_metadata.setdefault(k, v)
-        l_metadata["wms_name"] = l_name
+        l_metadata["ows_name"] = l_name
 
         # Update layer.
         layer.update(l_name, l_enabled, l_metadata)
@@ -489,12 +488,6 @@ class FeatureTypeModel(LayerModel):
                 "workspace": ws.name,
                 })
 
-        layer.update_metadatas({
-                "wfs_name": layer.get_metadata("wms_name"),
-                "wfs_title": layer.get_metadata("wms_title"),
-                "wfs_abstract": layer.get_metadata("wms_abstract"),
-                })
-
         # if enabled:
         #     layer.set_metadata("wfs_enable_request", "GetCapabilities DescribeFeatureType GetFeature")
 
@@ -598,9 +591,9 @@ class CoverageModel(LayerModel):
                 })
 
         layer.set_metadatas({
-                "wcs_name": layer.get_metadata("wms_name"),
-                "wcs_label": layer.get_metadata("wms_title"),
-                "wcs_description": layer.get_metadata("wms_abstract")
+                "wcs_name": layer.get_metadata("ows_name"),
+                "wcs_label": layer.get_metadata("ows_title"),
+                "wcs_description": layer.get_metadata("ows_abstract")
                 })
 
         # if enabled:
