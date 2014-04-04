@@ -24,7 +24,7 @@ Resource | Description
 ---------|------------
 [**GET    workspaces**](pages/workspaces.md#get-workspaces) | Returns a list containing workspaces.
 [**POST    workspaces**](pages/workspaces.md#post-workspaces) | Creates a new workspace.
-[**GET    workspaces/_{ws}_**](pages/workspaces.md#get-workspaces-ws) | Returns the given workspace.
+[**GET    workspaces/_{ws}_**](pages/workspaces.md#get-workspacesws) | Returns the given workspace.
 [**GET    workspaces/_{ws}_/datastores**](pages/datastores.md#get-workspaceswsdatastores) | Returns a list containing data stores in the given workspace.
 [**POST   workspaces/_{ws}_/datastores**](pages/datastores.md#post-workspaceswsdatastores) | Creates  a new data store.
 [**GET    workspaces/_{ws}_/datastores/_{ds}_**](pages/datastores.md#get-workspaceswsdatastoresds) | Returns data store _{ds}_.
