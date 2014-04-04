@@ -1000,6 +1000,7 @@ class layer(object):
 
         # update resource if changed
         href = data.get("resource", {}).get("href")
+        print href
         if href:
             try:
                 ws_name, st_type, st_name, r_type, r_name = mra.href_parse(href, 5)

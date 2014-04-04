@@ -69,11 +69,11 @@ So a layer is the combination of data (feature type or coverage) plus styling (i
 
 Resource | Description
 ---------|------------
-**GET    layers** | Returns a list containing all layers.
-**POST   layers** | Creates a new layer.
-**GET    layers/_{l}_** | Returns layer _{l}_.
-**PUT    layers/_{l}_** | Modifies layer _{l}_.
-**DELETE layers/_{l}_** | Deletes layer _{l}_.
+[**GET    layers**](pages/layers.md#get-layers) | Returns a list containing all layers.
+[**POST   layers**](pages/layers.md#post-layers) | Creates a new layer.
+[**GET    layers/_{l}_**](pages/layers.md#get-layersl) | Returns layer _{l}_.
+[**PUT    layers/_{l}_**](pages/layers.md#put-layersl) | Modifies layer _{l}_.
+[**DELETE layers/_{l}_**](pages/layers.md#delete-layersl) | Deletes layer _{l}_.
 **GET    layers/_{l}_/styles** | Returns a list containing all styles associated to layer _{l}_.
 **DELETE layers/_{l}_/styles/_{s}_** | Removes style _{s}_ from layer _{l}_.
 **GET    layers/_{l}_/fields** | Returns a list containing all fields associated to layer _{l}_.

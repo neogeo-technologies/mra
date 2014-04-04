@@ -14,17 +14,13 @@ http://hostname/workspaces{.extension}
 
 HTML (default value), JSON, XML.
 
-#### Parameters
-
-None
-
 #### Example request
 
-**GET http://hostname/workspaces.json**
+**GET** http://hostname/workspaces.json
 
 ##### Response
 
-**Status code:** 200 OK
+**Status code:** `200 OK`
 
     {
 	    "workspaces": [
@@ -47,15 +43,11 @@ http://hostname/workspaces{.extension}
 
 JSON, XML.
 
-#### Parameters
-
-None.
-
 #### Example request
 
-**POST http://hostname/workspaces.json**
+**POST** http://hostname/workspaces.json
 
-**POST Content-type:** `application-json'
+**POST Content-type:** `application-json`
 
 **POST data:**
 
@@ -68,9 +60,9 @@ None.
 
 ##### Response
 
-**Status code:** 201 OK
+**Status code:** `201 OK`
 
-**Location:** http://hostname/workspaces/my_workspace.json
+**Location:** `http://hostname/workspaces/my_workspace.json`
 
 ### GET workspaces/{ws}
 
@@ -78,23 +70,19 @@ Returns  workspace {ws}.
 
 #### Resource URL
 
-http://hostname/workspaces/{ws}.{extension}
+http://hostname/workspaces/{ws}{.extension}
 
 #### Available formats
 
 HTML (default value), JSON, XML.
 
-#### Parameters
-
-None
-
 #### Example request
 
-**GET http://hostname/workspaces/my_workspace.json**
+**GET** http://hostname/workspaces/my_workspace.json
 
 ##### Response
 
-**Status code:** 200 OK
+**Status code:** `200 OK`
 
     {
         "workspace": {
