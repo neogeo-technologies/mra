@@ -25,12 +25,12 @@ Resource | Description
 [**GET    workspaces**](pages/workspaces.md#get-workspaces) | Returns a list containing workspaces.
 [**POST    workspaces**](pages/workspaces.md#post-workspaces) | Creates a new workspace.
 [**GET    workspaces/_{ws}_**](pages/workspaces.md#get-workspaces-ws) | Returns the given workspace.
-[**GET    workspaces/_{ws}_/datastores**](pages/datastores.md#get-datastores) | Returns a list containing data stores in the given workspace.
-[**POST   workspaces/_{ws}_/datastores**](pages/datastores.md#post-datastores) | Creates  a new data store.
-[**GET    workspaces/_{ws}_/datastores/_{ds}_**](pages/datastores.md#get-datastores-ds) | Returns data store _{ds}_.
-[**PUT    workspaces/_{ws}_/datastores/_{ds}_**](pages/datastores.md#put-datastores-ds) | Modifies data store _{ds}_.
-[**DELETE workspaces/_{ws}_/datastores/_{ds}_**](pages/datastores.md#delete-datastores-ds) | Deletes data store _{ds}_.
-[**PUT    workspaces/_{ws}_/datastores/_{ds}_/file._{extension}_**](pages/datastores.md#put-datastores-ds-file-extension) | Uploads a vector data file from a local source.
+[**GET    workspaces/_{ws}_/datastores**](pages/datastores.md#get-workspaceswsdatastores) | Returns a list containing data stores in the given workspace.
+[**POST   workspaces/_{ws}_/datastores**](pages/datastores.md#post-workspaceswsdatastores) | Creates  a new data store.
+[**GET    workspaces/_{ws}_/datastores/_{ds}_**](pages/datastores.md#get-workspaceswsdatastoresds) | Returns data store _{ds}_.
+[**PUT    workspaces/_{ws}_/datastores/_{ds}_**](pages/datastores.md#put-workspaceswsdatastoresds) | Modifies data store _{ds}_.
+[**DELETE workspaces/_{ws}_/datastores/_{ds}_**](pages/datastores.md#delete-workspaceswsdatastoresds) | Deletes data store _{ds}_.
+[**PUT    workspaces/_{ws}_/datastores/_{ds}_/file._{extension}_**](pages/datastores.md#put-workspaceswsdatastoresdsfileextension) | Uploads a vector data file from a local source.
 **GET    workspaces/_{ws}_/datastores/_{ds}_/featuretypes** | Returns a list containing all feature types in selected data store.
 **POST   workspaces/_{ws}_/datastores/_{ds}_/featuretypes** | Creates a new feature type. It creates the associated layer by default.
 **GET    workspaces/_{ws}_/datastores/_{ds}_/featuretypes/_{ft}_** | Returns feature type _{ft}_.
