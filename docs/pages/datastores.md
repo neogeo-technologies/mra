@@ -201,14 +201,14 @@ None
 **Status code:** 200 OK
 
 
-### PUT workspaces/{ws}/datastores/{ds}/files.{extension}
+### PUT workspaces/{ws}/datastores/{ds}/file.{extension}
 
 Uploads a file from a local source and creates the data store.
 File must be zipped.
 
 #### Resource URL
 
-http://hostname/workspaces/{ws}/datastores/{ds}/files.{extension}
+http://hostname/workspaces/{ws}/datastores/{ds}/file.{extension}
 
 #### Available formats
 
