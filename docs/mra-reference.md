@@ -3,26 +3,24 @@
 This section describes the REST configuration API.
 
 It is in process of writing...
-Nevertheless, you could refer to the GeoServer Rest API documentation cause MRA was designed to offer compatibility with this model.
-You will also find few _docstrings_ by reading the code, especially the module `server.py` which defines the URL mapping infrastructure and HTTP methods used by the REST API.
-
 
 ### Compatibility with GeoServer REST API
 
-MapServer REST API was designed to offer compatibility with the GeoServer REST API model because we believe that both should be able to communicate...
+MapServer REST API was designed to offer compatibility with the GeoServer REST API model because we believe that both should be able to communicate.
 These two concepts should not be viewed as being mutually opposed.
-On the contrary, they can be mutually rewarding.
-This was helpful for us. So this can be used more widely.
+On the contrary, they can be mutually rewarding. This was helpful for us. So this can be used more widely.
 
-The pre-existence of GeoServer REST API obliges us to make choices, and hence depart from the MapServer model in favor of the GeoServer model.
-And that does not mean to say that it would be the best way to control MapServer.
-However, despite these still substantial differences between the two softwares, 
+The pre-existence of GeoServer REST API obliges us to make choices, and hence depart from the MapServer logic in favor of the GeoServer model.
+That does not mean to say that it would be the best way to control MapServer.
+However, despite the substantial differences between the two softwares, MapServer REST API help to a certain extent to reduce the gap.
+
+MapServer REST API is not fully compatible with GeoServer.
+Either do we believe that it makes much sense to include elements which does not affect the good functioning of services provided.
 
 
+### Mapfiles & Workspaces, data stores, featuretypes, coverage stores, coverages
 
-### Workspaces, data stores & featuretypes, coverage stores & coverages
-
-A workspace is a grouping of data stores and coverage stores.
+In GeoServer, a workspace is a grouping of data stores and coverage stores.
 
 A data store is a source of spatial data that is vector based.
 It can be a file such as a _shapefile_ or a database such as _PostGIS_.
@@ -31,13 +29,15 @@ In cases of a _shapefile_, the feature type is unique and corresponds to the dat
 In cases of a _PostGIS_ database, feature types corresponds to tables.
 
 A coverage store is a source of spatial data that is raster based. 
-In current version, it can only be a _GeoTIFF_ file.
-For this format file, the coverage is unique and corresponds to the coverage store.
+It can be a _GeoTIFF_ file and for this format file, the coverage is unique and corresponds to the coverage store.
 
 The concept of _workspace_ comes from GeoServer and it does not exist in MapServer.
+This is the main difference between the two designs.
 
 However, it is possible to assimilate this concept to a single _mapfile_.
-So a _workspace_ is a _mapfile_.
+So a MapServer' _mapfile_ is assimilated to GeoServer' _workspace_.
+And this contains layers which shall be regarded as connections to data stores or to coverage stores.
+That can be treated as a [layer](#layers) and that can be published as [OGC Web Service](#ogc-web-services) or not.
 
 ###### Workspaces
 
@@ -140,7 +140,7 @@ Resource | Description
 [**POST   layergroups**](resources/post-layergroups.md) | Creates a new layer group.
 [**GET    layergroups/\<lg\>**](resources/get-layergroup.md) | Returns layer group \<lg\>.
 [**PUT    layergroups/\<lg\>**](resources/put-layergroup.md) | Modifies layer group \<lg\> (i.e. adding or removing layers of the group).
-[**DELETE layergroups/\<lg\>**](resources/delete-layergroups.md) | Deletes layer group \<lg\>.
+[**DELETE layergroups/\<lg\>**](resources/delete-layergroup.md) | Deletes layer group \<lg\>.
 
 
 ### OGC Web Services
