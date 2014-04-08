@@ -4,32 +4,42 @@ Creates a new layers.
 
 #### Resource URL
 
-http://_hostname_/layers_.format_
+http://\<hostname\>/layers\<.format\>
 
 #### Available formats
 
 HTML (default value), JSON, XML.
 
-#### Exemple request
+#### Parameters
 
-**POST** http://hostname/layers.json
+None.
 
-**POST Content-type:** `application-json`
+#### Exemple requests
 
-**POST data:**
+###### JSON
+
+`POST http://127.0.0.1/layers.json`
+
+Content-type: `application/json`
+
+Data:
 
 ```json
 {
     "layer": {
         "name": "ne_110m_admin_0_countries",
         "resource": {
-            "href": "http://hostname/workspaces/my_workspace/datastores/ne_110m_admin_0_countries/featuretypes/ne_110m_admin_0_countries.json"}
+            "href": "http://127.0.0.1/workspaces/my_workspace/datastores/ne_110m_admin_0_countries/featuretypes/ne_110m_admin_0_countries.json"}
     }
 }
 ```
 
-#### Response
+Returns,
 
-**Status code:** `201 Created`
+Status code: `201 Created`
 
-**Location:** http://hostname/layer/just_countries.json
+Location: `http://127.0.0.1/layer/ne_110m_admin_0_countries.json
+
+#### Compatibility with GeoServer REST API
+
+`TODO`

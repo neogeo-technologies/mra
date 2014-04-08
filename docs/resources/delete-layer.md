@@ -1,19 +1,19 @@
-### DELETE layers/_l_
+### DELETE layers/\<l\>
 
-Deletes the layer `_l_'.
+Deletes the layer \<l\>.
 
 #### Resource URL
 
-http://_hostname_/layers/_l.format_
+http://\<hostname\>/layers/\<l\>\<.format\>
 
 #### Available formats
 
 HTML (default value), JSON, XML.
 
+#### Parameters
+
+None.
+
 #### Exemple request
 
-**DELETE** http://hostname/layers/ne_110m_admin_0_countries.json
-
-#### Response
-
-**Status code:** `200 OK`
+`DELETE http://127.0.0.1/layers/ne_110m_admin_0_countries.json`

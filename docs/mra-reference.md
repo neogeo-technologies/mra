@@ -7,6 +7,19 @@ Nevertheless, you could refer to the GeoServer Rest API documentation cause MRA 
 You will also find few _docstrings_ by reading the code, especially the module `server.py` which defines the URL mapping infrastructure and HTTP methods used by the REST API.
 
 
+### Compatibility with GeoServer REST API
+
+MapServer REST API was designed to offer compatibility with the GeoServer REST API model because we believe that both should be able to communicate...
+These two concepts should not be viewed as being mutually opposed.
+On the contrary, they can be mutually rewarding.
+This was helpful for us. So this can be used more widely.
+
+The pre-existence of GeoServer REST API obliges us to make choices, and hence depart from the MapServer model in favor of the GeoServer model.
+And that does not mean to say that it would be the best way to control MapServer.
+However, despite these still substantial differences between the two softwares, 
+
+
+
 ### Workspaces, data stores & featuretypes, coverage stores & coverages
 
 A workspace is a grouping of data stores and coverage stores.
@@ -21,37 +34,60 @@ A coverage store is a source of spatial data that is raster based.
 In current version, it can only be a _GeoTIFF_ file.
 For this format file, the coverage is unique and corresponds to the coverage store.
 
+The concept of _workspace_ comes from GeoServer and it does not exist in MapServer.
+
+However, it is possible to assimilate this concept to a single _mapfile_.
+So a _workspace_ is a _mapfile_.
+
+###### Workspaces
+
 Resource | Description
 ---------|------------
 [**GET    workspaces**](resources/get-workspaces.md) | Returns a list containing workspaces.
 [**POST   workspaces**](resources/post-workspaces.md) | Creates a new workspace.
-[**GET    workspaces/_ws_**](resources/get-workspace.md) | Returns workspace `_ws_'.
-~ | ~
-[**GET    workspaces/_ws_/datastores**](resources/get-datastores.md) | Returns a list containing data stores in the workspace `_ws_'.
-[**POST   workspaces/_ws_/datastores**](resources/post-datastores.md) | Creates a new data store.
-[**GET    workspaces/_ws_/datastores/_ds_**](resources/get-datastore.md) | Returns data store `_ds_'.
-[**PUT    workspaces/_ws_/datastores/_ds_**](resources/put-datastore.md) | Modifies data store `_ds_'.
-[**DELETE workspaces/_ws_/datastores/_ds_**](resources/delete-datastore.md) | Deletes data store `_ds_'.
-[**PUT    workspaces/_ws_/datastores/_ds_/file_.extension_**](resources/put-datastore-file.md) | Uploads a vector data file from a local source.
-~ | ~
-[**GET    workspaces/_ws_/datastores/_ds_/featuretypes**](resources/get-featuretypes.md) | Returns a list containing all feature types in data store `_ds_'.
-[**POST   workspaces/_ws_/datastores/_ds_/featuretypes**](resources/post-featuretypes.md) | Creates a new feature type. It creates the associated layer by default.
-[**GET    workspaces/_ws_/datastores/_ds_/featuretypes/_ft_**](resources/get-featuretype.md) | Returns feature type `_ft_'.
-[**PUT    workspaces/_ws_/datastores/_ds_/featuretypes/_ft_**](resources/put-featuretype.md) | Modifies feature type  `_ft_'.
-[**DELETE workspaces/_ws_/datastores/_ds_/featuretypes/_ft_**](resources/delete-featuretype.md) | Delete feture type `_ft_'.
-~ | ~
-[**GET    workspaces/_ws_/coveragestores**](resources/get-coveragestores.md) | Returns a list containing coverage stores in the workspace `_ws_'.
-[**POST   workspaces/_ws_/coveragetores**](resources/post-coveragestores.md) | Creates a new coverage store.
-[**GET    workspaces/_ws_/coveragestores/_cs_**](resources/get-coveragestore.md) | Returns coverage store `_cs_'.
-[**PUT    workspaces/_ws_/coveragestores/_cs_**](resources/put-coveragestore.md) | Modifies coverage store `_cs_'.
-[**DELETE workspaces/_ws_/coveragestores/_cs_**](resources/delete-coveragestore.md) | Deletes coverage store `_cs_'.
-[**PUT    workspaces/_ws_/coveragestores/_cs_/file_.extension_**](resources/put-coveragestore-file.md) | Uploads a raster data file from a local source.
-~ | ~
-[**GET    workspaces/_<ws>_/coveragestores/_cs_/coverages**](resources/get-coverages.md) | Returns a list containing all coverages in coverage store `_cs_'.
-[**POST   workspaces/_<ws>_/coveragestores/_cs_/coverages**](resources/post-coverages.md) | Creates a new coverage. It creates the associated layer by default.
-[**GET    workspaces/_<ws>_/coveragestores/_cs_/coverages/_c_**](resources/get-coverage.md) | Returns coverage `_c_'.
-[**PUT    workspaces/_<ws>_/coveragestores/_cs_/coverages/_c_**](resources/put-coverage.md) | Modifies coverage `_c_'.
-[**DELETE workspaces/_<ws>_/coveragestores/_cs_/coverages/_c_**](resources/delete-coverage.md) | Deletes coverage `_c_'.
+[**GET    workspaces/\<ws\>**](resources/get-workspace.md) | Returns workspace \<ws\>.
+
+###### Data Stores
+
+Resource | Description
+---------|------------
+[**GET    workspaces/\<ws\>/datastores**](resources/get-datastores.md) | Returns a list containing data stores in the workspace \<ws\>.
+[**POST   workspaces/\<ws\>/datastores**](resources/post-datastores.md) | Creates a new data store.
+[**GET    workspaces/\<ws\>/datastores/\<ds\>**](resources/get-datastore.md) | Returns data store \<ds\>.
+[**PUT    workspaces/\<ws\>/datastores/\<ds\>**](resources/put-datastore.md) | Modifies data store \<ds\>.
+[**DELETE workspaces/\<ws\>/datastores/\<ds\>**](resources/delete-datastore.md) | Deletes data store \<ds\>.
+[**PUT    workspaces/\<ws\>/datastores/\<ds\>/file\<.extension\>**](resources/put-datastore-file.md) | Uploads a vector data file from a local source.
+
+###### Feature Types
+
+Resource | Description
+---------|------------
+[**GET    workspaces/\<ws\>/datastores/\<ds\>/featuretypes**](resources/get-featuretypes.md) | Returns a list containing all feature types in data store \<ds\>.
+[**POST   workspaces/\<ws\>/datastores/\<ds\>/featuretypes**](resources/post-featuretypes.md) | Creates a new feature type. It creates the associated layer by default.
+[**GET    workspaces/\<ws\>/datastores/\<ds\>/featuretypes/\<ft\>**](resources/get-featuretype.md) | Returns feature type \<ft\>.
+[**PUT    workspaces/\<ws\>/datastores/\<ds\>/featuretypes/\<ft\>**](resources/put-featuretype.md) | Modifies feature type  \<ft\>.
+[**DELETE workspaces/\<ws\>/datastores/\<ds\>/featuretypes/\<ft\>**](resources/delete-featuretype.md) | Delete feture type \<ft\>.
+
+###### Coverage Stores
+
+Resource | Description
+---------|------------
+[**GET    workspaces/\<ws\>/coveragestores**](resources/get-coveragestores.md) | Returns a list containing coverage stores in the workspace \<ws\>.
+[**POST   workspaces/\<ws\>/coveragetores**](resources/post-coveragestores.md) | Creates a new coverage store.
+[**GET    workspaces/\<ws\>/coveragestores/\<cs\>**](resources/get-coveragestore.md) | Returns coverage store \<cs\>.
+[**PUT    workspaces/\<ws\>/coveragestores/\<cs\>**](resources/put-coveragestore.md) | Modifies coverage store \<cs\>.
+[**DELETE workspaces/\<ws\>/coveragestores/\<cs\>**](resources/delete-coveragestore.md) | Deletes coverage store \<cs\>.
+[**PUT    workspaces/\<ws\>/coveragestores/\<cs\>/file\<.extension\>**](resources/put-coveragestore-file.md) | Uploads a raster data file from a local source.
+
+###### Coverages
+
+Resource | Description
+---------|------------
+[**GET    workspaces/\<ws\>/coveragestores/\<cs\>/coverages**](resources/get-coverages.md) | Returns a list containing all coverages in coverage store \<cs\>.
+[**POST   workspaces/\<ws\>/coveragestores/\<cs\>/coverages**](resources/post-coverages.md) | Creates a new coverage. It creates the associated layer by default.
+[**GET    workspaces/\<ws\>/coveragestores/\<cs\>/coverages/\<c\>**](resources/get-coverage.md) | Returns coverage \<c\>.
+[**PUT    workspaces/\<ws\>/coveragestores/\<cs\>/coverages/\<c\>**](resources/put-coverage.md) | Modifies coverage \<c\>.
+[**DELETE workspaces/\<ws\>/coveragestores/\<cs\>/coverages/\<c\>**](resources/delete-coverage.md) | Deletes coverage \<c\>.
 
 
 ### Styles
@@ -62,9 +98,9 @@ Resource | Description
 ---------|------------
 [**GET    styles**](resources/get-styles.md) | Returns a list containing all available styles.
 [**POST   styles**](resources/post-styles.md) | Creates a new style.
-[**GET    styles/_s_**](resources/get-style.md) | Returns style `_s_'.
-[**PUT    styles/_s_**](resources/put-style.md) | Modifies style `_s_'.
-[**DELETE styles/_s_**](resources/delete-style.md) | Deletes style `_s_'.
+[**GET    styles/\<s\>**](resources/get-style.md) | Returns style \<s\>.
+[**PUT    styles/\<s\>**](resources/put-style.md) | Modifies style \<s\>.
+[**DELETE styles/\<s\>**](resources/delete-style.md) | Deletes style \<s\>.
 
 
 ### Fonts
@@ -86,12 +122,12 @@ Resource | Description
 ---------|------------
 [**GET    layers**](resources/get-layers.md) | Returns a list containing all layers.
 [**POST   layers**](resources/post-layers.md) | Creates a new layer.
-[**GET    layers/_l_**](resources/get-layer.md) | Returns layer `_l_'.
-[**PUT    layers/_l_**](resources/put-layer.md) | Modifies layer `_l_'.
-[**DELETE layers/_l_**](resources/delete-layer.md) | Deletes layer `_l_'.
-[**GET    layers/_l_/styles**](resources/get-layerstyles.md) | Returns a list containing all styles associated to layer `_l_'.
-[**DELETE layers/_l_/styles/_s_**](resources/get-layerstyle.md) | Removes style `_s_' from layer `_l_'.
-[**GET    layers/_l_/fields**](resources/get-layerfields.md) | Returns a list containing all fields associated to layer `_l_'.
+[**GET    layers/\<l\>**](resources/get-layer.md) | Returns layer \<l\>.
+[**PUT    layers/\<l\>**](resources/put-layer.md) | Modifies layer \<l\>.
+[**DELETE layers/\<l\>**](resources/delete-layer.md) | Deletes layer \<l\>.
+[**GET    layers/\<l\>/styles**](resources/get-layerstyles.md) | Returns a list containing all styles associated to layer \<l\>.
+[**DELETE layers/\<l\>/styles/\<s\>**](resources/get-layerstyle.md) | Removes style \<s\> from layer \<l\>.
+[**GET    layers/\<l\>/fields**](resources/get-layerfields.md) | Returns a list containing all fields associated to layer \<l\>.
 
 
 ### Layer groups
@@ -102,9 +138,9 @@ Resource | Description
 ---------|------------
 [**GET    layergroups**](resources/get-layergroups.md) | Returns a list containing all existing layer groups.
 [**POST   layergroups**](resources/post-layergroups.md) | Creates a new layer group.
-[**GET    layergroups/_lg_**](resources/get-layergroup.md) | Returns layer group `_lg_'.
-[**PUT    layergroups/_lg_**](resources/put-layergroup.md) | Modifies layer group `_lg_' (i.e. adding or removing layers of the group).
-[**DELETE layergroups/_lg_**](resources/delete-layergroups.md) | Deletes layer group `_lg_'.
+[**GET    layergroups/\<lg\>**](resources/get-layergroup.md) | Returns layer group \<lg\>.
+[**PUT    layergroups/\<lg\>**](resources/put-layergroup.md) | Modifies layer group \<lg\> (i.e. adding or removing layers of the group).
+[**DELETE layergroups/\<lg\>**](resources/delete-layergroups.md) | Deletes layer group \<lg\>.
 
 
 ### OGC Web Services

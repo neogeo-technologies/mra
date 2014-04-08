@@ -1,22 +1,28 @@
-### PUT layers/_l_
+### PUT layers/\<l\>
 
-Modifies the configuration of the layer `_l_'.
+Modifies the configuration of the layer \<l\>.
 
 #### Resource URL
 
-http://_hostname_/layers/_l.format_
+http://\<hostname\>/layers/\<l\>\<.format\>
 
 #### Available formats
 
-HTML (default value), JSON, XML.
+JSON, XML.
 
-#### Exemple request
+#### Parameters
 
-**PUT** http://hostname/layers/ne_110m_admin_0_countries.json
+None.
 
-**PUT Content-type:** `application-json`
+#### Exemple requests
 
-**PUT data:**
+###### JSON
+
+`PUT http://127.0.0.1/layers/ne_110m_admin_0_countries.json`
+
+Content-type: `application/json`
+
+Data:
 
 ```json
 {
@@ -27,6 +33,6 @@ HTML (default value), JSON, XML.
 }
 ```
 
-#### Response
+#### Compatibility with GeoServer REST API
 
-**Status code:** `200 OK`
+`TODO`

@@ -4,27 +4,48 @@ Returns a list of all existing layers.
 
 #### Resource URL
 
-http://_hostname_/layers_.format_
+http://\<hostname\>/layers\<.format\>
 
 #### Available formats
 
 HTML (default value), JSON, XML.
 
-#### Exemple request
+#### Exemple requests
 
-**GET** http://hostname/layers.json
+###### XML
 
-#### Response
+`GET http://127.0.0.1/layers.xml`
 
-**Status code:** `200 OK`
+Results,
+
+```xml
+<layers>
+	<layer>
+		<name>ne_110m_admin_0_countries</name>
+		<atom:link href="http://127.0.0.1/layers/ne_110m_admin_0_countries.json" rel="alternate" type="application/xml"/>
+	</layer>
+</layers>
+```
+
+###### JSON
+
+`GET http://127.0.0.1/layers.json`
+
+Results,
 
 ```json
 {
     "layers": [
         {
             "name": "ne_110m_admin_0_countries",
-            "href": "http://hostname/layers/ne_110m_admin_0_countries.json"
+            "href": "http://127.0.0.1/layers/ne_110m_admin_0_countries.json"
         }
     ]
 }
 ```
+
+#### Compatibility with GeoServer REST API
+
+The XML response is fully compatible with GeoServer REST API.
+
+But the JSON response is not.

@@ -4,19 +4,25 @@ Creates a new workspace.
 
 #### Resource URL
 
-http://_hostname_/workspaces_.format_
+http://\<hostname\>/workspaces\<.format\>
 
 #### Available formats
 
 JSON, XML.
 
-#### Example request
+#### Parameters
 
-**POST** http://hostname/workspaces.json
+None.
 
-**POST Content-type:** `application-json`
+#### Example requests
 
-**POST data:**
+###### JSON
+
+`POST http://127.0.0.1/workspaces.json`
+
+Content-type: `application/json`
+
+Data:
 
 ```json
 {
@@ -27,8 +33,26 @@ JSON, XML.
 }
 ```
 
-##### Response
+###### XML
 
-**Status code:** `201 OK`
+`POST http://127.0.0.1/workspaces.xml`
 
-**Location:** `http://hostname/workspaces/my_workspace.json`
+Content-type: `application/xml`
+
+Data:
+
+```xml
+<workspace>
+	<name>another_workspace</name>
+</workspace>
+```
+
+Returns,
+
+Status code: `201 Created`
+
+With Location: `http://hostname/workspaces/another_workspace.xml`
+
+#### Compatibility with GeoServer REST API
+
+Fully compatible.

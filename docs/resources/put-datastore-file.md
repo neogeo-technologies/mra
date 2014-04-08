@@ -1,11 +1,11 @@
-### PUT workspaces/_ws_/datastores/_ds_/file_.extension_
+### PUT workspaces/\<ws\>/datastores/\<ds\>/file\<.extension\>
 
-Uploads a file from a local source and creates the data store `_ds_'.
-File must be zipped.
+Uploads a file from a local source and creates the data store \<ds\>.
+Files must be zipped.
 
 #### Resource URL
 
-http://_hostname_/workspaces/_ws_/datastores/_ds_/file_.extension_
+http://\<hostname\>/workspaces/\<ws\>/datastores/\<ds\>/file\<.extension\>
 
 #### Available extensions
 
@@ -13,16 +13,20 @@ SHP (ShapeFile).
 
 #### Parameters
 
-`TODO`
+None.
 
 #### Example request
 
-**PUT** http://hostname/workspaces/my_workspace/datastores/ne_110m_admin_0_countries/file.shp
+`PUT http://127.0.0.1/workspaces/my_workspace/datastores/ne_110m_admin_0_countries/file.shp`
 
-**PUT Content-type:** `application-zip`
+Content-type: `application/zip`
 
-**PUT binary-data**
+Data: `binary-data`
 
-#### Response
+Returns
 
-**Status code:** `200 OK`
+Status code: `200 OK`
+
+#### Compatibility with GeoServer REST API
+
+`TODO`

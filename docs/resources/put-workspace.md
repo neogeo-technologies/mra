@@ -1,3 +1,3 @@
-### PUT workspaces/_ws_
+### PUT workspaces/\<ws\>
 
 `TODO`

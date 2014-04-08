@@ -1,28 +1,36 @@
-### PUT workspaces/_ws_/datastores/_ds_
+### PUT workspaces/\<ws\>/datastores/\<ds\>
 
-Modifies data store `_ds_'.
+Modifies data store \<ds\>.
 
 #### Resource URL
 
-http://_hostname_/workspaces/_ws_/datastores/_ds.format_
+http://\<hostname\>/workspaces/\<ws\>/datastores/\<ds\>\<.format\>
 
 #### Available formats
 
 JSON, XML.
 
+#### Parameters
+
+None.
+
 #### Example request
 
-**PUT http://hostname/workspaces/my_workspace/datastores/pg_sample.json
+##### Data store is a PostGIS connection
 
-**PUT Content-type:** `application-json`
+###### JSON
 
-**PUT Data:**
+`PUT http://127.0.0.1/workspaces/my_workspace/datastores/pg_sample.json`
+
+Content-type: `application/json`
+
+Data:
 
 ```json
 {
     "dataStore": {
         "name": "pg_sample",
-        "enabled": false,
+        "enabled": true,
         "connectionParameters": {
             "dbtype": "postgis",
             "host": "127.0.0.1",
@@ -35,8 +43,6 @@ JSON, XML.
 }
 ```
 
-#### Response
+#### Compatibility with GeoServer REST API
 
-**Status code:** `201 Created`
-
-**Location:** `http://hostname/workspaces/my_workspace/datastores/pg_sample.json`
+`TODO`

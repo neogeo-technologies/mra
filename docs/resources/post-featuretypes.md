@@ -1,25 +1,29 @@
-### POST workspaces/_ws_/datastores/_ds_/featuretypes
+### POST workspaces/\<ws\>/datastores/\<ds\>/featuretypes
 
-Configures a new feature type in data store `_ds_'.
+Configures a new feature type in data store \<ds\>.
 The feature type musts exit.
 
 This operation creates automatically the associated [layer](../mra-reference.md#layers).
 
 #### Resource URL
 
-http://_hostname_/workspaces/_ws_/datastores/_ds_/featuretypes_.format_
+http://\<hostname\>/workspaces/\<ws\>/datastores/\<ds\>/featuretypes\<.format\>
 
 #### Available formats
 
 JSON, XML.
 
-#### Example request
+#### Parameters
 
-**POST** http://hostname/workspaces/my_workspace/datastores/ne_110m_admin_0_countries/featuretypes.json
+None.
 
-**POST Content-type:** `application-json`
+#### Example requests
 
-**POST data:**
+`POST http://127.0.0.1/workspaces/my_workspace/datastores/ne_110m_admin_0_countries/featuretypes.json`
+
+Content-type: `application/json`
+
+Data:
 
 ```json
 {
@@ -30,8 +34,12 @@ JSON, XML.
 }
 ```
 
-#### Response
+Returns,
 
-**Status code:** `201 Created`
+Status code: `201 Created`
 
-**Location:** http://hostname/workspaces/my_workspace/datastores/ne_110m_admin_0_countries/featuretypes/ne_110m_admin_0_countries.json
+Location: `http://127.0.0.1/workspaces/my_workspace/datastores/ne_110m_admin_0_countries/featuretypes/ne_110m_admin_0_countries.json`
+
+#### Compatibility with GeoServer REST API
+
+`TODO`

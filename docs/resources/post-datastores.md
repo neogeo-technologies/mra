@@ -1,22 +1,30 @@
-### POST workspaces/_ws_/datastores
+### POST workspaces/\<ws\>/datastores
 
-Creates a new data store in workspace `_ws_'. 
+Creates a new data store in workspace \<ws\>.
 
 #### Resource URL
 
-http://_hostname_/workspaces/_ws_/datastores/_ds.format_
+http://\<hostname\>/workspaces/\<ws\>/datastores/\<ds\>\<.format\>
 
 #### Available formats
 
 JSON, XML.
 
-#### Example request
+#### Parameters
 
-**POST** http://hostname/workspaces/my_workspace/datastores.json
+None.
 
-**POST Content-type:** `application-json`
+#### Example requests
 
-**POST data:**
+##### Data store is a PostGIS connection
+
+###### JSON
+
+`POST http://127.0.0.1/workspaces/my_workspace/datastores.json`
+
+Content-type: `application/json`
+
+Data:
 
 ```json
 {
@@ -35,8 +43,12 @@ JSON, XML.
 }
 ```
 
-#### Response
+Returns,
 
-**Status code:** `201 Created`
+Status code: `201 Created`
 
-**Location:** `http://hostname/workspaces/my_workspace/datastores/pg_sample.json`
+Location: `http://127.0.0.1/workspaces/my_workspace/datastores/pg_sample.json`
+
+#### Compatibility with GeoServer REST API
+
+`TODO`

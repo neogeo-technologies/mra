@@ -1,75 +1,75 @@
-### GET workspaces/_ws_/datastores/_ds_/featuretypes/_ft_
+### GET workspaces/\<ws\>/datastores/\<ds\>/featuretypes/\<ft\>
 
-Returns the feature type `_ft_'.
+Returns the feature type \<ft\>.
 
 #### Resource URL
 
-http://_hostname_/workspaces/_ws_/datastores/_ds_/featuretypes/_ft.format_
+http://\<hostname\>/workspaces/\<ws\>/datastores/\<ds\>/featuretypes/\<ft\>\<.format\>
 
 #### Available formats
 
-JSON, XML.
+HTML (default value), JSON, XML.
+
+#### Parameters
+
+None.
 
 #### Example request
 
-**GET** http://hostname/workspaces/my_workspace/datastores/ne_110m_admin_0_countries/featuretypes/ne_110m_admin_0_countries.json
+###### XML
 
-#### Response
+`GET http://hostname/workspaces/my_workspace/datastores/ne_110m_admin_0_countries/featuretypes/ne_110m_admin_0_countries.xml`
 
-**Status code:** `200 OK`
+Returns,
 
-```json
-{
-    "featureType": {
-        "nativeBoundingBox": {
-            "minx": -180,
-            "miny": -90,
-            "maxx": 180,
-            "maxy": 83.64513,
-            "crs": "EPSG:4326"
-        },
-        "nativeCRS": "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AUTHORITY[\"EPSG\",\"4326\"]]",
-        "latLonBoundingBox": {
-            "minx": -180,
-            "miny": -90,
-            "maxx": 180,
-            "maxy": 83.64513,
-            "crs": "EPSG:4326"
-        },
-        "abstract": null,
-        "nativeName": "ne_110m_admin_0_countries",
-        "name": "ne_110m_admin_0_countries",
-        "title": "ne_110m_admin_0_countries",
-        "enabled": true,
-        "projectionPolicy": "NONE",
-        "attributes": [
-            {
-                "length": 4,
-                "type": "Integer",
-                "name": "scalerank"
-            },
-            {
-                "length": 30,
-                "type": "String",
-                "name": "featurecla"
-            },
-            {
-                "length": 16,
-                "type": "Real",
-                "name": "labelrank"
-            },
-            // ...
-           	{
-                "maxOccurs": 1,
-                "type": "polygon",
-                "name": "geometry",
-                "minOccurs": 0
-            }
-        ],
-        "store": {
-            "href": "http://hostname/workspaces/my_workspace/datastores/ne_110m_admin_0_countries.json",
-            "name": "ne_110m_admin_0_countries"
-        }
-    }
-}
+```xml
+<featureType>
+    <name>ne_110m_admin_0_countries</name>
+    <nativeName>ne_110m_admin_0_countries</nativeName>
+    <title>ne_110m_admin_0_countries</title>
+    <nativeCRS>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9108"]],AUTHORITY["EPSG","4326"]]</nativeCRS>
+    <nativeBoundingBox>
+        <minx>-180.0</minx>
+        <miny>-90.0</miny>
+        <maxx>180.0</maxx>
+        <maxy>83.64513</maxy>
+        <crs>EPSG:4326</crs>
+    </nativeBoundingBox>
+    <latLonBoundingBox>
+        <minx>-180.0</minx>
+        <miny>-90.0</miny>
+        <maxx>180.0</maxx>
+        <maxy>83.64513</maxy>
+        <crs>EPSG:4326</crs>
+    </latLonBoundingBox>  
+    <projectionPolicy>NONE</projectionPolicy>
+    <enabled>True</enabled>
+    <store>
+        <name>ne_110m_admin_0_countries</name>
+        <atom:link xmlns:atom="http://www.w3.org/2005/Atom" href="http://127.0.0.1/workspaces/my_workspace/datastores/ne_110m_admin_0_countries.xml" rel="alternate" type="application/xml" />
+    </store>
+    <attributes>
+        <attribute>
+            <name>scalerank</name>
+            <type>Integer</type>
+            <length>4</length>
+        </attribute>
+        <attribute>
+            <name>featurecla</name>
+            <type>String</type>
+            <length>30</length>
+        </attribute>
+        <!-- (...) -->
+        <attribute>
+            <name>geometry</name>
+            <type>polygon</type>
+            <minOccurs>0</minOccurs>
+            <maxOccurs>1</maxOccurs>
+        </attribute>
+    </attributes>
+</featureType>
 ```
+
+#### Compatibility with GeoServer REST API
+
+`TODO`
