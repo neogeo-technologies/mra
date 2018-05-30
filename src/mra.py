@@ -28,9 +28,9 @@
     Module for managing MapFiles in MRA conceptual model.
 
     It deliberately follows a conceptual model close to GeoServer REST
-    API in order to ensure as much compatibility as possible. And thus 
+    API in order to ensure as much compatibility as possible. And thus
     allows to switch from first to second.
-    
+
     But, the next should be (will be) more consistent with MapServer
     while maintaining a certain proximity with GeoServer...
 
@@ -300,7 +300,7 @@ class Mapfile(MetadataMixin):
         self.ms.save(path or self.path)
 
     def rawtext(self):
-        open(self.path, "r").read() 
+        open(self.path, "r").read()
 
     # Layers:
 
@@ -442,10 +442,10 @@ class FeatureTypeModel(LayerModel):
         cparam = info["connectionParameters"]
         if cparam.get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
             self.ms.connectiontype = mapscript.MS_POSTGIS
-            connection = "dbname=%s port=%s host=%s " % (cparam["database"], cparam["port"], cparam["host"])
+            connection = "dbname=%s port=%s host=%s " % (cparam.get("database", "postgres"), cparam.get("port", "5432"), cparam.get("host", "localhost"))
             connection += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
             self.ms.connection = connection
-            self.ms.data = "%s FROM %s.%s" % (ds[ft_name].get_geometry_column(), cparam["schema"], ft_name)
+            self.ms.data = '%s FROM %s."%s"' % (ds[ft_name].get_geometry_column(), cparam.get("schema", "public"), ft_name)
             # self.set_metadata("ows_extent", "%s %s %s %s" %
             #     (ft.get_extent().minX(), ft.get_extent().minY(),
             #     ft.get_extent().maxX(), ft.get_extent().maxY()))
