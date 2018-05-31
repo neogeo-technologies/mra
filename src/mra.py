@@ -637,15 +637,13 @@ class Workspace(Mapfile):
         info = self.get_mra_metadata("%ss" % st_type, {})[name].copy()
         info["name"] = name
 
-        for v in exclude:
-            path = tuple(k for k in v.split('.'))
-            copy = info
-            for m in path[:-1]:
-                copy = copy.get(m)
-            try:
+        if exclude:
+            for v in exclude:
+                path = tuple(k for k in v.split('.'))
+                copy = info
+                for m in path[:-1]:
+                    copy = copy.get(m)
                 del copy[path[-1]]
-            except:
-                pas
 
         return info
 
