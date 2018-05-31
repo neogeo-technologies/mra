@@ -34,6 +34,7 @@ from osgeo import ogr, osr, gdal
 import mapscript
 import tools
 
+
 class Extent(list):
 
     def __init__(self, *args, **kwargs):
@@ -62,6 +63,7 @@ class Extent(list):
         for y in args:
             self[1] = min(self[1], y)
             self[3] = max(self[3], y)
+
 
 class Field(object):
     """A Field implementation backed by ogr."""
@@ -120,6 +122,7 @@ class Field(object):
         else:
             return None
 
+
 class Feature(object):
     """A Feature implementation backed by ogr."""
 
@@ -143,6 +146,7 @@ class Feature(object):
 
     def get_field(self):
         return Field(self.backend.GetFieldDefn(), layer)
+
 
 class Featuretype(object):
     """A featuretype implementation backed by ogr."""
@@ -299,6 +303,7 @@ class Featuretype(object):
             name, nullable = feature.GetField(0), feature.GetField(1)
             self.nullables[name] = nullable
 
+
 class Datastore(object):
     """A datastore implementation backed by ogr."""
 
@@ -345,6 +350,7 @@ class Datastore(object):
         for i in xrange(self.backend.GetLayerCount()):
             yield Featuretype(self.backend.GetLayerByIndex(i), self)
 
+
 class Band(object):
     """A band immplementation backed by gdal."""
 
@@ -353,15 +359,16 @@ class Band(object):
 
         self.backend = backend
 
+
 class Coveragestore(object):
     """A coveragestore implementation backed by gdal."""
 
     def __init__(self, path):
         """Path will be used to open the store, it can be a simple filesystem path
         or something more complex used by gdal/ogr to access databases for example.
-        
+
         The first argument to __init__ can also directly be a gdal/ogr object.
-        
+
         """
         self.backend = path if isinstance(path, gdal.Dataset) else gdal.Open(path)
         if self.backend == None:

@@ -33,6 +33,7 @@ import xml.etree.ElementTree as etree
 from xml.etree.ElementTree import Element
 from xml.sax.saxutils import escape
 
+
 # Here we have the Entries, it wraps either a list or a dict.
 # Its not trivial because we want to inherit from a list or
 # from a dict, but we want both instances to inherit from Entries.
@@ -65,18 +66,19 @@ class Entries(object):
 def href(link, element=None):
     """Builds an atom:link object for the link."""
 
-    if element == None:
+    if element is None:
         element = Element("atom:link")
 
     element.tag = "atom:link"
     element.attrib = {
-            "xmlns:atom":"http://www.w3.org/2005/Atom",
-            "rel":"alternate",
-            "href":link,
-            "type":"application/xml",
-            }
+        "xmlns:atom": "http://www.w3.org/2005/Atom",
+        "rel": "alternate",
+        "href": link,
+        "type": "application/xml",
+        }
 
     return element
+
 
 def singular(name):
     """Tries to return name in its singular form if possible else it just returns name."""
@@ -85,6 +87,7 @@ def singular(name):
     elif name.endswith("s"):
         return name[:-1]
     return name
+
 
 def default_xml_dict_mapper(obj_name, key_name="key"):
     """Maps to xml_dict and tries to deduce the entry naming from obj_name.
@@ -98,6 +101,7 @@ def default_xml_dict_mapper(obj_name, key_name="key"):
     else:
         return xml_dict, None
 
+
 def default_xml_list_mapper(obj_name, entry_name="entry"):
     """Always maps to xml_list but tries to name its entries after the
     singular of obj_name if possible. If not they are named after entry_name.
@@ -108,6 +112,7 @@ def default_xml_list_mapper(obj_name, entry_name="entry"):
         return xml_list, singular_name
     else:
         return xml_list, entry_name
+
 
 def default_xml_mapper(obj, obj_name,
                        dict_mapper=default_xml_dict_mapper,
@@ -125,7 +130,7 @@ def default_xml_mapper(obj, obj_name,
     and otherwise it is assumed to be a string.
 
     """
-    if obj == None:
+    if obj is None:
         return None, None
     elif isinstance(obj, Entries):
         return obj.get_hints()
@@ -146,6 +151,7 @@ def default_xml_mapper(obj, obj_name,
     else:
         raise NotImplementedError("Can't map %s object." % type(obj))
 
+
 def xml(obj, obj_name=None, parent=None,
         xml_mapper=default_xml_mapper,
         dict_mapper=default_xml_dict_mapper,
@@ -157,11 +163,11 @@ def xml(obj, obj_name=None, parent=None,
 
     """
     # Findout the object's name.
-    if obj_name == None:
-        obj_name = parent.tag if parent != None else "object"
+    if obj_name is None:
+        obj_name = parent.tag if parent is not None else "object"
 
     # Create the parent if it's not provided.
-    if parent == None:
+    if parent is None:
         parent = etree.Element(tag=obj_name)
 
     mapper, hint = xml_mapper(obj, obj_name, dict_mapper, list_mapper)
@@ -172,15 +178,18 @@ def xml(obj, obj_name=None, parent=None,
 
     return parent
 
+
 def xml_href(parent, obj, hint=None, xml_mapper=default_xml_mapper,
              dict_mapper=default_xml_dict_mapper, list_mapper=default_xml_list_mapper):
     """Adds obj to parent as if it is a href."""
     href(str(obj), parent)
 
+
 def xml_string(parent, obj, _=None, xml_mapper=default_xml_mapper,
              dict_mapper=default_xml_dict_mapper, list_mapper=default_xml_list_mapper):
     """Adds obj to parent as if it is a string."""
     parent.text = escape(str(obj))
+
 
 def xml_dict(parent, obj, hint=None, xml_mapper=default_xml_mapper,
              dict_mapper=default_xml_dict_mapper, list_mapper=default_xml_list_mapper):
@@ -197,6 +206,7 @@ def xml_dict(parent, obj, hint=None, xml_mapper=default_xml_mapper,
         xml(v, parent=child, xml_mapper=xml_mapper, dict_mapper=dict_mapper, list_mapper=list_mapper)
         parent.append(child)
 
+
 def xml_list(parent, obj, hint, xml_mapper=default_xml_mapper,
              dict_mapper=default_xml_dict_mapper, list_mapper=default_xml_list_mapper):
     """Adds obj to parent as if it is a list.
@@ -209,13 +219,16 @@ def xml_list(parent, obj, hint, xml_mapper=default_xml_mapper,
         xml(v, parent=child, xml_mapper=xml_mapper, dict_mapper=dict_mapper, list_mapper=list_mapper)
         parent.append(child)
 
+
 def dump(obj, fp, encoding=None, *args, **kwargs):
     """Writes the xml represention of obj to the file-like object fp."""
     fp.write(etree.tostring(xml(obj, *args, **kwargs), encoding))
 
+
 def dumps(obj, encoding=None, *args, **kwargs):
     """Returns the xml representation of obj as a string."""
     return etree.tostring(xml(obj, *args, **kwargs), encoding)
+
 
 def obj(xml):
     """Returns the object represented by the xml.
@@ -275,6 +288,7 @@ def obj(xml):
     else:
         return list(obj(c) for c in children)
 
+
 def loads(s, retname=False, *args, **kwargs):
     """Returns an object coresponding to what is described in the xml."""
     try:
@@ -285,10 +299,11 @@ def loads(s, retname=False, *args, **kwargs):
     o = obj(xml, *args, **kwargs)
     return (o, xml.tag) if retname else o
 
+
 def load(fp, retname=False, *args, **kwargs):
     """Returns an object coresponding to what is described in the xml
     read from the file-like object fp.
-    
+
     """
     try:
         xml = etree.parse(fp)
@@ -297,4 +312,3 @@ def load(fp, retname=False, *args, **kwargs):
         raise ValueError("No XML object could be decoded.")
     o = obj(xml, *args, **kwargs)
     return (o, xml.tag) if retname else o
-

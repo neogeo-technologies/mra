@@ -35,6 +35,7 @@ import inspect
 import logging
 import functools
 
+
 def setup(log_level, log_file=None, format="%(asctime)s %(levelname)7s: %(message)s"):
     log_level = getattr(logging, log_level.upper())
 
@@ -45,6 +46,7 @@ def setup(log_level, log_file=None, format="%(asctime)s %(levelname)7s: %(messag
     sh.setLevel(log_level)
     sh.setFormatter(logging.Formatter(format))
     logging.getLogger().addHandler(sh)
+
 
 class Reccord(logging.Handler):
     """A logging.Handler class which stores the records.
@@ -83,6 +85,7 @@ class Reccord(logging.Handler):
         logger.removeHandler(logging.getLogger(self.logger))
         logging.Handler.__del__(self)
 
+
 def short_str(obj, length=15, delta=5, tail="..."):
     """Returns a short version of str(obj) of length +/- delta.
     It tries to cut on characters from string.punctuation.
@@ -120,6 +123,7 @@ def logIn(level="debug", filter=(lambda *a, **kw:True)):
         return decorator(f)
     return decorator
 
+
 def logOut(level="debug", filter=(lambda *a, **kw:True)):
     """Decorator factory used to log when the function returns.
     The log level can be specified using level.
@@ -143,6 +147,7 @@ def logOut(level="debug", filter=(lambda *a, **kw:True)):
         f, level = level, "debug"
         return decorator(f)
     return decorator
+
 
 def logBoth(level="debug"):
     """Helper decorator, same as applying both @logIn and @logOut"""

@@ -36,7 +36,9 @@ import yaml
 import contextlib
 from mapscript import MapServerError
 
+
 METADATA_NAME="mra"
+
 
 def get_metadata(obj, key, *args):
     """Returns Metadata for a mapObj or a layerObj.
@@ -52,7 +54,7 @@ def get_metadata(obj, key, *args):
     except MapServerError:
         value = None
 
-    if value == None:
+    if value is None:
         if not args:
             raise KeyError(key)
         value = args[0]
@@ -61,6 +63,7 @@ def get_metadata(obj, key, *args):
         value = value.encode("UTF8")
 
     return value
+
 
 def iter_metadata_keys(obj):
     # Prepare for ugliness...
@@ -73,23 +76,29 @@ def iter_metadata_keys(obj):
 
     return keys
 
+
 def get_metadata_keys(obj):
     return list(iter_metadata_keys(obj))
 
+
 def set_metadata(obj, key, value):
     obj.setMetaData(key, value)
+
 
 def set_metadatas(obj, metadatas):
     # TODO: erease all metadata first.
     for key, value in metadatas.iteritems():
         set_metadata(obj, key, value)
 
+
 def update_metadatas(obj, metadatas):
     for key, value in metadatas.iteritems():
         set_metadata(obj, key, value)
 
+
 def del_metadata(obj, key):
     obj.removeMetaData(key)
+
 
 @contextlib.contextmanager
 def metadata(obj, key, *args):
@@ -100,6 +109,7 @@ def metadata(obj, key, *args):
     metadata = get_metadata(obj, key, *args)
     yield metadata
     set_metadata(obj, key, metadata)
+
 
 def __get_mra(obj):
     text = get_metadata(obj, METADATA_NAME, None)
@@ -112,8 +122,10 @@ def __get_mra(obj):
         raise IOError("File has corrupted MRA metadata for entry \"%s\"." % key)
     return metadata
 
+
 def __save_mra(obj, mra_metadata):
     set_metadata(obj, METADATA_NAME, yaml.safe_dump(mra_metadata))
+
 
 def get_mra_metadata(obj, key, *args):
     """get_metadata(obj, key, [default]) -> value"""
@@ -130,26 +142,33 @@ def get_mra_metadata(obj, key, *args):
             raise
         return args[0]
 
+
 def iter_mra_metadata_keys(obj):
     return __get_mra(obj).iterkeys()
 
+
 def get_mra_metadata_keys(obj):
     return __get_mra(obj).keys()
+
 
 def update_mra_metadatas(obj, update):
     with mra_metadata(obj) as metadata:
         metadata.update(update)
 
+
 def set_mra_metadatas(obj, mra_metadata):
     __save_mra(obj, mra_metadata)
+
 
 def set_mra_metadata(obj, key, value):
     with mra_metadata(obj) as metadata:
         metadata[key] = value
 
+
 def del_mra_metadata(obj, key, value):
     with mra_metadata(obj) as mra_metadata:
         del metadata[key]
+
 
 @contextlib.contextmanager
 def mra_metadata(obj, *args):

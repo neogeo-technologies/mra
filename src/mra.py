@@ -51,12 +51,14 @@ from webapp import KeyExists
 import stores
 import metadata
 
+
 class MetadataMixin(object):
     def __getattr__(self, attr):
         if hasattr(self, "ms") and hasattr(metadata, attr):
             return functools.partial(getattr(metadata, attr), self.ms)
         raise AttributeError("\"%s\" object has no attribute \"%s\"." %
                              (type(self).__name__, attr))
+
 
 class Clazz(object):
     def __init__(self, backend):
@@ -65,13 +67,14 @@ class Clazz(object):
     def index(self):
         return self.index
 
+
 class Layer(MetadataMixin):
     def __init__(self, backend):
         self.ms = backend
 
     def update(self, name, enabled, metadata):
         self.ms.name = name
-        self.ms.template = "foo.html" # TODO: Support html format response
+        self.ms.template = "foo.html"  # TODO: Support html format response
         self.enable(enabled)
         self.update_metadatas(metadata)
 
@@ -214,6 +217,7 @@ class Layer(MetadataMixin):
             if c.ms.group == s_name:
                 self.ms.removeClass(c.index)
 
+
 class LayerGroup(object):
 
     def __init__(self, name, mapfile):
@@ -270,6 +274,7 @@ class LayerGroup(object):
 
         return extent
 
+
 class Mapfile(MetadataMixin):
 
     def __init__(self, path, create=False, needed=False):
@@ -289,7 +294,7 @@ class Mapfile(MetadataMixin):
             # and adding some default values...
             self.ms.name = self.name
             self.ms.setProjection("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-            self.ms.setExtent(-180,-90,180,90)
+            self.ms.setExtent(-180, -90, 180, 90)
             self.ms.units = mapscript.MS_DD
             self.set_metadata("ows_title", "OGC Web Service")
             self.set_metadata("ows_srs", "EPSG:4326")
@@ -412,14 +417,17 @@ class Mapfile(MetadataMixin):
         with self.mra_metadata("layergroups", {}) as layergroups:
             del layergroups[lg_name]
 
+
 # Workspaces are special Mapfiles that are composed of LayerModels
 # which are layers that can be used to configure other layers.
+
 
 class LayerModel(Layer):
     def __init__(self, ws, *args, **kwargs):
         Layer.__init__(self, *args, **kwargs)
         self.ws = ws
         self.name = self.get_mra_metadata("name", None)
+
 
 class FeatureTypeModel(LayerModel):
     def update(self, ds_name, ft_name, metadata):
@@ -490,11 +498,11 @@ class FeatureTypeModel(LayerModel):
         layer.ms.connection = self.ms.connection
 
         layer.update_mra_metadatas({
-                "name": self.get_mra_metadata("name"),
-                "type": self.get_mra_metadata("type"),
-                "storage": self.get_mra_metadata("storage"),
-                "workspace": ws.name,
-                })
+            "name": self.get_mra_metadata("name"),
+            "type": self.get_mra_metadata("type"),
+            "storage": self.get_mra_metadata("storage"),
+            "workspace": ws.name,
+            })
 
         # if enabled:
         #     layer.set_metadata("wfs_enable_request", "GetCapabilities DescribeFeatureType GetFeature")
@@ -514,7 +522,7 @@ class FeatureTypeModel(LayerModel):
             field_names.append(field.get_name())
 
         geometry_column = ft.get_geometry_column()
-        if geometry_column == None:
+        if geometry_column is None:
             geometry_column = "geometry"
         layer.set_metadatas({
             "ows_include_items": ",".join(field_names),
@@ -526,13 +534,14 @@ class FeatureTypeModel(LayerModel):
             "wfs_getfeature_formatlist": "OGRGML,SHAPEZIP",
             })
 
-        if ft.get_fid_column() != None:
+        if ft.get_fid_column() is not None:
             layer.set_metadatas({
                 "wfs_featureid": ft.get_fid_column(),
                 "gml_featureid": ft.get_fid_column(),
                 })
 
         plugins.extend("post_configure_vector_layer", self, ws, ds, ft, layer)
+
 
 class CoverageModel(LayerModel):
 
@@ -586,28 +595,29 @@ class CoverageModel(LayerModel):
         layer.ms.setProjection(self.ms.getProjection())
         layer.ms.setExtent(self.ms.extent.minx, self.ms.extent.miny,
                            self.ms.extent.maxx, self.ms.extent.maxy)
-        layer.ms.setProcessingKey("RESAMPLE","AVERAGE")
+        layer.ms.setProcessingKey("RESAMPLE", "AVERAGE")
         layer.ms.data = self.ms.data
         layer.ms.connectiontype = self.ms.connectiontype
         layer.ms.connection = self.ms.connection
 
         layer.update_mra_metadatas({
-                "name": self.get_mra_metadata("name"),
-                "type": self.get_mra_metadata("type"),
-                "storage": self.get_mra_metadata("storage"),
-                "workspace": ws.name,
-                })
+            "name": self.get_mra_metadata("name"),
+            "type": self.get_mra_metadata("type"),
+            "storage": self.get_mra_metadata("storage"),
+            "workspace": ws.name,
+            })
 
         layer.set_metadatas({
-                "wcs_name": layer.get_metadata("ows_name"),
-                "wcs_label": layer.get_metadata("ows_title"),
-                "wcs_description": layer.get_metadata("ows_abstract")
-                })
+            "wcs_name": layer.get_metadata("ows_name"),
+            "wcs_label": layer.get_metadata("ows_title"),
+            "wcs_description": layer.get_metadata("ows_abstract")
+            })
 
         # if enabled:
         #     layer.set_metadata("wcs_enable_request", "GetCapabilities DescribeCoverage GetCoverage")
 
         plugins.extend("post_configure_raster_layer", self, ws, layer)
+
 
 class Workspace(Mapfile):
 
@@ -706,7 +716,7 @@ class Workspace(Mapfile):
         try:
             next(self.iter_featuretypemodels(name))
         except StopIteration:
-            pass # No layers use our store, all OK.
+            pass  # No layers use our store, all OK.
         else:
             raise ValueError("The datastore \"%s\" can't be delete because it is used." % name)
         return self.delete_store("datastore", name)
@@ -749,7 +759,7 @@ class Workspace(Mapfile):
         try:
             next(self.iter_coveragemodels(name))
         except StopIteration:
-            pass # No layers use our store, all OK.
+            pass  # No layers use our store, all OK.
         else:
             raise ValueError("The coveragestore \"%s\" can't be delete because it is used." % name)
         return self.delete_store("coveragestore", name)
@@ -776,7 +786,7 @@ class Workspace(Mapfile):
     def iter_layermodels(self, st_type=None, store=None, **kwargs):
         if st_type:
             kwargs.setdefault("mra", {})["type"] = st_type
-        if store != None:
+        if store is not None:
             kwargs.setdefault("mra", {})["storage"] = store
         for ms_layer in self.iter_ms_layers(**kwargs):
             yield self.__ms2model(ms_layer)
@@ -853,7 +863,9 @@ class Workspace(Mapfile):
     def delete_coveragemodel(self, cs_name, c_name):
         return self.delete_layermodel("coverage", cs_name, c_name)
 
+
 # Finaly the global context:
+
 
 class MRA(object):
     def __init__(self, config_path):
@@ -891,8 +903,8 @@ class MRA(object):
     # Fonts:
 
     def get_fontset_path(self, *args):
-        root = self.config["storage"].get("fontset",
-                    "/".join([self.get_resource_path("fonts"), "fonts.txt"]))
+        root = self.config["storage"].get(
+            "fontset", "/".join([self.get_resource_path("fonts"), "fonts.txt"]))
         return self.get_resource_path(root, *args)
 
     def list_fontset(self):

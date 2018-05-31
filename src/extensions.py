@@ -33,6 +33,7 @@ import sys
 import os.path
 import logging
 
+
 class ExtensionManager(object):
 
     def __init__(self, ):
@@ -62,12 +63,13 @@ class ExtensionManager(object):
             f(*args, **kwargs)
 
     def register(self, name, f=None):
-        if f == None:
+        if f is None:
             def decorator(f):
                 self.register(name, f)
                 return f
             return decorator
 
         self.extentions.setdefault(name, []).append(f)
+
 
 plugins = ExtensionManager()

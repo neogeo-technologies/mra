@@ -46,12 +46,17 @@ from pyxml import Entries
 from extensions import plugins
 import mapscript
 
+
 # Some helper functions first.
+
+
 def get_workspace(ws_name):
     with webapp.mightNotFound():
         return mra.get_workspace(ws_name)
 
+
 # Now the main classes that handle the REST API.
+
 
 class index(object):
     """Index of the API (e.g. http://hostname/mra/)
@@ -71,6 +76,7 @@ class index(object):
             "fonts": href("fonts"),
             }
 
+
 class version(object):
     """To know about used versions...
 
@@ -83,11 +89,12 @@ class version(object):
                     ]}
                 }
 
+
 class workspaces(object):
     """Workspaces container.
 
     http://hostname/mra/workspaces
-    
+
     See 'workspace' class documentation for definition of a 'workspace'.
 
     """
@@ -113,18 +120,19 @@ class workspaces(object):
 
         webapp.Created("%s/workspaces/%s.%s" % (web.ctx.home, ws_name, format))
 
+
 class workspace(object):
     """A workspace is a grouping of data stores and coverage stores.
 
     http://hostname/mra/workspaces/<ws>
-    
-    In fact, a workspace is assimilated to one mapfile (<workspace_name>.ws.map) 
-    which contains some unactivated layers. These layers allows to configure 
-    connections to data (data store or coverage store) then data 
+
+    In fact, a workspace is assimilated to one mapfile (<workspace_name>.ws.map)
+    which contains some unactivated layers. These layers allows to configure
+    connections to data (data store or coverage store) then data
     itself (featuretype for vector type or coverage for raster type).
 
-    These layers should not be published as OGC service as such. 
-    However, in the near future (TODO), it should be possible to publish 
+    These layers should not be published as OGC service as such.
+    However, in the near future (TODO), it should be possible to publish
     a workspace as permitted GeoServer.
     And this workspace should be identified as a usual MapFile.
 
@@ -145,6 +153,7 @@ class workspace(object):
 
     # TODO: def PUT(...
     # TODO: def DELETE(...
+
 
 class datastores(object):
     """Data stores container.
@@ -172,7 +181,7 @@ class datastores(object):
 
         ws = get_workspace(ws_name)
 
-        data = get_data(name="dataStore", mandatory=["name"], 
+        data = get_data(name="dataStore", mandatory=["name"],
                         authorized=["name", "title", "abstract", "connectionParameters"])
         ds_name = data.pop("name")
 
@@ -182,7 +191,8 @@ class datastores(object):
         ws.save()
 
         webapp.Created("%s/workspaces/%s/datastores/%s.%s" % (
-                web.ctx.home, ws_name, ds_name, format))
+            web.ctx.home, ws_name, ds_name, format))
+
 
 class datastore(object):
     """A data store is a source of spatial data that is vector based.
@@ -205,8 +215,8 @@ class datastore(object):
 
         return {"dataStore": {
                     "name": info["name"],
-                    "enabled": True, # Always enabled
-                                     # TODO: Handle enabled/disabled states
+                    "enabled": True,  # Always enabled
+                                      # TODO: Handle enabled/disabled states
                     "workspace": {
                         "name": ws.name,
                         "href": "%s/workspaces/%s.%s" % (
@@ -247,6 +257,7 @@ class datastore(object):
         with webapp.mightNotFound("dataStore", workspace=ws_name):
             ws.delete_datastore(ds_name)
         ws.save()
+
 
 class featuretypes(object):
     """Feature types container.
@@ -294,11 +305,12 @@ class featuretypes(object):
         webapp.Created("%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
                 web.ctx.home, ws.name, ds_name, data["name"], format))
 
+
 class featuretype(object):
     """A feature type is a data set that originates from a data store.
 
     http://hostname/mra/workspaces/<ws>/datastores/<ds>/featuretypes/<ft>
-    
+
     A feature type is considered as a layer under MapServer which is still unactivated.
 
     """
@@ -320,7 +332,7 @@ class featuretype(object):
         latlon_extent = ft.get_latlon_extent()
 
 
-        # About attributs, we apply just values handled by 
+        # About attributs, we apply just values handled by
         # MapServer in a GetFeature response...
         attributes = [{
             "name": f.get_name(),
@@ -335,7 +347,7 @@ class featuretype(object):
                 "name": dsft.get_geometry_column(),
                 "type": dsft.get_geomtype_gml(),
                 "minOccurs": 0,
-                "maxOccurs": 1, 
+                "maxOccurs": 1,
                 # "nillable": True,
                 # binding?
                 })
@@ -378,10 +390,10 @@ class featuretype(object):
                     # In MRA, it is easier (or more logical?) to keep native CRS,
                     # Or there is a problem of understanding on our part.
                     # So, i prefer to comment 'srs' entry cause we force the
-                    # value of 'projectionPolicy' to 'NONE'... but it is something 
+                    # value of 'projectionPolicy' to 'NONE'... but it is something
                     # we should investigate...
-                    "enabled": True, # Always enabled => TODO
-                    "store": { # TODO: add key: class="dataStore"
+                    "enabled": True,  # Always enabled => TODO
+                    "store": {  # TODO: add key: class="dataStore"
                         "name": ds_name,
                         "href": "%s/workspaces/%s/datastores/%s.%s" % (
                             web.ctx.home, ws_name, ds_name, format)
@@ -421,6 +433,7 @@ class featuretype(object):
             ws.delete_featuretypemodel(ds_name, ft_name)
         ws.save()
 
+
 class coveragestores(object):
     """Coverage stores container.
 
@@ -443,7 +456,7 @@ class coveragestores(object):
 
     @HTTPCompatible()
     def POST(self, ws_name, format):
-        """Create new coverage store.""" 
+        """Create new coverage store."""
 
         ws = get_workspace(ws_name)
         data = get_data(name="coverageStore", mandatory=["name"], authorized=["name", "title", "abstract", "connectionParameters"])
@@ -462,6 +475,7 @@ class coveragestores(object):
 
         webapp.Created("%s/workspaces/%s/coveragestores/%s.%s" % (
                 web.ctx.home, ws_name, cs_name, format))
+
 
 class coveragestore(object):
     """A coverage store is a source of spatial data that is raster based.
@@ -503,10 +517,10 @@ class coveragestore(object):
     @HTTPCompatible()
     def PUT(self, ws_name, cs_name, format):
         """Modify coverage store <ds>."""
-        
+
         ws = get_workspace(ws_name)
-        data = get_data(name="coverageStore", 
-                        mandatory=["name"], 
+        data = get_data(name="coverageStore",
+                        mandatory=["name"],
                         authorized=["name", "title", "abstract", "connectionParameters"])
         if cs_name != data.pop("name"):
             raise webapp.Forbidden("Can't change the name of a coverage store.")
@@ -527,6 +541,7 @@ class coveragestore(object):
         with webapp.mightNotFound("coverageStore", workspace=ws_name):
             ws.delete_coveragestore(cs_name)
         ws.save()
+
 
 class coverages(object):
     """Coverages container.
@@ -569,6 +584,7 @@ class coverages(object):
         webapp.Created("%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
                 web.ctx.home, ws.name, cs_name, data["name"], format))
 
+
 class coverage(object):
     """A coverage is a raster based data set that originates from a coverage store.
 
@@ -596,14 +612,14 @@ class coverage(object):
                     "title": c.get_mra_metadata("title", c.name),
                     "abstract": c.get_mra_metadata("abstract", None),
                     # TODO: Keywords
-                    "nativeCRS": c.get_wkt(), # TODO: Add key class="projected" if projected...
+                    "nativeCRS": c.get_wkt(),  # TODO: Add key class="projected" if projected...
                     "srs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()),
                     "nativeBoundingBox": {
                         "minx": extent.minX(),
                         "miny": extent.minY(),
                         "maxx": extent.maxX(),
                         "maxy": extent.maxY(),
-                        "crs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()), # TODO: Add key class="projected" if projected...
+                        "crs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()),  # TODO: Add key class="projected" if projected...
                         },
                     "latLonBoundingBox":{
                         "minx": latlon_extent.minX(),
@@ -612,8 +628,8 @@ class coverage(object):
                         "maxy": latlon_extent.maxY(),
                         "crs": "EPSG:4326"
                         },
-                    "enabled": True, # Always enabled => TODO
-                    "store": { # TODO: Add attr class="coverageStore"
+                    "enabled": True,  # Always enabled => TODO
+                    "store": {  # TODO: Add attr class="coverageStore"
                         "name": cs_name,
                         "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
                             web.ctx.home, ws_name, cs_name, format)
@@ -649,7 +665,7 @@ class coverage(object):
     @HTTPCompatible()
     def PUT(self, ws_name, cs_name, c_name, format):
         """Modify coverage <c>."""
-        
+
         ws = get_workspace(ws_name)
 
         data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
@@ -675,6 +691,7 @@ class coverage(object):
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
             ws.delete_coveragemodel(c_name, cs_name)
         ws.save()
+
 
 class files(object):
     """
@@ -710,7 +727,7 @@ class files(object):
         except KeyError:
             # Create the store if it seems legit and it does not exist.
             if st_type == "datastores" or st_type == "coveragestores":
-                st_type = st_type[:-1] # Remove trailing 's'
+                st_type = st_type[:-1]  # Remove trailing 's'
                 with webapp.mightConflict("Workspace", workspace=ws_name):
                     ws.create_store(st_type, st_name, {})
             # Finaly check if its OK now.
@@ -737,7 +754,8 @@ class files(object):
                 z.extract(f, path=dest)
 
         # Set new connection parameters:
-        ws.update_store(st_type, st_name, {"connectionParameters":{"url":"file:"+mra.pub_file_path(path)}})
+        ws.update_store(st_type, st_name, {
+            "connectionParameters": {"url": "file:" + mra.pub_file_path(path)}})
         ws.save()
 
         # Finally we might have to configure it.
@@ -751,6 +769,7 @@ class files(object):
         else:
             raise webapp.BadRequest(message="configure must be one of 'first', 'none' or 'all'.")
 
+
 class fonts(object):
     """Configure available fonts.
 
@@ -761,8 +780,7 @@ class fonts(object):
     def GET(self, format):
         """Returns the list of available fonts."""
 
-        return {"fonts": [f_name
-            for f_name in mra.list_fontset()]}
+        return {"fonts": [f_name for f_name in mra.list_fontset()]}
 
     @HTTPCompatible()
     def PUT(self, format):
@@ -778,13 +796,14 @@ class fonts(object):
 
         mra.update_fontset()
 
-        # Then updates (the) mapfile(s) only 
+        # Then updates (the) mapfile(s) only
         # if the fontset path is not specified.
         # Should it be done here ?...
         mf = mra.get_available()
-        if mf.ms.fontset.filename == None:
+        if mf.ms.fontset.filename is None:
             mf.ms.setFontSet(mra.get_fontset_path())
             mf.save()
+
 
 class styles(object):
     """SLD styles container.
@@ -804,13 +823,13 @@ class styles(object):
 
     @HTTPCompatible()
     def POST(self, format):
-        """Create a new SLD style. Add the 'name' parameter in order to specify 
+        """Create a new SLD style. Add the 'name' parameter in order to specify
         the name to be given to the new style.
 
         """
         params = web.input(name=None)
         name = params.name
-        if name == None:
+        if name is None:
             raise webapp.BadRequest(message="no parameter \"name\" given.")
 
         data = web.data()
@@ -818,12 +837,13 @@ class styles(object):
 
         webapp.Created("%s/styles/%s.%s" % (web.ctx.home, name, format))
 
+
 class style(object):
-    """A style describes how a resource (a feature type or a coverage) should be 
+    """A style describes how a resource (a feature type or a coverage) should be
     symbolized or rendered by a Web Map Service.
 
     http://hostname/mra/styles/<s>
-    
+
     Styles are specified with SLD and translated into the mapfile (with CLASS and
     STYLE blocs) to be applied.
     An extension may be considered to manage all style possibilities offered by MapServer.
@@ -858,6 +878,7 @@ class style(object):
         mra.create_style(s_name, data)
 
     # TODO: def DELETE(...
+
 
 class layers(object):
     """Layers container.
@@ -923,6 +944,7 @@ class layers(object):
 
         webapp.Created("%s/layers/%s.%s" % (web.ctx.home, l_name, format))
 
+
 class layer(object):
     """A layer is a published resource (feature type or coverage) from a MapFile.
 
@@ -949,32 +971,36 @@ class layer(object):
                     "title": layer.get_metadata("ows_title", None),
                     "abstract": layer.get_metadata("ows_abstract", None),
                     "type": layer.get_type_name(),
-                    "resource": { 
+                    "resource": {
                         # TODO: Add attr class="featureType|coverage"
                         "name": layer.get_mra_metadata("name"),
                         "href": "%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
                             web.ctx.home, layer.get_mra_metadata("workspace"),
-                            store_type, layer.get_mra_metadata("storage"), 
+                            store_type, layer.get_mra_metadata("storage"),
                             data_type, layer.get_mra_metadata("name"), format),
                         },
-                    "enabled": bool(layer.ms.status), # TODO because it's fictitious...
+                    "enabled": bool(layer.ms.status),  # TODO because it's fictitious...
                     # "attribution" => TODO?
                     # "path" => TODO?
                     }}
 
         # Check CLASSGROUP
         dflt_style = layer.ms.classgroup
-        if dflt_style == None:
+        if dflt_style is None:
             # If is 'None': take the first style as would MapServer.
             for s_name in layer.iter_styles():
                 dflt_style = s_name
                 break
-        if dflt_style == None:
+        if dflt_style is None:
             return response
-       
-        response["layer"].update({"defaultStyle": {"name": dflt_style,
-                                            "href": "%s/styles/%s.%s" % (web.ctx.home, dflt_style, format)},})
-      
+
+        response["layer"].update({
+            "defaultStyle": {
+                "name": dflt_style,
+                "href": "%s/styles/%s.%s" % (web.ctx.home, dflt_style, format)
+                }
+            })
+
         styles = [{"name": s_name,
                    "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
                    } for s_name in layer.iter_styles() if s_name != dflt_style]
@@ -994,7 +1020,7 @@ class layer(object):
         if l_name != data.get("name", l_name):
             raise webapp.Forbidden("Can't change the name of a layer.")
 
-        l_enabled = True # TODO: => data.pop("enabled", True)
+        l_enabled = True  # TODO: => data.pop("enabled", True)
 
         mf = mra.get_available()
         with webapp.mightNotFound():
@@ -1008,7 +1034,7 @@ class layer(object):
             except ValueError:
                 raise webapp.NotFound(message="resource \"%s\" was not found." % href)
 
-            st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
+            st_type, r_type = st_type[:-1], r_type[:-1]  # Remove trailing s.
 
             ws = get_workspace(ws_name)
             with webapp.mightNotFound(r_type, workspace=ws_name):
@@ -1028,7 +1054,7 @@ class layer(object):
             with webapp.mightNotFound():
                 style = mra.get_style(s_name)
             layer.add_style_sld(mf, s_name, style)
-            
+
             # Remove the automatic default style.
             for s_name in layer.iter_styles():
                 if s_name == tools.get_dflt_sld_name(layer.ms.type):
@@ -1044,6 +1070,7 @@ class layer(object):
         with webapp.mightNotFound():
             mf.delete_layer(l_name)
         mf.save()
+
 
 class layerstyles(object):
     """Styles container associated to one layer.
@@ -1068,6 +1095,7 @@ class layerstyles(object):
                     } for s_name in layer.iter_styles()],
                 }
 
+
 class layerstyle(object):
     """Style associated to layer <l>.
 
@@ -1084,6 +1112,7 @@ class layerstyle(object):
         with webapp.mightNotFound("style", layer=l_name):
             layer.remove_style(s_name)
         mf.save()
+
 
 class layerfields(object):
     """Attributes (Fields) container associated to layer <l>.
@@ -1112,7 +1141,7 @@ class layerfields(object):
             min_occurs, max_occurs = int(occurs[0]), int(occurs[1])
         else:
             geom, type, min_occurs, max_occurs = "undefined", "undefined", 0, 1
-        
+
         fields.append({
             "name": geom,
             "type": type,
@@ -1121,6 +1150,7 @@ class layerfields(object):
             })
 
         return {"fields": fields}
+
 
 class layergroups(object):
     """Layergroups container.
@@ -1159,8 +1189,9 @@ class layergroups(object):
 
         webapp.Created("%s/layergroups/%s.%s" % (web.ctx.home, lg.name, format))
 
+
 class layergroup(object):
-    """A layergroup is a grouping of layers and styles that can be accessed 
+    """A layergroup is a grouping of layers and styles that can be accessed
     as a single layer in a WMS GetMap request.
 
     http://hostname/mra/layergroups/<lg>
@@ -1176,7 +1207,8 @@ class layergroup(object):
 
         latlon_extent = lg.get_latlon_extent()
 
-        bounds = {"minx": latlon_extent.minX(),
+        bounds = {
+            "minx": latlon_extent.minX(),
             "miny": latlon_extent.minY(),
             "maxx": latlon_extent.maxX(),
             "maxy": latlon_extent.maxY(),
@@ -1227,6 +1259,7 @@ class layergroup(object):
             mf.delete_layergroup(lg_name)
         mf.save()
 
+
 class OWSGlobalSettings(object):
     """Control settings of the main OWS service, i.e. the mapfile: layers.map
 
@@ -1255,12 +1288,13 @@ class OWSGlobalSettings(object):
         data = get_data(name=ows, mandatory=["enabled"], authorized=["enabled"])
         is_enabled = data.pop("enabled")
         # TODO: That would be cool to be able to control each operation...
-        values = {True: "*", "True": "*", "true": "*", 
+        values = {True: "*", "True": "*", "true": "*",
                   False: "", "False": "", "false": ""}
         if is_enabled not in values:
             raise KeyError("\"%s\" is not valid" % is_enabled)
         mf.set_metadata("%s_enable_request" % ows, values[is_enabled])
         mf.save()
+
 
 # Index:
 urlmap(index, "")

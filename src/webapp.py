@@ -39,15 +39,19 @@ import os.path
 import itertools
 import mralogs
 
+
 class KeyExists(KeyError):
     pass
+
 
 # web.py doesn't allow to set a custom message for all errors, as it does
 # for NotFound, we attempt to fix that here, but only handle those we use...
 
+
 def Created(location):
     web.ctx.status = "201 Created"
     web.header("Location", location)
+
 
 class BadRequest(web.webapi.HTTPError):
     """`400 Bad Request` error."""
@@ -57,6 +61,7 @@ class BadRequest(web.webapi.HTTPError):
         headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
 
+
 class NotFound(web.webapi.HTTPError):
     """`404 Not Found` error."""
     def __init__(self, message="not found"):
@@ -64,6 +69,7 @@ class NotFound(web.webapi.HTTPError):
         status = "404 Not Found"
         headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
+
 
 class Unauthorized(web.webapi.HTTPError):
     """`401 Unauthorized` error."""
@@ -73,6 +79,7 @@ class Unauthorized(web.webapi.HTTPError):
         headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
 
+
 class Forbidden(web.webapi.HTTPError):
     """`403 Forbidden` error."""
     def __init__(self, message="forbidden"):
@@ -80,6 +87,7 @@ class Forbidden(web.webapi.HTTPError):
         status = "403 Forbidden"
         headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
+
 
 class Conflict(web.webapi.HTTPError):
     """`409 Conflict` error."""
@@ -89,6 +97,7 @@ class Conflict(web.webapi.HTTPError):
         headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
 
+
 class NotAcceptable(web.webapi.HTTPError):
     """`406 Not Acceptable` error."""
     def __init__(self, message="not acceptable"):
@@ -96,6 +105,7 @@ class NotAcceptable(web.webapi.HTTPError):
         status = "406 Not Acceptable"
         headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
+
 
 class NotImplemented(web.webapi.HTTPError):
     """`501 Not Implemented` error."""
@@ -105,7 +115,9 @@ class NotImplemented(web.webapi.HTTPError):
         headers = {"Content-Type": "text/html"}
         web.webapi.HTTPError.__init__(self, status, headers, message)
 
+
 # The folowing helpers are for managing exceptions and transforming them into http errors:
+
 
 class exceptionManager(object):
     raise_all = False
@@ -120,6 +132,7 @@ class exceptionManager(object):
         if not self.raise_all and exc_type in self.exceptions:
             return not self.handle(exc_type, exc_value, traceback)
 
+
 class exceptionsToHTTPError(exceptionManager):
     def __init__(self, message=None, exceptions=None, **kwargs):
         if message != None:
@@ -130,6 +143,7 @@ class exceptionsToHTTPError(exceptionManager):
     def handle(self, exc_type, exc_value, traceback):
         msg = self.message.format(exception=getattr(exc_value, "message", str(exc_value)), **self.msg_args)
         raise self.HTTPError(message=msg)
+
 
 class nargString(list):
     """This object only implements format, which it redirects to one
@@ -145,6 +159,7 @@ class nargString(list):
             raise TypeError("To many arguments for string formatting.")
         return self[len(args) + len(kwargs)].format(*args, **kwargs)
 
+
 class mightFailLookup(exceptionsToHTTPError):
     def __init__(self, name=None, message=None, exceptions=None, **kwargs):
         if len(kwargs) == 1:
@@ -152,6 +167,7 @@ class mightFailLookup(exceptionsToHTTPError):
         if name:
             kwargs["name"] = name
         exceptionsToHTTPError.__init__(self, message, exceptions, **kwargs)
+
 
 class mightNotFound(mightFailLookup):
     exceptions = (KeyError, IndexError)
@@ -162,6 +178,7 @@ class mightNotFound(mightFailLookup):
                          "'{exception}' not found in {container_type} {container}.",
                          "{name} '{exception!s}' not found in {container_type} '{container}'.")
 
+
 class mightConflict(mightFailLookup):
     exceptions = (KeyExists,)
     HTTPError = Conflict
@@ -170,6 +187,7 @@ class mightConflict(mightFailLookup):
                          "'{exception}' already exists in '{container}'.",
                          "'{exception}' already exists in {container_type} {container}.",
                          "{name} '{exception}' already exists in {container_type} '{container}'.")
+
 
 class URLMap(object):
     """Helper class to build url maps for web.py.
@@ -257,8 +275,10 @@ class URLMap(object):
         self.map = []
         return iter(map)
 
+
 # Available for use if you don't want your own instance.
 urlmap = URLMap()
+
 
 def default_renderer(format, authorized, content, name_hint):
     if format == "xml":
@@ -274,9 +294,10 @@ def default_renderer(format, authorized, content, name_hint):
         render = web.template.render(templates)
         return render.response(web.ctx.home, web.ctx.path.split("/"), urls, pyhtml.dumps(content, obj_name=name_hint, indent=4))
     elif format == "json":
-        return json.dumps({name_hint:content})
+        return json.dumps({name_hint: content})
     else:
         return str(content)
+
 
 class HTTPCompatible(object):
     """Decorator factory used to transform the output of a backend function
@@ -290,10 +311,10 @@ class HTTPCompatible(object):
     return_logs = False
 
     known_mimes = {
-        "xml"  : "application/xml",
-        "sld"  : "application/vnd.ogc.sld+xml",
-        "html" : "text/html",
-        "json" : "application/json",
+        "xml": "application/xml",
+        "sld": "application/vnd.ogc.sld+xml",
+        "html": "text/html",
+        "json": "application/json",
         }
 
     def __init__(self, authorize=set(), forbid=set(), authorized=set(["xml", "json", "html"]),
@@ -323,7 +344,7 @@ class HTTPCompatible(object):
         self.default = default
         self.renderer = renderer
 
-        self.name_hint=name_hint
+        self.name_hint = name_hint
         self.parse_format = parse_format
 
         if not isinstance(authorize, set):
@@ -347,7 +368,7 @@ class HTTPCompatible(object):
         for the web.
 
         """
-        if self.render == None:
+        if self.render is None:
             # We must guess if we want to render or not.
             self.render = f.__name__ in ["GET"]
 
@@ -369,13 +390,12 @@ class HTTPCompatible(object):
             else:
                 page_format = self.default
 
-
             # TODO: look at web.ctx.env.get("Accept") and take it into account.
             # Send a NotAcceptable error if we can't agree with the client.
 
             # Trim trailing Nones.
             if self.trim_nones:
-                while args and args[-1] == None:
+                while args and args[-1] is None:
                     del args[-1]
 
             # Check format against authorized.
@@ -408,27 +428,27 @@ class HTTPCompatible(object):
 
             name_hint = self.name_hint
 
-            if name_hint == None and isinstance(content, dict) and len(content) == 1:
+            if name_hint is None and isinstance(content, dict) and len(content) == 1:
                 name_hint = next(content.iterkeys())
                 content = next(content.itervalues())
-            elif name_hint == None:
+            elif name_hint is None:
                 name_hint = "response"
 
             # We want to make sure we don't end up doing str(None)
-            if content == None:
+            if content is None:
                 content = ""
 
             # Lets add the logs to the content.
             if add_debug:
-                msgs = [{"asctime":msg.asctime,
-                         "filename":msg.filename,
-                         "funcName":msg.funcName,
-                         "lineno":msg.lineno,
-                         "levelname":msg.levelname,
-                         "message":msg.message,
+                msgs = [{"asctime": msg.asctime,
+                         "filename": msg.filename,
+                         "funcName": msg.funcName,
+                         "lineno": msg.lineno,
+                         "levelname": msg.levelname,
+                         "message": msg.message,
                          } for msg in reccord]
                 name_hint = "debug_data"
-                content = {self.name_hint:content, "_logs":msgs}
+                content = {self.name_hint: content, "_logs": msgs}
 
             if self.render and self.renderer:
                 result = self.renderer(page_format, self.authorized, content, name_hint)
@@ -442,19 +462,20 @@ class HTTPCompatible(object):
         self.original_function = f
         return wrapper
 
+
 def get_data(name=None, mandatory=[], authorized=[], forbidden=[]):
     data = web.data()
 
     if not data:
         raise web.badrequest("You must suply some data. (mandatory: %s, authorized: %s)" % (mandatory, authorized))
 
-    if not "CONTENT_TYPE" in web.ctx.env:
+    if "CONTENT_TYPE" not in web.ctx.env:
         raise web.badrequest("You must specify a Content-Type.")
 
     ctype = web.ctx.env.get("CONTENT_TYPE")
 
     try:
-        if "text/xml" in ctype or  "application/xml" in ctype:
+        if "text/xml" in ctype or "application/xml" in ctype:
             data, dname = pyxml.loads(data, retname=True)
             print "received \"%s\"" % dname
             print data
@@ -467,7 +488,7 @@ def get_data(name=None, mandatory=[], authorized=[], forbidden=[]):
     except (AttributeError, ValueError):
         raise web.badrequest("Could not decode input data (%s)." % data)
 
-    if name and data == None:
+    if name and data is None:
         raise web.badrequest("The object you are sending does not contain a \"%s\" entry." % name)
 
     if not all(x in data for x in mandatory):
