@@ -628,8 +628,14 @@ class Workspace(Mapfile):
     def get_store_info(self, st_type, name, exclude=None):
         info = self.get_mra_metadata("%ss" % st_type, {})[name].copy()
         info["name"] = name
-        for k in exclude:
-            info.pop(k)
+
+        for v in exclude:
+            path = tuple(k for k in v.split('.'))
+            copy = info
+            for m in path[:-1]:
+                copy = copy.get(m)
+            del copy[path[-1]]
+
         return info
 
     def iter_store_names(self, st_type):
@@ -662,7 +668,8 @@ class Workspace(Mapfile):
     def get_datastore_info(self, name):
         """Returns info for a datastore from the workspace."""
 
-        return self.get_store_info("datastore", name, exclude=["password"])
+        return self.get_store_info(
+            "datastore", name, exclude=["connectionParameters.password"])
 
     def iter_datastore_names(self):
         """Return an iterator over the datastore names."""
