@@ -625,9 +625,11 @@ class Workspace(Mapfile):
         else:
             raise AssertionError("Unknown st_type \"%s\"." % st_type)
 
-    def get_store_info(self, st_type, name):
+    def get_store_info(self, st_type, name, exclude=None):
         info = self.get_mra_metadata("%ss" % st_type, {})[name].copy()
         info["name"] = name
+        for k in exclude:
+            info.pop(k)
         return info
 
     def iter_store_names(self, st_type):
@@ -660,7 +662,7 @@ class Workspace(Mapfile):
     def get_datastore_info(self, name):
         """Returns info for a datastore from the workspace."""
 
-        return self.get_store_info("datastore", name)
+        return self.get_store_info("datastore", name, exclude=["password"])
 
     def iter_datastore_names(self):
         """Return an iterator over the datastore names."""
