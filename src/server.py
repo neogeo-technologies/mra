@@ -117,6 +117,7 @@ class workspaces(object):
 
         with webapp.mightConflict():
             mra.create_workspace(ws_name).save()
+            # TODO Create associated service
 
         webapp.Created("%s/workspaces/%s.%s" % (web.ctx.home, ws_name, format))
 
@@ -296,11 +297,18 @@ class featuretypes(object):
         ws.save()
 
         # Then creates the associated layer by default:
+        #   - in layers.map
         model = ws.get_featuretypemodel(ds_name, data["name"])
         mf = mra.get_available()
         with webapp.mightConflict():
             mf.create_layer(model, data["name"], True)
         mf.save()
+
+        #   - in {workspace}.map
+        wsmf = mra.get_service(ws_name)
+        with webapp.mightConflict():
+            wsmf.create_layer(model, data["name"], True)
+        wsmf.save()
 
         webapp.Created("%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
                 web.ctx.home, ws.name, ds_name, data["name"], format))
@@ -1296,6 +1304,42 @@ class OWSGlobalSettings(object):
         mf.save()
 
 
+class OWSWorkspaceSettings(object):
+    """Control settings of the main OWS service, i.e. the mapfile: layers.map
+
+    http://hostname/mra/services/[wms|wfs|wcs]/settings<lg>
+
+    """
+    @HTTPCompatible()
+    def GET(self, ws_name, ows, format):
+        """It returns the status of the OGC service."""
+
+        mf = mra.get_service(ws_name)
+
+        return {
+            ows: Entries({
+                "enabled": mf.get_metadata("%s_enable_request" % ows) == "*" and True or False,
+                "name": ows,
+                "schemaBaseURL": mf.get_metadata("ows_schemas_location", "http://schemas.opengis.net"),
+                }
+            )}
+
+    @HTTPCompatible()
+    def PUT(self, ws_name, ows, format):
+        """To enable or disable OGC service..."""
+
+        mf = mra.get_service(ws_name)
+        data = get_data(name=ows, mandatory=["enabled"], authorized=["enabled"])
+        is_enabled = data.pop("enabled")
+        # TODO: That would be cool to be able to control each operation...
+        values = {True: "*", "True": "*", "true": "*",
+                  False: "", "False": "", "false": ""}
+        if is_enabled not in values:
+            raise KeyError("\"%s\" is not valid" % is_enabled)
+        mf.set_metadata("%s_enable_request" % ows, values[is_enabled])
+        mf.save()
+
+
 # Index:
 urlmap(index, "")
 # About version:
@@ -1333,6 +1377,7 @@ urlmap(layergroups, "layergroups")
 urlmap(layergroup, "layergroups", ())
 # OGC Web Services:
 urlmap(OWSGlobalSettings, "services", "(wms|wfs|wcs)", "settings")
+urlmap(OWSWorkspaceSettings, "services", "workspaces", (), "(wms|wfs|wcs)", "settings")
 
 urls = tuple(urlmap)
 

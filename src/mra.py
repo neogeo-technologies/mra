@@ -1035,7 +1035,7 @@ class MRA(object):
     # Services:
 
     def get_service_path(self, *args):
-        root = self.config["storage"].get("services", self.get_path("available"))
+        root = self.config["storage"].get("services", self.get_path("services"))
         return self.get_path(root, *args)
 
     def pub_service_path(self, path):
@@ -1046,7 +1046,7 @@ class MRA(object):
 
     def get_service(self, name):
         path = self.get_service_path("%s.map" % name)
-        return Mapfile(path)
+        return Mapfile(self.mk_path(path), needed=True)
 
     # URL Helpers:
 
