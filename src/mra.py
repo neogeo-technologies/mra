@@ -297,7 +297,7 @@ class Mapfile(MetadataMixin):
             self.ms.setExtent(-180, -90, 180, 90)
             self.ms.units = mapscript.MS_DD
             self.set_metadata("ows_title", "OGC Web Service")
-            self.set_metadata("ows_srs", "EPSG:4326")
+            self.set_metadata("ows_srs", "EPSG:4326 EPSG:3857")
 
             for ows in ("wms", "wfs", "wcs"):
                 self.set_metadata("%s_enable_request" % ows, "")
