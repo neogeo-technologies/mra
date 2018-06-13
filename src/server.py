@@ -829,7 +829,7 @@ class styles(object):
                     } for s_name in mra.list_styles()]
                 }
 
-    @HTTPCompatible()
+    @HTTPCompatible(authorize=["sld"])
     def POST(self, format):
         """Create a new SLD style. Add the 'name' parameter in order to specify
         the name to be given to the new style.
@@ -875,7 +875,7 @@ class style(object):
                     }
                 }
 
-    @HTTPCompatible()
+    @HTTPCompatible(authorize=["sld"])
     def PUT(self, s_name, format):
         """Modify style <s>."""
 

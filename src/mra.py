@@ -975,7 +975,7 @@ class MRA(object):
             raise KeyError(name)
 
     def delete_style(self, name):
-        path = self.get_style_path(name)
+        path = self.get_style_path("%s.sld" % name)
         try:
             os.remove(path)
         except (OSError, IOError):
