@@ -1024,7 +1024,8 @@ class layer(object):
         mf = mra.get_available()
 
         data = get_data(name="layer", mandatory=[],
-                        authorized=["name", "resource", "defaultStyle"])
+                        authorized=["name", "resource", "defaultStyle",
+                                    "title", "type", "enabled", "href", "abstract"])
         if l_name != data.get("name", l_name):
             raise webapp.Forbidden("Can't change the name of a layer.")
 
