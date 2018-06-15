@@ -1101,15 +1101,22 @@ class layer(object):
         mf.save()
         wsmf.save()
 
-
     @HTTPCompatible()
     def DELETE(self, l_name, format):
         """Delete layer <l>."""
 
         mf = mra.get_available()
         with webapp.mightNotFound():
+            layer = mf.get_layer(l_name)
+
+        wsmf = mra.get_service(layer.get_mra_metadata('workspace'))
+
+        with webapp.mightNotFound():
             mf.delete_layer(l_name)
+            wsmf.delete_layer(l_name)
+
         mf.save()
+        wsmf.save()
 
 
 class layerstyles(object):
