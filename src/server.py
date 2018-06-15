@@ -935,20 +935,31 @@ class layers(object):
         with webapp.mightConflict():
             mf.create_layer(model, l_name, l_enabled)
 
+        wsmf = mra.get_service(ws_name)
+        with webapp.mightConflict():
+            wsmf.create_layer(model, l_name, l_enabled)
+
         # If we have a defaultStyle apply it.
         s_name = data.get("defaultStyle", {}).get("name")
         if s_name:
             with webapp.mightNotFound():
                 style = mra.get_style(s_name)
                 layer = mf.get_layer(l_name)
+                wslayer = wsmf.get_layer(l_name)
             layer.add_style_sld(mf, s_name, style)
+            wslayer.add_style_sld(wsmf, s_name, style)
 
             # Remove the automatic default style.
             for s_name in layer.iter_styles():
                 if s_name == tools.get_dflt_sld_name(layer.ms.type):
                     layer.remove_style(s_name)
 
+            for s_name in wslayer.iter_styles():
+                if s_name == tools.get_dflt_sld_name(wslayer.ms.type):
+                    wslayer.remove_style(s_name)
+
         mf.save()
+        wsmf.save()
 
         webapp.Created("%s/layers/%s.%s" % (web.ctx.home, l_name, format))
 
@@ -1035,6 +1046,11 @@ class layer(object):
         with webapp.mightNotFound():
             layer = mf.get_layer(l_name)
 
+        ws_name = layer.get_mra_metadata('workspace')
+        wsmf = mra.get_service(ws_name)
+        with webapp.mightConflict():
+            wslayer = wsmf.get_layer(l_name)
+
         # update resource if changed
         href = data.get("resource", {}).get("href")
         if href:
@@ -1055,21 +1071,36 @@ class layer(object):
             if layer.get_mra_metadata("type") != r_type:
                 raise webapp.BadRequest("Can't change a \"%s\" layer into a \"%s\"."
                                     % (layer.get_mra_metadata("type"), r_type))
-        model.configure_layer(layer, l_enabled)
+            if wslayer.get_mra_metadata("type") != r_type:
+                raise webapp.BadRequest("Can't change a \"%s\" layer into a \"%s\"."
+                                    % (wslayer.get_mra_metadata("type"), r_type))
+
+            model.configure_layer(layer, l_enabled)
+            model.configure_layer(wslayer, l_enabled)
 
         # If we have a defaultStyle apply it.
         s_name = data.get("defaultStyle", {}).get("name")
         if s_name:
             with webapp.mightNotFound():
                 style = mra.get_style(s_name)
+
+            layer.remove_style(s_name)
             layer.add_style_sld(mf, s_name, style)
+
+            wslayer.remove_style(s_name)
+            wslayer.add_style_sld(wsmf, s_name, style)
 
             # Remove the automatic default style.
             for s_name in layer.iter_styles():
                 if s_name == tools.get_dflt_sld_name(layer.ms.type):
                     layer.remove_style(s_name)
+            for s_name in wslayer.iter_styles():
+                if s_name == tools.get_dflt_sld_name(wslayer.ms.type):
+                    wslayer.remove_style(s_name)
 
         mf.save()
+        wsmf.save()
+
 
     @HTTPCompatible()
     def DELETE(self, l_name, format):
