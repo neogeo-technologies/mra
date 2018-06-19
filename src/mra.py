@@ -50,6 +50,7 @@ import webapp
 from webapp import KeyExists
 import stores
 import metadata
+import xml.etree.ElementTree as ET
 
 
 class MetadataMixin(object):
@@ -176,7 +177,7 @@ class Layer(MetadataMixin):
         mf.ms.insertLayer(ms_template_layer)
 
         try:
-            ms_template_layer.applySLD(new_sld, sld_layer_name)
+            ms_template_layer.applySLD(new_sld.encode("utf-8"), sld_layer_name)
         except:
             raise ValueError("Unable to access storage.")
 
@@ -968,10 +969,12 @@ class MRA(object):
 
     def get_style(self, name):
         try:
-            return open(self.get_style_path("%s.sld" % name)).read()
+            return ET.tostring(
+                ET.parse(self.get_style_path("%s.sld" % name)).getroot())
         except (OSError, IOError):
             if name in ["default_point", "default_line", "default_polygon"]:
-                return open(os.path.join(os.path.dirname(__file__), "%s.sld" % name)).read()
+                return ET.tostring(ET.parse(
+                    os.path.join(os.path.dirname(__file__), "%s.sld" % name)).getroot())
             raise KeyError(name)
 
     def delete_style(self, name):
