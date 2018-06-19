@@ -278,7 +278,7 @@ class LayerGroup(object):
 
 class Mapfile(MetadataMixin):
 
-    def __init__(self, path, create=False, needed=False):
+    def __init__(self, path, create=False, needed=False, fontset=None):
         self.path = path
         self.filename = os.path.basename(self.path)
         self.name = os.path.splitext(self.filename)[0]
@@ -302,6 +302,8 @@ class Mapfile(MetadataMixin):
 
             for ows in ("wms", "wfs", "wcs"):
                 self.set_metadata("%s_enable_request" % ows, "")
+
+            fontset and self.ms.setFontSet(fontset)
         else:
             self.ms = mapscript.mapObj(self.path)
 
@@ -1011,7 +1013,7 @@ class MRA(object):
 
     def get_available(self):
         path = self.get_available_path("layers.map")
-        return Mapfile(path, needed=True)
+        return Mapfile(path, needed=True, fontset=self.get_fontset_path())
 
     # Workspaces:
 
@@ -1049,7 +1051,7 @@ class MRA(object):
 
     def get_service(self, name):
         path = self.get_service_path("%s.map" % name)
-        return Mapfile(self.mk_path(path), needed=True)
+        return Mapfile(self.mk_path(path), needed=True, fontset=self.get_fontset_path())
 
     # URL Helpers:
 
