@@ -462,7 +462,7 @@ class FeatureTypeModel(LayerModel):
             self.ms.data = '%s FROM %s."%s"' % (ds[ft_name].get_geometry_column(), cparam.get("schema", "public"), ft_name)
             if ft.get_fid_column() is not None:
                 self.ms.data += ' USING UNIQUE %s' % ft.get_fid_column()
-            print(ft.get_authority_name(), ft.get_authority_code())
+
             if ft.get_authority_code() is not None:
                 self.ms.data += ' USING SRID=%s' % ft.get_authority_code()
             # self.set_metadata("ows_extent", "%s %s %s %s" %
