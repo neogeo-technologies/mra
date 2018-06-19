@@ -36,3 +36,6 @@ nosetests.xml
 
 # Project
 /src/mra.yaml
+/src/default_line.sld
+/src/default_point.sld
+/src/default_polygon.sld
