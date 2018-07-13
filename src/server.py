@@ -288,7 +288,9 @@ class featuretypes(object):
         """
         ws = get_workspace(ws_name)
         data = get_data(name="featureType", mandatory=["name"],
-                        authorized=["name", "title", "abstract"])
+                        authorized=["name", "title", "abstract", "enabled"])
+
+        l_enabled = data.pop("enabled", True)
 
         # Creates first the feature type:
         with webapp.mightConflict("featureType", datastore=ds_name):
@@ -301,13 +303,13 @@ class featuretypes(object):
         model = ws.get_featuretypemodel(ds_name, data["name"])
         mf = mra.get_available()
         with webapp.mightConflict():
-            mf.create_layer(model, data["name"], True)
+            mf.create_layer(model, data["name"], l_enabled)
         mf.save()
 
         #   - in {workspace}.map
         wsmf = mra.get_service(ws_name)
         with webapp.mightConflict():
-            wsmf.create_layer(model, data["name"], True)
+            wsmf.create_layer(model, data["name"], l_enabled)
         wsmf.save()
 
         webapp.Created("%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (

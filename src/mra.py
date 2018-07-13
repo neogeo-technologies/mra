@@ -78,13 +78,13 @@ def outputformat(
 OUTPUTFORMAT = {
     'WFS': {
         'SHAPEZIP': outputformat(
-            "OGR/ESRI Shapefile", "SHAPEZIP",
+            "OGR/ESRI Shapefile", "shapezip",
             mimetype="application/shapefile",
             imagemode=mapscript.MS_IMAGEMODE_FEATURE,
             transparent=mapscript.MS_OFF,
             options={"FILENAME": "result.zip", "FORM": "zip"}),
         'GEOJSON': outputformat(
-            "OGR/GEOJSON", "GEOJSON",
+            "OGR/GEOJSON", "geojson",
             mimetype="application/json; subtype=geojson",
             imagemode=mapscript.MS_IMAGEMODE_FEATURE,
             transparent=mapscript.MS_OFF,
@@ -92,14 +92,14 @@ OUTPUTFORMAT = {
         },
     'WMS': {
         'PNG8': outputformat(
-            "AGG/PNG8", "PNG8", mimetype="image/png; mode=8bit",
+            "AGG/PNG8", "png8", mimetype="image/png; mode=8bit",
             imagemode=mapscript.MS_IMAGEMODE_RGB, extension="png",
             options={
                 "QUANTIZE_FORCE": "on",
                 "QUANTIZE_COLORS": "256",
                 "GAMMA": "0.75"}),
         'JPEG': outputformat(
-            "AGG/JPEG", "JPEG", mimetype="image/jpeg",
+            "AGG/JPEG", "jpeg", mimetype="image/jpeg",
             imagemode=mapscript.MS_IMAGEMODE_RGB,
             extension="jpg", options={"GAMMA": "0.75"})
         }
@@ -589,7 +589,7 @@ class FeatureTypeModel(LayerModel):
             "gml_%s_type" % geometry_column: ft.get_geomtype_gml(),
             # TODO: Add gml_<geometry name>_occurances,
             "wfs_srs": " ".join(DEFAULT_EPSG),
-            "wfs_getfeature_formatlist": ",".join(OUTPUTFORMAT["VECTOR"].keys())
+            "wfs_getfeature_formatlist": ",".join(OUTPUTFORMAT["WFS"].keys())
             })
 
         if ft.get_fid_column() is not None:
