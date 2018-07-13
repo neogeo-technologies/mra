@@ -106,7 +106,7 @@ OUTPUTFORMAT = {
     }
 
 
-DEFAULT_EPSG = ["3857", "4326"]
+DEFAULT_SRS = ["EPSG:3857", "EPSG:4326"]
 
 
 class MetadataMixin(object):
@@ -360,7 +360,7 @@ class Mapfile(MetadataMixin):
                 self.ms.appendOutputFormat(outputformat)
 
             self.set_metadata("ows_title", "OGC Web Service")
-            self.set_metadata("ows_srs", " ".join(DEFAULT_EPSG))
+            self.set_metadata("ows_srs", " ".join(DEFAULT_SRS))
 
             for ows in ("wms", "wfs", "wcs"):
                 self.set_metadata("%s_enable_request" % ows, "")
@@ -420,7 +420,7 @@ class Mapfile(MetadataMixin):
         dflt_metadata = {
             "ows_title": l_name,
             "ows_abstract": l_name,
-            "wms_srs": " ".join(DEFAULT_EPSG)
+            "wms_srs": " ".join(DEFAULT_SRS)
             }
 
         for k, v in dflt_metadata.iteritems():
@@ -588,7 +588,7 @@ class FeatureTypeModel(LayerModel):
             "gml_geometries": geometry_column,
             "gml_%s_type" % geometry_column: ft.get_geomtype_gml(),
             # TODO: Add gml_<geometry name>_occurances,
-            "wfs_srs": " ".join(DEFAULT_EPSG),
+            "wfs_srs": " ".join(DEFAULT_SRS),
             "wfs_getfeature_formatlist": ",".join(OUTPUTFORMAT["WFS"].keys())
             })
 
