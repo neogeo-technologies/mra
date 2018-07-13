@@ -1040,7 +1040,7 @@ class layer(object):
         if l_name != data.get("name", l_name):
             raise webapp.Forbidden("Can't change the name of a layer.")
 
-        l_enabled = True  # TODO: => data.pop("enabled", True)
+        l_enabled = data.pop("enabled", True)
 
         mf = mra.get_available()
         with webapp.mightNotFound():
@@ -1050,6 +1050,9 @@ class layer(object):
         wsmf = mra.get_service(ws_name)
         with webapp.mightConflict():
             wslayer = wsmf.get_layer(l_name)
+
+        layer.enable(l_enabled)
+        wslayer.enable(l_enabled)
 
         # update resource if changed
         href = data.get("resource", {}).get("href")

@@ -53,6 +53,62 @@ import metadata
 import xml.etree.ElementTree as ET
 
 
+# Defines commons outputformats:
+
+
+def outputformat(
+        driver, name, mimetype=None, imagemode=None,
+        extension=None, transparent=mapscript.MS_OFF, options=None):
+    _format = mapscript.outputFormatObj(driver, name)
+
+    if mimetype:
+        _format.mimetype = mimetype
+    if imagemode:
+        _format.imagemode = imagemode
+    if extension:
+        _format.extension = extension
+    if transparent:
+        _format.transparent = transparent
+    if options:
+        for k, v in options.items():
+            _format.setOption(k, v)
+    return _format
+
+
+OUTPUTFORMAT = {
+    'WFS': {
+        'SHAPEZIP': outputformat(
+            "OGR/ESRI Shapefile", "SHAPEZIP",
+            mimetype="application/shapefile",
+            imagemode=mapscript.MS_IMAGEMODE_FEATURE,
+            transparent=mapscript.MS_OFF,
+            options={"FILENAME": "result.zip", "FORM": "zip"}),
+        'GEOJSON': outputformat(
+            "OGR/GEOJSON", "GEOJSON",
+            mimetype="application/json; subtype=geojson",
+            imagemode=mapscript.MS_IMAGEMODE_FEATURE,
+            transparent=mapscript.MS_OFF,
+            options={"FORM": "SIMPLE", "STORAGE": "stream"})
+        },
+    'WMS': {
+        'PNG8': outputformat(
+            "AGG/PNG8", "PNG8", mimetype="image/png; mode=8bit",
+            imagemode=mapscript.MS_IMAGEMODE_RGB, extension="png",
+            options={
+                "QUANTIZE_FORCE": "on",
+                "QUANTIZE_COLORS": "256",
+                "GAMMA": "0.75"}),
+        'JPEG': outputformat(
+            "AGG/JPEG", "JPEG", mimetype="image/jpeg",
+            imagemode=mapscript.MS_IMAGEMODE_RGB,
+            extension="jpg", options={"GAMMA": "0.75"})
+        }
+    }
+
+
+DEFAULT_EPSG = ["3857", "4326"]
+
+
 class MetadataMixin(object):
     def __getattr__(self, attr):
         if hasattr(self, "ms") and hasattr(metadata, attr):
@@ -76,15 +132,16 @@ class Layer(MetadataMixin):
     def update(self, name, enabled, metadata):
         self.ms.name = name
         self.ms.template = "foo.html"  # TODO: Support html format response
-        self.enable(enabled)
+        self.enable(enabled=enabled)
         self.update_metadatas(metadata)
 
     def enable(self, enabled=True):
-        self.ms.status = mapscript.MS_ON if enabled else mapscript.MS_OFF
-
-        # TODO: later...
-        # requests = ["GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic"]
-        # self.set_metadata("wms_enable_request", " ".join(("%s" if enabled else "!%s") % c for c in requests))
+        if enabled:
+            self.ms.status = mapscript.MS_ON
+            self.set_metadata("ows_enable_request", "*")
+        else:
+            self.ms.status = mapscript.MS_OFF
+            self.set_metadata("ows_enable_request", "")
 
     def get_type_name(self):
         return {
@@ -297,8 +354,13 @@ class Mapfile(MetadataMixin):
             self.ms.setProjection("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
             self.ms.setExtent(-180, -90, 180, 90)
             self.ms.units = mapscript.MS_DD
+
+            for outputformat in [
+                    v for k in OUTPUTFORMAT.keys() for v in list(OUTPUTFORMAT[k].values())]:
+                self.ms.appendOutputFormat(outputformat)
+
             self.set_metadata("ows_title", "OGC Web Service")
-            self.set_metadata("ows_srs", "EPSG:4326 EPSG:3857")
+            self.set_metadata("ows_srs", " ".join(DEFAULT_EPSG))
 
             for ows in ("wms", "wfs", "wcs"):
                 self.set_metadata("%s_enable_request" % ows, "")
@@ -358,7 +420,7 @@ class Mapfile(MetadataMixin):
         dflt_metadata = {
             "ows_title": l_name,
             "ows_abstract": l_name,
-            "wms_srs": "EPSG:4326"
+            "wms_srs": " ".join(DEFAULT_EPSG)
             }
 
         for k, v in dflt_metadata.iteritems():
@@ -475,12 +537,6 @@ class FeatureTypeModel(LayerModel):
             url = urlparse.urlparse(cparam["url"])
             self.ms.data = self.ws.mra.get_file_path(url.path)
 
-        # Deactivate wms and wfs requests, because we are a virtual layer.
-        # self.set_metadatas({
-        #     "wms_enable_request": "!GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic",
-        #     "wfs_enable_request": "!GetCapabilities !DescribeFeatureType !GetFeature",
-        #     })
-
         # Update mra metadata, and make sure the mandatory ones are left untouched.
         self.update_mra_metadatas(metadata)
         self.update_mra_metadatas({"name": ft_name, "type": "featuretype", "storage": ds_name})
@@ -507,8 +563,7 @@ class FeatureTypeModel(LayerModel):
             "workspace": ws.name,
             })
 
-        # if enabled:
-        #     layer.set_metadata("wfs_enable_request", "GetCapabilities DescribeFeatureType GetFeature")
+        layer.enable(enabled)
 
         # Configure the layer based on information from the store.
         ds = ws.get_datastore(self.get_mra_metadata("storage"))
@@ -533,8 +588,8 @@ class FeatureTypeModel(LayerModel):
             "gml_geometries": geometry_column,
             "gml_%s_type" % geometry_column: ft.get_geomtype_gml(),
             # TODO: Add gml_<geometry name>_occurances,
-            "wfs_srs": "EPSG:4326",
-            "wfs_getfeature_formatlist": "OGRGML,SHAPEZIP",
+            "wfs_srs": " ".join(DEFAULT_EPSG),
+            "wfs_getfeature_formatlist": ",".join(OUTPUTFORMAT["VECTOR"].keys())
             })
 
         if ft.get_fid_column() is not None:
@@ -575,12 +630,6 @@ class CoverageModel(LayerModel):
         #else:
         #    raise ValueError("Unhandled type \"%s\"." % cparam["dbtype"])
 
-        # Deactivate wms and wcs requests, because we are a virtual layer.
-        # self.set_metadatas({
-        #     "wms_enable_request": "!GetCapabilities !GetMap !GetFeatureInfo !GetLegendGraphic",
-        #     "wcs_enable_request": "!GetCapabilities !DescribeCoverage !GetCoverage",
-        #     })
-
         # Update mra metadatas, and make sure the mandatory ones are left untouched.
         self.update_mra_metadatas(metadata)
         self.update_mra_metadatas({"name": c_name, "type": "coverage", "storage": cs_name,
@@ -616,8 +665,7 @@ class CoverageModel(LayerModel):
             "wcs_description": layer.get_metadata("ows_abstract")
             })
 
-        # if enabled:
-        #     layer.set_metadata("wcs_enable_request", "GetCapabilities DescribeCoverage GetCoverage")
+        layer.enable(enabled)
 
         plugins.extend("post_configure_raster_layer", self, ws, layer)
 
