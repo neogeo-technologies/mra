@@ -1426,7 +1426,7 @@ urlmap(layergroups, "layergroups")
 urlmap(layergroup, "layergroups", ())
 # OGC Web Services:
 urlmap(OWSGlobalSettings, "services", "(ows|wms|wfs|wcs)", "settings")
-urlmap(OWSWorkspaceSettings, "services", "(wms|wfs|wcs)", "workspaces", (), "settings")
+urlmap(OWSWorkspaceSettings, "services", "(ows|wms|wfs|wcs)", "workspaces", (), "settings")
 
 urls = tuple(urlmap)
 
