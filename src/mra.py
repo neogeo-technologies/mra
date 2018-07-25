@@ -360,9 +360,10 @@ class Mapfile(MetadataMixin):
                 self.ms.appendOutputFormat(outputformat)
 
             self.set_metadata("ows_title", "OGC Web Service")
+            self.set_metadata("ows_abstract", "OGC Web Service")
             self.set_metadata("ows_srs", " ".join(DEFAULT_SRS))
 
-            for ows in ("wms", "wfs", "wcs"):
+            for ows in ("ows", "wms", "wfs", "wcs"):
                 self.set_metadata("%s_enable_request" % ows, "")
 
             fontset and self.ms.setFontSet(fontset)
