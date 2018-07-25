@@ -145,8 +145,6 @@ class workspace(object):
         ws = get_workspace(ws_name)
         return {"workspace": ({
                     "name": ws.name,
-                    "title": ws.title,
-                    "description": ws.description,
                     "dataStores":
                         href("%s/workspaces/%s/datastores.%s" % (web.ctx.home, ws.name, format)),
                     "coverageStores":
