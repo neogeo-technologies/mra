@@ -1312,6 +1312,113 @@ class layergroup(object):
         mf.save()
 
 
+class workspaceLayergroups(object):
+    """Layergroups container in a Workspace.
+
+    http://hostname/mra/workspaces/<ws>/layergroups
+
+    """
+    @HTTPCompatible()
+    def GET(self, ws_name, format):
+        """List all layer groups in a workspace."""
+
+        wsmf = mra.get_service(ws_name)
+        return {"layerGroups": [{
+                    "name": lg.name,
+                    "href": "%s/workspaces/%s/layergroups/%s.%s" % (web.ctx.home, wsmf.name, lg.name, format)
+                    } for lg in wsmf.iter_layergroups()]
+                }
+
+    @HTTPCompatible()
+    def POST(self, ws_name, format):
+        """Create a new layer group in a workspace."""
+
+        wsmf = mra.get_service(ws_name)
+
+        data = get_data(name="layerGroup", mandatory=["name"], authorized=["name", "title", "abstract", "layers"])
+        lg_name = data.pop("name")
+        with webapp.mightNotFound():
+            layers = [wsmf.get_layer(l_name) for l_name in data.pop("layers", [])]
+
+        with webapp.mightConflict():
+            lg = wsmf.create_layergroup(lg_name, data)
+        lg.add(*layers)
+
+        wsmf.save()
+
+        webapp.Created("%s/workspaces/%s/layergroups/%s.%s" % (web.ctx.home, wsmf.name, lg.name, format))
+
+
+class workspaceLayergroup(object):
+    """A layergroup is a grouping of layers and styles that can be accessed
+    as a single layer in a WMS GetMap request.
+
+    http://hostname/mra/workspaces/<ws>/layergroups/<lg>
+
+    """
+    @HTTPCompatible()
+    def GET(self, ws_name, lg_name, format):
+        """Return layergroup <lg>."""
+
+        wsmf = mra.get_service(ws_name)
+        with webapp.mightNotFound():
+            lg = wsmf.get_layergroup(lg_name)
+
+        latlon_extent = lg.get_latlon_extent()
+
+        bounds = {
+            "minx": latlon_extent.minX(),
+            "miny": latlon_extent.minY(),
+            "maxx": latlon_extent.maxX(),
+            "maxy": latlon_extent.maxY(),
+            "crs": "EPSG:4326",
+            }
+
+        return {"layerGroup": ({
+                    "name": lg.name,
+                    "mode": "NAMED", # Only available mode in MRA.
+                    "publishables": Entries([{
+                            "name": layer.ms.name,
+                            "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
+                            } for layer in lg.iter_layers()], tag_name="published"),
+                    "bounds": Entries(bounds),
+                    # TODO: Styles
+                    # "styles": [],
+                    })
+                }
+
+    @HTTPCompatible()
+    def PUT(self, ws_name, lg_name, format):
+        """Modify layergroup <lg>."""
+
+        wsmf = mra.get_service(ws_name)
+
+        with webapp.mightNotFound():
+            lg = wsmf.get_layergroup(lg_name)
+
+        data = get_data(name="layerGroup", mandatory=["name"], authorized=["name", "title", "abstract", "layers"])
+        if lg_name != data.pop("name"):
+            raise webapp.Forbidden("Can't change the name of a layergroup.")
+
+        layers = data.pop("layers", [])
+        if not isinstance(layers, list) or any(not isinstance(x, basestring) for x in layers):
+            raise webapp.BadRequest("layers must be a list of layer names.")
+
+        lg.clear()
+        lg.add(*layers)
+
+        wsmf.save()
+
+    @HTTPCompatible()
+    def DELETE(self, ws_name, lg_name, format):
+        """Delete layergroup <lg>."""
+
+        wsmf = mra.get_service(ws_name)
+        with webapp.mightNotFound():
+            wsmf.delete_layergroup(lg_name)
+        wsmf.save()
+
+
 class OWSGlobalSettings(object):
     """Control settings of the main OWS service, i.e. the mapfile: layers.map
 
@@ -1424,6 +1531,8 @@ urlmap(layerfields, "layers", (), "fields")
 # Layergroups:
 urlmap(layergroups, "layergroups")
 urlmap(layergroup, "layergroups", ())
+urlmap(workspaceLayergroups, "workspaces", (), "layergroups")
+urlmap(workspaceLayergroup, "workspaces", (), "layergroups", ())
 # OGC Web Services:
 urlmap(OWSGlobalSettings, "services", "(ows|wms|wfs|wcs)", "settings")
 urlmap(OWSWorkspaceSettings, "services", "(ows|wms|wfs|wcs)", "workspaces", (), "settings")

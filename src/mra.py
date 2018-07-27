@@ -291,7 +291,7 @@ class LayerGroup(object):
     def add_layer(self, layer):
         layer.ms.group = self.name
         layer.set_metadata("wms_group_name", self.name)
-        for k, v in self.mapfile.get_mra_metadata("layergroups")[self.name]:
+        for k, v in self.mapfile.get_mra_metadata("layergroups")[self.name].iteritems():
             layer.set_metadata("wms_group_%s" % k, v)
         self.mapfile.move_layer_down(layer.ms.name)
 
