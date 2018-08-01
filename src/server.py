@@ -1053,7 +1053,7 @@ class layer(object):
         with webapp.mightConflict():
             wslayer = wsmf.get_layer(l_name)
 
-        layer.enable(l_enabled)
+        layer.enable(True)
         wslayer.enable(l_enabled)
 
         # update resource if changed

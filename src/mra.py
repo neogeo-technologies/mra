@@ -136,12 +136,24 @@ class Layer(MetadataMixin):
         self.update_metadatas(metadata)
 
     def enable(self, enabled=True):
+        wms = ("GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic")
+        wcs = ("GetCapabilities", "GetCoverage", "DescribeCoverage")
+        wfs = ("GetCapabilities", "GetFeature", "DescribeFeatureType")
+
         if enabled:
             self.ms.status = mapscript.MS_ON
-            self.set_metadata("ows_enable_request", "*")
+            self.set_metadata("wms_enable_request", " ".join(wms))
+            if self.ms.type == 3:
+                self.set_metadata("wcs_enable_request", " ".join(wcs))
+            else:
+                self.set_metadata("wfs_enable_request", " ".join(wfs))
         else:
             self.ms.status = mapscript.MS_OFF
-            self.set_metadata("ows_enable_request", "")
+            self.set_metadata("wms_enable_request", " ".join(["!%s" % m for m in wms]))
+            if self.ms.type == 3:
+                self.set_metadata("wcs_enable_request", " ".join(["!%s" % m for m in wcs]))
+            else:
+                self.set_metadata("wfs_enable_request", " ".join(["!%s" % m for m in wfs]))
 
     def get_type_name(self):
         return {
