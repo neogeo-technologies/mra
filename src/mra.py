@@ -106,9 +106,6 @@ OUTPUTFORMAT = {
     }
 
 
-DEFAULT_SRS = ["EPSG:3857", "EPSG:4326"]
-
-
 class MetadataMixin(object):
     def __getattr__(self, attr):
         if hasattr(self, "ms") and hasattr(metadata, attr):
@@ -347,10 +344,11 @@ class LayerGroup(object):
 
 class Mapfile(MetadataMixin):
 
-    def __init__(self, path, create=False, needed=False, fontset=None):
+    def __init__(self, path, create=False, needed=False, fontset=None, conf=None):
         self.path = path
         self.filename = os.path.basename(self.path)
         self.name = os.path.splitext(self.filename)[0]
+        self.conf = conf or {}
 
         if os.path.exists(self.path):
             if create and not needed:
@@ -363,17 +361,21 @@ class Mapfile(MetadataMixin):
             self.ms = mapscript.mapObj()
             # and adding some default values...
             self.ms.name = self.name
-            self.ms.setProjection("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-            self.ms.setExtent(-180, -90, 180, 90)
-            self.ms.units = mapscript.MS_DD
+            self.ms.setProjection(self.conf.get("projection", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
+            self.ms.setExtent(*self.conf.get("extent", [-180, -90, 180, 90]))
+            self.ms.units = self.conf.get("units", mapscript.MS_DD)
 
             for outputformat in [
                     v for k in OUTPUTFORMAT.keys() for v in list(OUTPUTFORMAT[k].values())]:
                 self.ms.appendOutputFormat(outputformat)
 
-            self.set_metadata("ows_title", "OGC Web Service")
-            self.set_metadata("ows_abstract", "OGC Web Service")
-            self.set_metadata("ows_srs", " ".join(DEFAULT_SRS))
+            meta = self.conf.get("metadata", {})
+            self.set_metadata("ows_title", meta.pop("ows_title", "OGC Web Service"))
+            self.set_metadata("ows_abstract", meta.pop("ows_abstract", "OGC Web Service"))
+            self.set_metadata("ows_srs", " ".join(meta.pop("ows_srs", ["EPSG:4326", "EPSG:3857"])))
+
+            for k, v in meta.iteritems():
+                self.set_metadata(k, v)
 
             for ows in ("ows", "wms", "wfs", "wcs"):
                 self.set_metadata("%s_enable_request" % ows, "")
@@ -433,7 +435,7 @@ class Mapfile(MetadataMixin):
         dflt_metadata = {
             "ows_title": l_name,
             "ows_abstract": l_name,
-            "wms_srs": " ".join(DEFAULT_SRS)
+            "wms_srs": self.get_metadata("ows_srs")
             }
 
         for k, v in dflt_metadata.iteritems():
@@ -601,7 +603,7 @@ class FeatureTypeModel(LayerModel):
             "gml_geometries": geometry_column,
             "gml_%s_type" % geometry_column: ft.get_geomtype_gml(),
             # TODO: Add gml_<geometry name>_occurances,
-            "wfs_srs": " ".join(DEFAULT_SRS),
+            "wfs_srs": ws.get_metadata("ows_srs"),
             "wfs_getfeature_formatlist": ",".join(OUTPUTFORMAT["WFS"].keys())
             })
 
@@ -1074,7 +1076,9 @@ class MRA(object):
 
     def get_available(self):
         path = self.get_available_path("layers.map")
-        return Mapfile(path, needed=True, fontset=self.get_fontset_path())
+        return Mapfile(
+            path, fontset=self.get_fontset_path(),
+            conf=self.config["mapfile"], needed=True)
 
     # Workspaces:
 
