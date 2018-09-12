@@ -118,3 +118,17 @@ def wkt_to_authority(wkt):
         return srs.GetAuthorityName("GEOGCS"), srs.GetAuthorityCode("GEOGCS")
     else:
         return "Unknown", "Unknown"  # :s it could be improved... (TODO)
+
+
+def get_units(value):
+    return {
+        'inches': mapscript.MS_INCHES,
+        'feet': mapscript.MS_FEET,
+        'miles': mapscript.MS_MILES,
+        'meters': mapscript.MS_METERS,
+        'kilometers': mapscript.MS_KILOMETERS,
+        'dd': mapscript.MS_DD,
+        'pixels': mapscript.MS_PIXELS,
+        'percentages': mapscript.MS_PERCENTAGES,
+        'nauticalmiles': mapscript.MS_NAUTICALMILES
+        }.get(value.lower(), None)

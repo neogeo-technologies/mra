@@ -363,7 +363,7 @@ class Mapfile(MetadataMixin):
             self.ms.name = self.name
             self.ms.setProjection(self.conf.get("projection", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
             self.ms.setExtent(*self.conf.get("extent", [-180, -90, 180, 90]))
-            self.ms.units = self.conf.get("units", mapscript.MS_DD)
+            self.ms.units = tools.get_units(self.conf.get("units", "DD"))
 
             for outputformat in [
                     v for k in OUTPUTFORMAT.keys() for v in list(OUTPUTFORMAT[k].values())]:
