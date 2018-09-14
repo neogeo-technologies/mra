@@ -82,7 +82,7 @@ def get_metadata_keys(obj):
 
 
 def set_metadata(obj, key, value):
-    obj.setMetaData(key, value)
+    obj.setMetaData(key, value.encode('utf8'))
 
 
 def set_metadatas(obj, metadatas):
