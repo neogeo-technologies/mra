@@ -126,12 +126,6 @@ class Layer(MetadataMixin):
     def __init__(self, backend):
         self.ms = backend
 
-    def update(self, name, enabled, metadata):
-        self.ms.name = name
-        self.ms.template = "foo.html"  # TODO: Support html format response
-        self.enable(enabled=enabled)
-        self.update_metadatas(metadata)
-
     def enable(self, enabled=True):
         wms = ("GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic")
         wcs = ("GetCapabilities", "GetCoverage", "DescribeCoverage")
@@ -431,22 +425,19 @@ class Mapfile(MetadataMixin):
         # Create the layer.
         layer = Layer(mapscript.layerObj(self.ms))
 
-        # Add some default metadata.
-        dflt_metadata = {
-            "ows_title": l_name,
-            "ows_abstract": l_name,
-            "wms_srs": self.get_metadata("ows_srs")
-            }
-
-        for k, v in dflt_metadata.iteritems():
-            l_metadata.setdefault(k, v)
-        l_metadata["ows_name"] = l_name
-
-        # Update layer.
-        layer.update(l_name, l_enabled, l_metadata)
-
         # Configure the layer according to the model.
         model.configure_layer(layer, l_enabled)
+
+        layer.ms.name = l_name
+        layer.ms.template = "foo.html"
+        # layer.enable()
+
+        # Add metadata.
+        metadata = {
+            "wms_srs": self.get_metadata("ows_srs"),
+            }
+        metadata.update(l_metadata)
+        layer.update_metadatas(metadata)
 
         # Set default style.
         layer.set_default_style(self)
@@ -571,8 +562,10 @@ class FeatureTypeModel(LayerModel):
         layer.ms.connectiontype = self.ms.connectiontype
         layer.ms.connection = self.ms.connection
 
+        layer_name = self.get_mra_metadata("name")
+
         layer.update_mra_metadatas({
-            "name": self.get_mra_metadata("name"),
+            "name": layer_name,
             "type": self.get_mra_metadata("type"),
             "storage": self.get_mra_metadata("storage"),
             "workspace": ws.name,
@@ -588,6 +581,9 @@ class FeatureTypeModel(LayerModel):
         field_names = []
         for field in ft.iterfields():
             layer.set_metadatas({
+                "ows_name": layer_name,
+                "ows_title": layer_name,
+                "ows_abstract": layer_name,
                 "gml_%s_alias" % field.get_name(): field.get_name(),
                 "gml_%s_type" % field.get_name(): field.get_type_gml(),
                 # TODO: Add gml_<field name>_precision, gml_<field name>_width
@@ -667,14 +663,19 @@ class CoverageModel(LayerModel):
         layer.ms.connectiontype = self.ms.connectiontype
         layer.ms.connection = self.ms.connection
 
+        layer_name = self.get_mra_metadata("name")
+
         layer.update_mra_metadatas({
-            "name": self.get_mra_metadata("name"),
+            "name": layer_name,
             "type": self.get_mra_metadata("type"),
             "storage": self.get_mra_metadata("storage"),
             "workspace": ws.name,
             })
 
         layer.set_metadatas({
+            "ows_name": layer_name,
+            "ows_title": layer_name,
+            "ows_abstract": layer_name,
             "wcs_name": layer.get_metadata("ows_name"),
             "wcs_label": layer.get_metadata("ows_title"),
             "wcs_description": layer.get_metadata("ows_abstract")

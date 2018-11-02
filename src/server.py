@@ -1056,6 +1056,11 @@ class layer(object):
         layer.enable(True)
         wslayer.enable(l_enabled)
 
+        for k in data:
+            if k in ("title", "abstract"):
+                layer.set_metadata("ows_%s" % k, data.get(k))
+                wslayer.set_metadata("ows_%s" % k, data.get(k))
+
         # update resource if changed
         href = data.get("resource", {}).get("href")
         if href:
