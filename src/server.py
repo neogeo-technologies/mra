@@ -966,6 +966,24 @@ class layers(object):
         webapp.Created("%s/layers/%s.%s" % (web.ctx.home, l_name, format))
 
 
+class workspaceLayers(object):
+    """Layers container for workspace <ws>.
+
+    http://hostname/mra/workspaces/<ws>/layers
+
+    """
+    @HTTPCompatible()
+    def GET(self, ws_name, format):
+        """List all layers."""
+
+        wsmf = mra.get_service(ws_name)
+        return {"layers": [{
+                    "name": layer.ms.name,
+                    "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
+                    } for layer in wsmf.iter_layers()]
+                }
+
+
 class layer(object):
     """A layer is a published resource (feature type or coverage) from a MapFile.
 
@@ -1053,7 +1071,7 @@ class layer(object):
         with webapp.mightConflict():
             wslayer = wsmf.get_layer(l_name)
 
-        layer.enable(True)
+        layer.enable(l_enabled)
         wslayer.enable(l_enabled)
 
         for k in data:
@@ -1126,6 +1144,89 @@ class layer(object):
             wsmf.delete_layer(l_name)
 
         mf.save()
+        wsmf.save()
+
+
+class workspaceLayer(object):
+    """A layer is a published resource (feature type or coverage) from a MapFile.
+
+    http://hostname/mra/workspaces/<ws>/layers/<l>
+
+    All layers are added in one single MapFile which should be activate as OGC service.
+
+    """
+    @HTTPCompatible()
+    def GET(self, ws_name, l_name, format):
+        """Return layer <l> for workspace <ws>."""
+
+        wsmf = mra.get_service(ws_name)
+        with webapp.mightNotFound():
+            layer = wsmf.get_layer(l_name)
+
+        # TODO Factorize below with layer.GET fn
+
+        data_type, store_type = {
+            "featuretype": ("featuretype", "datastore"),
+            "coverage": ("coverage", "coveragestore")
+            }[layer.get_mra_metadata("type")]
+
+        response = {"layer": {
+                    "name": l_name,
+                    "title": layer.get_metadata("ows_title", None),
+                    "abstract": layer.get_metadata("ows_abstract", None),
+                    "type": layer.get_type_name(),
+                    "resource": {
+                        # TODO: Add attr class="featureType|coverage"
+                        "name": layer.get_mra_metadata("name"),
+                        "href": "%s/workspaces/%s/%ss/%s/%ss/%s.%s" % (
+                            web.ctx.home, layer.get_mra_metadata("workspace"),
+                            store_type, layer.get_mra_metadata("storage"),
+                            data_type, layer.get_mra_metadata("name"), format),
+                        },
+                    "enabled": bool(layer.ms.status),  # TODO because it's fictitious...
+                    # "attribution" => TODO?
+                    # "path" => TODO?
+                    }}
+
+        # Check CLASSGROUP
+        dflt_style = layer.ms.classgroup
+        if dflt_style is None:
+            # If is 'None': take the first style as would MapServer.
+            for s_name in layer.iter_styles():
+                dflt_style = s_name
+                break
+        if dflt_style is None:
+            return response
+
+        response["layer"].update({
+            "defaultStyle": {
+                "name": dflt_style,
+                "href": "%s/styles/%s.%s" % (web.ctx.home, dflt_style, format)
+                }
+            })
+
+        styles = [{"name": s_name,
+                   "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
+                   } for s_name in layer.iter_styles() if s_name != dflt_style]
+        if not styles:
+            return response
+
+        return response["layer"].update({"styles": styles})
+
+    @HTTPCompatible()
+    def PUT(self, ws_name, l_name, format):
+        """Modify layer <l> from <ws>."""
+
+        data = get_data(name="layer", mandatory=[],
+                        authorized=["enabled"])
+
+        l_enabled = data.pop("enabled", True)
+
+        wsmf = mra.get_service(ws_name)
+        with webapp.mightNotFound():
+            layer = wsmf.get_layer(l_name)
+
+        layer.enable(l_enabled)
         wsmf.save()
 
 
@@ -1530,6 +1631,8 @@ urlmap(style, "styles", ())
 # Layers, layer styles and data fields:
 urlmap(layers, "layers")
 urlmap(layer, "layers", ())
+urlmap(workspaceLayers, "workspaces", (), "layers")
+urlmap(workspaceLayer, "workspaces", (), "layers", ())
 urlmap(layerstyles, "layers", (), "styles")
 urlmap(layerstyle, "layers", (), "styles", ())
 urlmap(layerfields, "layers", (), "fields")

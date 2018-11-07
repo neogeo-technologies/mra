@@ -372,7 +372,7 @@ class Mapfile(MetadataMixin):
                 self.set_metadata(k, v)
 
             for ows in ("ows", "wms", "wfs", "wcs"):
-                self.set_metadata("%s_enable_request" % ows, "")
+                self.set_metadata("%s_enable_request" % ows, "*")
 
             fontset and self.ms.setFontSet(fontset)
         else:
