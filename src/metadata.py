@@ -59,8 +59,8 @@ def get_metadata(obj, key, *args):
             raise KeyError(key)
         value = args[0]
 
-    if isinstance(value, basestring):
-        value = value.encode("UTF8")
+    # if isinstance(value, basestring):
+    #     value = value.encode("UTF8")
 
     return value
 
