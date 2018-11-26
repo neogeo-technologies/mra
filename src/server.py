@@ -298,7 +298,7 @@ class featuretypes(object):
                 ws.create_featuretypemodel(ds_name, data["name"], data)
         ws.save()
 
-        # Then creates the associated layer by default:
+        # Then creates associated layers by default:
         #   - in layers.map
         model = ws.get_featuretypemodel(ds_name, data["name"])
         mf = mra.get_available()
@@ -578,18 +578,30 @@ class coverages(object):
         """Create a new coverage."""
 
         ws = get_workspace(ws_name)
-        data = get_data(name="coverage", mandatory=["name"], authorized=["name", "title", "abstract"])
+        data = get_data(name="coverage", mandatory=["name"],
+                        authorized=["name", "title", "abstract", "enabled"])
+
+        l_enabled = data.pop("enabled", True)
+
+        # Creates first the coverage:
         with webapp.mightConflict("coverage", coveragestore=cs_name):
             with webapp.mightNotFound("coverage", coveragestore=cs_name):
                 ws.create_coveragemodel(data["name"], cs_name, data)
         ws.save()
 
-        # Then creates the associated layer by default:
+        # Then creates associated layers by default:
+        #   - in layers.map
         model = ws.get_coveragemodel(cs_name, data["name"])
         mf = mra.get_available()
         with webapp.mightConflict():
-            mf.create_layer(model, data["name"], True)
+            mf.create_layer(model, data["name"], l_enabled)
         mf.save()
+
+        #   - in {workspace}.map
+        wsmf = mra.get_service(ws_name)
+        with webapp.mightConflict():
+            wsmf.create_layer(model, data["name"], l_enabled)
+        wsmf.save()
 
         webapp.Created("%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
                 web.ctx.home, ws.name, cs_name, data["name"], format))

@@ -676,9 +676,9 @@ class CoverageModel(LayerModel):
             "ows_name": layer_name,
             "ows_title": layer_name,
             "ows_abstract": layer_name,
-            "wcs_name": layer.get_metadata("ows_name"),
-            "wcs_label": layer.get_metadata("ows_title"),
-            "wcs_description": layer.get_metadata("ows_abstract")
+            "wcs_name": layer_name,
+            "wcs_label": layer_name,
+            "wcs_description": layer_name
             })
 
         layer.enable(enabled)
@@ -942,7 +942,8 @@ class MRA(object):
             exit("Error in configuration file: %s" % e)
 
     def safe_path_join(self, root, *args):
-        full_path = os.path.realpath(os.path.join(root, *args))
+        # full_path = os.path.realpath(os.path.join(root, *args))
+        full_path = os.path.join(root, *args)
         if not full_path.startswith(os.path.realpath(root)):
             raise webapp.Forbidden(message="Path \"%s\" outside root directory." % (args))
         return full_path
