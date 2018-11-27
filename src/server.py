@@ -291,6 +291,8 @@ class featuretypes(object):
                         authorized=["name", "title", "abstract", "enabled"])
 
         l_enabled = data.pop("enabled", True)
+        l_metadata = dict(
+            ("ows_%s" % k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
 
         # Creates first the feature type:
         with webapp.mightConflict("featureType", datastore=ds_name):
@@ -303,13 +305,13 @@ class featuretypes(object):
         model = ws.get_featuretypemodel(ds_name, data["name"])
         mf = mra.get_available()
         with webapp.mightConflict():
-            mf.create_layer(model, data["name"], l_enabled)
+            mf.create_layer(model, data["name"], l_enabled, l_metadata=l_metadata)
         mf.save()
 
         #   - in {workspace}.map
         wsmf = mra.get_service(ws_name)
         with webapp.mightConflict():
-            wsmf.create_layer(model, data["name"], l_enabled)
+            wsmf.create_layer(model, data["name"], l_enabled, l_metadata=l_metadata)
         wsmf.save()
 
         webapp.Created("%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
@@ -582,6 +584,8 @@ class coverages(object):
                         authorized=["name", "title", "abstract", "enabled"])
 
         l_enabled = data.pop("enabled", True)
+        l_metadata = dict(
+            ("ows_%s" % k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
 
         # Creates first the coverage:
         with webapp.mightConflict("coverage", coveragestore=cs_name):
@@ -594,13 +598,13 @@ class coverages(object):
         model = ws.get_coveragemodel(cs_name, data["name"])
         mf = mra.get_available()
         with webapp.mightConflict():
-            mf.create_layer(model, data["name"], l_enabled)
+            mf.create_layer(model, data["name"], l_enabled, l_metadata=l_metadata)
         mf.save()
 
         #   - in {workspace}.map
         wsmf = mra.get_service(ws_name)
         with webapp.mightConflict():
-            wsmf.create_layer(model, data["name"], l_enabled)
+            wsmf.create_layer(model, data["name"], l_enabled, l_metadata=l_metadata)
         wsmf.save()
 
         webapp.Created("%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
