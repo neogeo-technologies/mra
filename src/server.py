@@ -112,12 +112,16 @@ class workspaces(object):
     def POST(self, format):
         """Create a new workspace."""
 
-        data = get_data(name="workspace", mandatory=["name"])
+        data = get_data(name="workspace", mandatory=["name"], authorized=["name", "title", "abstract", "srs"])
         ws_name = data.pop("name")
 
+        ws_metadata = dict(
+            ("ows_%s" % k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
+        if "srs" in data:
+            ws_metadata["ows_srs"] = " ".join(data["srs"])
+
         with webapp.mightConflict():
-            mra.create_workspace(ws_name).save()
-            # TODO Create associated service
+            mra.create_workspace(ws_name, ws_metadata).save()
 
         webapp.Created("%s/workspaces/%s.%s" % (web.ctx.home, ws_name, format))
 
@@ -1603,8 +1607,10 @@ class OWSWorkspaceSettings(object):
         """To enable or disable OGC service..."""
 
         mf = mra.get_service(ws_name)
-        data = get_data(name=ows, authorized=["enabled", "title", "abstract"])
+        data = get_data(name=ows, authorized=["enabled", "title", "abstract", "srs"])
         is_enabled = data.pop("enabled", None)
+        if "srs" in data:
+            data["srs"] = " ".join(data["srs"])
         # TODO: That would be cool to be able to control each operation...
         values = {True: "*", "True": "*", "true": "*",
                   False: "", "False": "", "false": ""}
