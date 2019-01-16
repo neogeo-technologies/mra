@@ -522,10 +522,12 @@ class FeatureTypeModel(LayerModel):
             connection = "dbname=%s port=%s host=%s " % (cparam.get("database", "postgres"), cparam.get("port", "5432"), cparam.get("host", "localhost"))
             connection += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
             self.ms.connection = connection
-            self.ms.data = '%s FROM %s."%s"' % (ds[ft_name].get_geometry_column(), cparam.get("schema", "public"), ft_name)
+            self.ms.data = '%s FROM %s.%s' % (
+                ds[ft_name].get_geometry_column(),
+                cparam.get("schema", "public"),
+                ft_name[0].isdigit() and '"%s"' % ft_name or ft_name)
             if ft.get_fid_column() is not None:
                 self.ms.data += ' USING UNIQUE %s' % ft.get_fid_column()
-
             if ft.get_authority_code() is not None:
                 self.ms.data += ' USING SRID=%s' % ft.get_authority_code()
             # self.set_metadata("ows_extent", "%s %s %s %s" %
