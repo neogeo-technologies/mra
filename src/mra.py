@@ -369,6 +369,10 @@ class Mapfile(MetadataMixin):
             for ows in ("ows", "wms", "wfs", "wcs"):
                 self.set_metadata("%s_enable_request" % ows, "*")
 
+            if 'onlineresource' in config:
+                onlineresource = urlparse.urljoin(config.pop('onlineresource'), self.ms.name)
+                self.set_metadata('ows_onlineresource', onlineresource)
+
             fontset and self.ms.setFontSet(fontset)
         else:
             self.ms = mapscript.mapObj(self.path)
@@ -1119,9 +1123,9 @@ class MRA(object):
         ws = self.get_workspace(name)
         path = self.get_service_path("%s.map" % name)
 
-        metadata = dict((k, ws.get_metadata(k)) for k in ws.get_metadata_keys())
+        # metadata = dict((k, ws.get_metadata(k)) for k in ws.get_metadata_keys())
         config = self.config["mapfile"]
-        config.update({"metadata": metadata})
+        # config.update({"metadata": metadata})
         return Mapfile(self.mk_path(path), config=config,
                        needed=True, fontset=self.get_fontset_path())
 

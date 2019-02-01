@@ -27,6 +27,7 @@ mapfile:
     projection: "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
     extent: [-180, -90, 180, 90]
     units: "DD"
+    # onlineresource: "http://...
     metadata:
         ows_srs: ["EPSG:4326", "EPSG:3857"]
 
