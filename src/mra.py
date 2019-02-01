@@ -1123,9 +1123,11 @@ class MRA(object):
         ws = self.get_workspace(name)
         path = self.get_service_path("%s.map" % name)
 
-        # metadata = dict((k, ws.get_metadata(k)) for k in ws.get_metadata_keys())
+        metadata = dict(
+            (k, ws.get_metadata(k)) for k in ws.get_metadata_keys()
+            if k not in ('ows_onlineresource',))
         config = self.config["mapfile"]
-        # config.update({"metadata": metadata})
+        config.update({"metadata": metadata})
         return Mapfile(self.mk_path(path), config=config,
                        needed=True, fontset=self.get_fontset_path())
 
