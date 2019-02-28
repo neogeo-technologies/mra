@@ -127,7 +127,7 @@ class Layer(MetadataMixin):
         self.ms = backend
 
     def enable(self, enabled=True):
-        wms = ("GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic")
+        wms = ("GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic", "DescribeLayer")
         wcs = ("GetCapabilities", "GetCoverage", "DescribeCoverage")
         wfs = ("GetCapabilities", "GetFeature", "DescribeFeatureType")
 
@@ -177,7 +177,7 @@ class Layer(MetadataMixin):
     def get_latlon_extent(self):
         rect = mapscript.rectObj(*self.get_extent())
         res = rect.project(mapscript.projectionObj(self.get_proj4()),
-                           mapscript.projectionObj("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
+                           mapscript.projectionObj("+init=epsg:4326"))
         return stores.Extent(rect.minx, rect.miny, rect.maxx, rect.maxy)
 
     def get_fields(self):
@@ -355,9 +355,10 @@ class Mapfile(MetadataMixin):
 
             # and adding some default values...
             self.ms.name = self.name
-            self.ms.setProjection(config.pop("projection", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
+            self.ms.setProjection(config.pop("projection", "+init=epsg:4326"))
             self.ms.setExtent(*config.pop("extent", [-180, -90, 180, 90]))
             self.ms.units = tools.get_units(config.pop("units", "DD"))
+            self.ms.setSize(1, 1)
 
             for outputformat in [
                     v for k in OUTPUTFORMAT.keys() for v in list(OUTPUTFORMAT[k].values())]:
