@@ -629,6 +629,7 @@ class CoverageModel(LayerModel):
         self.ms.setProjection(cs.get_proj4())
         self.ms.setExtent(*cs.get_extent())
         self.ms.setProcessingKey("RESAMPLE", "AVERAGE")
+        self.ms.setProcessingKey("SCALE", "AUTO")
 
         # Configure the connection to the store.
         # This is a little hacky as we have to translate stuff...
