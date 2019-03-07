@@ -662,6 +662,7 @@ class CoverageModel(LayerModel):
         layer.ms.setExtent(self.ms.extent.minx, self.ms.extent.miny,
                            self.ms.extent.maxx, self.ms.extent.maxy)
         layer.ms.setProcessingKey("RESAMPLE", "AVERAGE")
+        layer.ms.setProcessingKey("SCALE", "AUTO")
         layer.ms.data = self.ms.data
         layer.ms.connectiontype = self.ms.connectiontype
         layer.ms.connection = self.ms.connection
