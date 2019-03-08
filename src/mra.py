@@ -355,23 +355,23 @@ class Mapfile(MetadataMixin):
 
             # and adding some default values...
             self.ms.name = self.name
-            self.ms.setProjection(config.pop("projection", "+init=epsg:4326"))
-            self.ms.setExtent(*config.pop("extent", [-180, -90, 180, 90]))
-            self.ms.units = tools.get_units(config.pop("units", "DD"))
+            self.ms.setProjection(config.get("projection", "+init=epsg:4326"))
+            self.ms.setExtent(*config.get("extent", [-180, -90, 180, 90]))
+            self.ms.units = tools.get_units(config.get("units", "DD"))
             self.ms.setSize(1, 1)
 
             for outputformat in [
                     v for k in OUTPUTFORMAT.keys() for v in list(OUTPUTFORMAT[k].values())]:
                 self.ms.appendOutputFormat(outputformat)
 
-            for k, v in config.pop('metadata', {}).iteritems():
+            for k, v in config.get('metadata', {}).iteritems():
                 self.set_metadata(k, v)
 
             for ows in ("ows", "wms", "wfs", "wcs"):
                 self.set_metadata("%s_enable_request" % ows, "*")
 
             if 'onlineresource' in config:
-                onlineresource = urlparse.urljoin(config.pop('onlineresource'), self.ms.name)
+                onlineresource = urlparse.urljoin(config.get('onlineresource'), self.ms.name)
                 self.set_metadata('ows_onlineresource', onlineresource)
 
             fontset and self.ms.setFontSet(fontset)
