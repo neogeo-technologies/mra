@@ -127,7 +127,7 @@ class Layer(MetadataMixin):
         self.ms = backend
 
     def enable(self, enabled=True):
-        wms = ("GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic", "DescribeLayer")
+        wms = ("GetCapabilities", "GetMap", "GetFeatureInfo", "GetLegendGraphic", "DescribeLayer", "GetStyles")
         wcs = ("GetCapabilities", "GetCoverage", "DescribeCoverage")
         wfs = ("GetCapabilities", "GetFeature", "DescribeFeatureType")
 
