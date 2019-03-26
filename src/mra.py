@@ -630,6 +630,7 @@ class CoverageModel(LayerModel):
         self.ms.setExtent(*cs.get_extent())
         self.ms.setProcessingKey("RESAMPLE", "AVERAGE")
         self.ms.setProcessingKey("SCALE", "AUTO")
+        self.ms.setProcessingKey("NODATA", "OFF")
 
         # Configure the connection to the store.
         # This is a little hacky as we have to translate stuff...
@@ -663,6 +664,7 @@ class CoverageModel(LayerModel):
                            self.ms.extent.maxx, self.ms.extent.maxy)
         layer.ms.setProcessingKey("RESAMPLE", "AVERAGE")
         layer.ms.setProcessingKey("SCALE", "AUTO")
+        layer.ms.setProcessingKey("NODATA", "OFF")
         layer.ms.data = self.ms.data
         layer.ms.connectiontype = self.ms.connectiontype
         layer.ms.connection = self.ms.connection
