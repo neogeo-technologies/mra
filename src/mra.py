@@ -520,7 +520,7 @@ class FeatureTypeModel(LayerModel):
 
         # Configure the connection to the store.
         # This is a little hacky as we have to translate stuff...
-        info = ws.get_datastore_info(ds_name)
+        info = ws.get_datastore_info(ds_name, exclude_password=False)
         cparam = info["connectionParameters"]
         if cparam.get("dbtype", None) in ["postgis", "postgres", "postgresql"]:
             self.ms.connectiontype = mapscript.MS_POSTGIS
@@ -757,11 +757,14 @@ class Workspace(Mapfile):
 
         return self.get_store("datastore", name)
 
-    def get_datastore_info(self, name):
+    def get_datastore_info(self, name, exclude_password=True):
         """Returns info for a datastore from the workspace."""
 
-        return self.get_store_info(
-            "datastore", name, exclude=["connectionParameters.password"])
+        exclude = []
+        if exclude_password:
+            exclude.append("connectionParameters.password")
+
+        return self.get_store_info("datastore", name, exclude=exclude)
 
     def iter_datastore_names(self):
         """Return an iterator over the datastore names."""
