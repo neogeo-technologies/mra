@@ -1,6 +1,3 @@
-#!/usr/bin/env python2.7
-# -*- coding: utf-8 -*-
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                       #
 #   MapServer REST API is a python wrapper around MapServer which       #
@@ -8,7 +5,7 @@
 #   developped to match as close as possible the way the GeoServer      #
 #   REST API acts.                                                      #
 #                                                                       #
-#   Copyright (C) 2011-2013 Neogeo Technologies.                        #
+#   Copyright (C) 2011-2020 Neogeo Technologies.                        #
 #                                                                       #
 #   This file is part of MapServer Rest API.                            #
 #                                                                       #
@@ -35,6 +32,7 @@
 import yaml
 import contextlib
 from mapscript import MapServerError
+import logging
 
 
 METADATA_NAME="mra"
@@ -51,7 +49,8 @@ def get_metadata(obj, key, *args):
     try:
         value = obj.getMetaData(key)
     # We never now what mapscript might throws at us...
-    except MapServerError:
+    except MapServerError as e:
+        logging.warning("metadata.py::get_metadata MapServerError: %s", str(e))
         value = None
 
     if value is None:
@@ -84,18 +83,18 @@ def get_metadata_keys(obj):
 def set_metadata(obj, key, value):
     try:
         obj.setMetaData(key, value)
-    except UnicodeEncodeError, e:
+    except UnicodeEncodeError as e:
         obj.setMetaData(key, value.encode('utf8'))
 
 
 def set_metadatas(obj, metadatas):
     # TODO: erease all metadata first.
-    for key, value in metadatas.iteritems():
+    for key, value in metadatas.items():
         set_metadata(obj, key, value)
 
 
 def update_metadatas(obj, metadatas):
-    for key, value in metadatas.iteritems():
+    for key, value in metadatas.items():
         set_metadata(obj, key, value)
 
 
@@ -140,18 +139,19 @@ def get_mra_metadata(obj, key, *args):
 
     try:
         return mra_metadata[key]
-    except KeyError:
+    except KeyError as e:
+        logging.warning("metadata.py::get_mra_metadata KeyError %s", str(e))
         if not args:
             raise
         return args[0]
 
 
 def iter_mra_metadata_keys(obj):
-    return __get_mra(obj).iterkeys()
+    return iter(__get_mra(obj).keys())
 
 
 def get_mra_metadata_keys(obj):
-    return __get_mra(obj).keys()
+    return list(__get_mra(obj).keys())
 
 
 def update_mra_metadatas(obj, update):

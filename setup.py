@@ -1,6 +1,3 @@
-#!/usr/bin/env python2.7
-# -*- coding: utf-8 -*-
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                       #
 #   MapServer REST API is a python wrapper around MapServer which       #
@@ -8,7 +5,7 @@
 #   developped to match as close as possible the way the GeoServer      #
 #   REST API acts.                                                      #
 #                                                                       #
-#   Copyright (C) 2011-2013 Neogeo Technologies.                        #
+#   Copyright (C) 2011-2020 Neogeo Technologies.                        #
 #                                                                       #
 #   This file is part of MapServer Rest API.                            #
 #                                                                       #
@@ -29,11 +26,11 @@ from distutils.core import setup
 
 setup(
     name='MapServer Rest API',
-    version='0.1.0',
+    version='1.0.0',
     author='Neogeo Technologies',
     author_email='contact@neogeo-online.net',
     description='A RESTFul interface for MapServer',
-    long_description=file('README.md','rb').read(),
+    long_description=open('README.md', 'r').read(),
     keywords='neogeo mapserver rest restful',
     license="GPLv3",
     #url='',
@@ -44,16 +41,17 @@ setup(
         'License :: OSI Approved :: GPLv3',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Programming Language :: Python3',
         'Natural Language :: English',
         'Topic :: Scientific/Engineering :: GIS',
         ],
     #packages=,
     #package_dir={'':'src'},
     #namespace_packages=['mra'],
-    requires=[
-        'web.py',
+    install_requires=[
+        'web.py==0.40',
         'pyyaml',
-        'osgeo',
+        'gdal<2.5.0',
         ],
     scripts=[
         'src/server.py',

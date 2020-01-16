@@ -1,6 +1,3 @@
-#!/usr/bin/env python2.7
-# -*- coding: utf-8 -*-
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                       #
 #   MapServer REST API is a python wrapper around MapServer which       #
@@ -8,7 +5,7 @@
 #   developped to match as close as possible the way the GeoServer      #
 #   REST API acts.                                                      #
 #                                                                       #
-#   Copyright (C) 2011-2013 Neogeo Technologies.                        #
+#   Copyright (C) 2011-2020 Neogeo Technologies.                        #
 #                                                                       #
 #   This file is part of MapServer Rest API.                            #
 #                                                                       #
@@ -38,6 +35,7 @@ import functools
 import os.path
 import itertools
 import mralogs
+import logging
 
 
 class KeyExists(KeyError):
@@ -253,7 +251,7 @@ class URLMap(object):
         if not last_is_var:
             url += "(?:/|(\\.[^/.]+)?)"
 
-        self.map.extend((url, page if isinstance(page, basestring) else page.__name__))
+        self.map.extend((url, page if isinstance(page, str) else page.__name__))
 
     def __getattr__(self, name):
         """Maps all attributes to a wrapper function calling self(name, *args, **kwargs),
@@ -377,7 +375,7 @@ class HTTPCompatible(object):
 
             args = list(args)
 
-            if isinstance(args[-1], basestring):
+            if isinstance(args[-1], str):
                 last = args[-1].split(".")
                 if len(last) == 1:
                     last.append(self.default)
@@ -424,13 +422,14 @@ class HTTPCompatible(object):
             try:
                 content = f(*args, **kwargs)
             except BaseException as e:
+                logging.warn("webapp.py::HTTPCompatible Unknown Error : %s", e)
                 raise
 
             name_hint = self.name_hint
 
             if name_hint is None and isinstance(content, dict) and len(content) == 1:
-                name_hint = next(content.iterkeys())
-                content = next(content.itervalues())
+                name_hint = next(iter(content.keys()))
+                content = next(iter(content.values()))
             elif name_hint is None:
                 name_hint = "response"
 
@@ -477,11 +476,11 @@ def get_data(name=None, mandatory=[], authorized=[], forbidden=[]):
     try:
         if "text/xml" in ctype or "application/xml" in ctype:
             data, dname = pyxml.loads(data, retname=True)
-            print "received \"%s\"" % dname
-            print data
+            print("received \"%s\"" % dname)
+            print(data)
             if name and dname != name: data = None
         elif "application/json" in ctype:
-            data = json.loads(data)
+            data = json.loads(data.decode())
             if name: data = data.get(name, None)
         else:
             raise web.badrequest("Content-type \"%s\" is not allowed." % ctype)

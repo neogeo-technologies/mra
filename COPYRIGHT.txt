@@ -1,4 +1,4 @@
-Copyright (c) 2011-2013 Neogeo Technologies.
+Copyright (C) 2011-2020 Neogeo Technologies.
 All Rights Reserved.
 
 MapServer Rest API is free software: you can redistribute it 

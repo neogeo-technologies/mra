@@ -1,6 +1,3 @@
-#!/usr/bin/env python2.7
-# -*- coding: utf-8 -*-
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                       #
 #   MapServer REST API is a python wrapper around MapServer which       #
@@ -8,7 +5,7 @@
 #   developped to match as close as possible the way the GeoServer      #
 #   REST API acts.                                                      #
 #                                                                       #
-#   Copyright (C) 2011-2013 Neogeo Technologies.                        #
+#   Copyright (C) 2011-2020 Neogeo Technologies.                        #
 #                                                                       #
 #   This file is part of MapServer Rest API.                            #
 #                                                                       #
@@ -34,7 +31,7 @@ import os.path
 import sys
 import web
 import json
-import urlparse
+import urllib.parse as urlparse
 import logging
 import mralogs
 from mra import MRA
@@ -116,7 +113,7 @@ class workspaces(object):
         ws_name = data.pop("name")
 
         ws_metadata = dict(
-            ("ows_%s" % k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
+            ("ows_%s" % k, v) for k, v in data.items() if k in ["title", "abstract"])
         if "srs" in data:
             ws_metadata["ows_srs"] = " ".join(data["srs"])
 
@@ -296,7 +293,7 @@ class featuretypes(object):
 
         l_enabled = data.pop("enabled", True)
         l_metadata = dict(
-            ("ows_%s" % k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
+            ("ows_%s" % k, v) for k, v in data.items() if k in ["title", "abstract"])
 
         # Creates first the feature type:
         with webapp.mightConflict("featureType", datastore=ds_name):
@@ -428,7 +425,7 @@ class featuretype(object):
         if ft_name != data["name"]:
             raise webapp.Forbidden("Can't change the name of a feature type.")
 
-        metadata = dict((k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
+        metadata = dict((k, v) for k, v in data.items() if k in ["title", "abstract"])
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
             ws.update_featuretypemodel(ds_name, ft_name, metadata)
@@ -589,7 +586,7 @@ class coverages(object):
 
         l_enabled = data.pop("enabled", True)
         l_metadata = dict(
-            ("ows_%s" % k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
+            ("ows_%s" % k, v) for k, v in data.items() if k in ["title", "abstract"])
 
         # Creates first the coverage:
         with webapp.mightConflict("coverage", coveragestore=cs_name):
@@ -702,7 +699,7 @@ class coverage(object):
         if c_name != data["name"]:
             raise webapp.Forbidden("Can't change the name of a coverage.")
 
-        metadata = dict((k, v) for k, v in data.iteritems() if k in ["title", "abstract"])
+        metadata = dict((k, v) for k, v in data.items() if k in ["title", "abstract"])
 
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
             ws.update_coveragemodel(c_name, cs_name, metadata)
@@ -968,8 +965,9 @@ class layers(object):
                 style = mra.get_style(s_name)
                 layer = mf.get_layer(l_name)
                 wslayer = wsmf.get_layer(l_name)
-            layer.add_style_sld(mf, s_name, style)
-            wslayer.add_style_sld(wsmf, s_name, style)
+            with webapp.mightFailLookup(exceptions=(Exception,)):
+                layer.add_style_sld(mf, s_name, style)
+                wslayer.add_style_sld(wsmf, s_name, style)
 
             # Remove the automatic default style.
             for s_name in layer.iter_styles():
@@ -1133,10 +1131,10 @@ class layer(object):
                 style = mra.get_style(s_name)
 
             layer.remove_style(s_name)
-            layer.add_style_sld(mf, s_name, style)
-
             wslayer.remove_style(s_name)
-            wslayer.add_style_sld(wsmf, s_name, style)
+            with webapp.mightFailLookup(exceptions=(Exception,)):
+                layer.add_style_sld(mf, s_name, style)
+                wslayer.add_style_sld(wsmf, s_name, style)
 
             # Remove the automatic default style.
             for s_name in layer.iter_styles():
@@ -1420,7 +1418,7 @@ class layergroup(object):
             raise webapp.Forbidden("Can't change the name of a layergroup.")
 
         layers = data.pop("layers", [])
-        if not isinstance(layers, list) or any(not isinstance(x, basestring) for x in layers):
+        if not isinstance(layers, list) or any(not isinstance(x, str) for x in layers):
             raise webapp.BadRequest("layers must be a list of layer names.")
 
         lg.clear()
@@ -1527,7 +1525,7 @@ class workspaceLayergroup(object):
             raise webapp.Forbidden("Can't change the name of a layergroup.")
 
         layers = data.pop("layers", [])
-        if not isinstance(layers, list) or any(not isinstance(x, basestring) for x in layers):
+        if not isinstance(layers, list) or any(not isinstance(x, str) for x in layers):
             raise webapp.BadRequest("layers must be a list of layer names.")
 
         lg.clear()

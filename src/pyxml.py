@@ -1,6 +1,3 @@
-#!/usr/bin/env python2.7
-# -*- coding: utf-8 -*-
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                       #
 #   MapServer REST API is a python wrapper around MapServer which       #
@@ -8,7 +5,7 @@
 #   developped to match as close as possible the way the GeoServer      #
 #   REST API acts.                                                      #
 #                                                                       #
-#   Copyright (C) 2011-2013 Neogeo Technologies.                        #
+#   Copyright (C) 2011-2020 Neogeo Technologies.                        #
 #                                                                       #
 #   This file is part of MapServer Rest API.                            #
 #                                                                       #
@@ -140,13 +137,13 @@ def default_xml_mapper(obj, obj_name,
         return dict_mapper(obj_name)
     elif isinstance(obj, list) or isinstance(obj, tuple):
         return list_mapper(obj_name)
-    elif any(isinstance(obj, t) for t in (basestring, int, float)):
+    elif any(isinstance(obj, t) for t in (str, int, float)):
         # Those we are sure we want to map as strings.
         return xml_string, None
     elif hasattr(obj, "__str__"):
         # Those we render as strings, but we are not sure.
         # Just add the type to the case above it is justified!
-        print "xml_mapper: Warning: We are trying to map %s as a string." % (type(obj))
+        print("xml_mapper: Warning: We are trying to map %s as a string." % (type(obj)))
         return xml_string, None
     else:
         raise NotImplementedError("Can't map %s object." % type(obj))
@@ -168,7 +165,7 @@ def xml(obj, obj_name=None, parent=None,
 
     # Create the parent if it's not provided.
     if parent is None:
-        parent = etree.Element(tag=obj_name)
+        parent = etree.Element(obj_name)
 
     mapper, hint = xml_mapper(obj, obj_name, dict_mapper, list_mapper)
     if not mapper:
@@ -198,11 +195,11 @@ def xml_dict(parent, obj, hint=None, xml_mapper=default_xml_mapper,
     The entries are of the form: <key>value</key> or <hint[0] hint[1]=key>value</hint[0]>
 
     """
-    for k, v in obj.iteritems():
+    for k, v in obj.items():
         if hint:
-            child = etree.Element(tag=hint[0], attrib={hint[1]:k})
+            child = etree.Element(hint[0], attrib={hint[1]:k})
         else:
-            child = etree.Element(tag=k, attrib={})
+            child = etree.Element(k, attrib={})
         xml(v, parent=child, xml_mapper=xml_mapper, dict_mapper=dict_mapper, list_mapper=list_mapper)
         parent.append(child)
 
@@ -215,7 +212,7 @@ def xml_list(parent, obj, hint, xml_mapper=default_xml_mapper,
 
     """
     for v in obj:
-        child = etree.Element(tag=hint, attrib={})
+        child = etree.Element(hint, attrib={})
         xml(v, parent=child, xml_mapper=xml_mapper, dict_mapper=dict_mapper, list_mapper=list_mapper)
         parent.append(child)
 
@@ -294,7 +291,8 @@ def loads(s, retname=False, *args, **kwargs):
     try:
         xml = etree.fromstring(s)
     # Python 2.6 has no xml.etree.ElementTree.ParseError.
-    except BaseException:
+    except BaseException as e:
+        logging.error("pyxml.py::loads: No XML object could be decoded. %s", e)
         raise ValueError("No XML object could be decoded.")
     o = obj(xml, *args, **kwargs)
     return (o, xml.tag) if retname else o
@@ -308,7 +306,8 @@ def load(fp, retname=False, *args, **kwargs):
     try:
         xml = etree.parse(fp)
     # Python 2.6 has no xml.etree.ElementTree.ParseError.
-    except BaseException:
+    except BaseException as e:
+        logging.error("pyxml.py::load: No XML object could be decoded. %s", e)
         raise ValueError("No XML object could be decoded.")
     o = obj(xml, *args, **kwargs)
     return (o, xml.tag) if retname else o

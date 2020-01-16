@@ -29,7 +29,7 @@ mapfile:
     units: "DD"
     # onlineresource: "http://...
     metadata:
-        ows_srs: ["EPSG:4326", "EPSG:3857"]
+        ows_srs: "EPSG:4326 EPSG:3857"
 
 debug:
     ## web_debug allows for easy debuging in the the browser, should be deactivated in production.

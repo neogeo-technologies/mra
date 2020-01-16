@@ -1,6 +1,3 @@
-#!/usr/bin/env python2.7
-# -*- coding: utf-8 -*-
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                       #
 #   MapServer REST API is a python wrapper around MapServer which       #
@@ -8,7 +5,7 @@
 #   developped to match as close as possible the way the GeoServer      #
 #   REST API acts.                                                      #
 #                                                                       #
-#   Copyright (C) 2011-2013 Neogeo Technologies.                        #
+#   Copyright (C) 2011-2020 Neogeo Technologies.                        #
 #                                                                       #
 #   This file is part of MapServer Rest API.                            #
 #                                                                       #
@@ -275,7 +272,7 @@ class Featuretype(object):
         return list(self.iterfields())
 
     def iterfields(self):
-        for i in xrange(self.backend.GetLayerDefn().GetFieldCount()):
+        for i in range(self.backend.GetLayerDefn().GetFieldCount()):
             yield Field(self.backend.GetLayerDefn().GetFieldDefn(i), self)
 
     def nbfeatures(self):
@@ -284,7 +281,7 @@ class Featuretype(object):
     def iterfeatures(self, what=[], when={}):
         if what != [] or when != {}:
             raise NotImplementedError("Iterfeature doesn't support filters yet.")
-        for i in xrange(self.backend.GetFeatureCount()):
+        for i in range(self.backend.GetFeatureCount()):
             yield Feature(self.backend.GetFeature(i), self)
 
     def get_aditional_info(self):
@@ -298,7 +295,7 @@ class Featuretype(object):
                                          (schema, table))
         if not result: return
 
-        for i in xrange(result.GetFeatureCount()):
+        for i in range(result.GetFeatureCount()):
             feature = result.GetFeature(i)
             name, nullable = feature.GetField(0), feature.GetField(1)
             self.nullables[name] = nullable
@@ -339,7 +336,7 @@ class Datastore(object):
         else:
             if self.schema:
                 key = "%s.%s" % (self.schema, key)
-            item = self.backend.GetLayerByName(key.encode("ascii", "ignore"))
+            item = self.backend.GetLayerByName(key)
             if item == None: raise KeyError(key)
         return Featuretype(item, self)
 
@@ -347,7 +344,7 @@ class Datastore(object):
         return self.backend.GetLayerCount()
 
     def iterlayers(self):
-        for i in xrange(self.backend.GetLayerCount()):
+        for i in range(self.backend.GetLayerCount()):
             yield Featuretype(self.backend.GetLayerByIndex(i), self)
 
 
@@ -428,5 +425,5 @@ class Coveragestore(object):
         return list(self.iterbands())
 
     def iterbands(self):
-        for i in xrange(1, self.backend.RasterCount + 1):
+        for i in range(1, self.backend.RasterCount + 1):
             yield Band(self.backend.GetRasterBand(i))

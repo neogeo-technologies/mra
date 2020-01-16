@@ -1,6 +1,3 @@
-#!/usr/bin/env python2.7
-# -*- coding: utf-8 -*-
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                       #
 #   MapServer REST API is a python wrapper around MapServer which       #
@@ -8,7 +5,7 @@
 #   developped to match as close as possible the way the GeoServer      #
 #   REST API acts.                                                      #
 #                                                                       #
-#   Copyright (C) 2011-2013 Neogeo Technologies.                        #
+#   Copyright (C) 2011-2020 Neogeo Technologies.                        #
 #                                                                       #
 #   This file is part of MapServer Rest API.                            #
 #                                                                       #
@@ -30,8 +27,8 @@
 """
 
 import pyxml
-import StringIO
-import urlparse
+import io
+import urllib.parse
 from xml.etree import ElementTree as etree
 from cgi import escape
 from xml.sax.saxutils import unescape
@@ -42,7 +39,7 @@ def should_be_url(s):
     consider a string is a URL.
 
     """
-    parsed = urlparse.urlparse(s)
+    parsed = urllib.parse.urlparse(s)
     return parsed.scheme and parsed.netloc
 
 
@@ -113,7 +110,7 @@ def dump(obj, fp, indent=0, *args, **kwargs):
 
 def dumps(obj, *args, **kwargs):
     """Returns the html representation of obj as a string."""
-    stream = StringIO.StringIO()
+    stream = io.StringIO()
     dump(obj, stream, *args, **kwargs)
     stream.flush()
     return stream.getvalue()

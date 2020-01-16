@@ -1,6 +1,3 @@
-#!/usr/bin/env python2.7
-# -*- coding: utf-8 -*-
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                       #
 #   MapServer REST API is a python wrapper around MapServer which       #
@@ -8,7 +5,7 @@
 #   developped to match as close as possible the way the GeoServer      #
 #   REST API acts.                                                      #
 #                                                                       #
-#   Copyright (C) 2011-2013 Neogeo Technologies.                        #
+#   Copyright (C) 2011-2020 Neogeo Technologies.                        #
 #                                                                       #
 #   This file is part of MapServer Rest API.                            #
 #                                                                       #
@@ -39,7 +36,7 @@
 import os
 import os.path
 import string
-import urlparse
+import urllib.parse
 import functools
 import web
 import yaml
@@ -51,6 +48,10 @@ from webapp import KeyExists
 import stores
 import metadata
 import xml.etree.ElementTree as ET
+import logging
+
+
+yaml.warnings({'YAMLLoadWarning': False})
 
 
 # Defines commons outputformats:
@@ -70,7 +71,7 @@ def outputformat(
     if transparent:
         _format.transparent = transparent
     if options:
-        for k, v in options.items():
+        for k, v in list(options.items()):
             _format.setOption(k, v)
     return _format
 
@@ -196,19 +197,19 @@ class Layer(MetadataMixin):
         return iter(self.get_fields())
 
     def iter_classes(self):
-        for i in reversed(xrange(self.ms.numclasses)):
+        for i in reversed(range(self.ms.numclasses)):
             c = Clazz(self.ms.getClass(i))
             c.index = i
             yield c
 
     def get_styles(self):
-        return set(self.ms.getClass(i).group for i in reversed(xrange(self.ms.numclasses)))
+        return set(self.ms.getClass(i).group for i in reversed(range(self.ms.numclasses)))
 
     def iter_styles(self):
         return iter(self.get_styles())
 
     def get_SLD(self):
-        return self.ms.generateSLD().decode("LATIN1").encode("UTF8")
+        return self.ms.generateSLD().decode()
 
     def add_style_sld(self, mf, s_name, new_sld):
         # Because we do not want to apply the sld to real layers by mistake
@@ -224,7 +225,8 @@ class Layer(MetadataMixin):
         try:
             xmlsld.firstChild.getElementsByTagNameNS("*", "NamedLayer")[0]\
                 .getElementsByTagNameNS("*", "Name")[0].firstChild.data = sld_layer_name
-        except:
+        except Exception as e:
+            logging.error("mra.py::Layer::add_style_sld: Bad sld (No NamedLayer/Name): %s", e)
             raise ValueError("Bad sld (No NamedLayer/Name)")
 
         # Remove encoding ?
@@ -237,11 +239,12 @@ class Layer(MetadataMixin):
         mf.ms.insertLayer(ms_template_layer)
 
         try:
-            ms_template_layer.applySLD(new_sld.encode("utf-8"), sld_layer_name)
-        except:
+            ms_template_layer.applySLD(new_sld, sld_layer_name)
+        except Exception as e:
+            logging.error("mra.py::Layer::add_style_sld: Unable to access storage : %s", e)
             raise ValueError("Unable to access storage.")
 
-        for i in xrange(ms_template_layer.numclasses):
+        for i in range(ms_template_layer.numclasses):
             ms_class = ms_template_layer.getClass(i)
             ms_class.group = s_name
             self.ms.insertClass(ms_class)
@@ -263,8 +266,9 @@ class Layer(MetadataMixin):
             return
 
         try:
-            style = open(os.path.join(os.path.dirname(__file__), "%s.sld" % s_name)).read()
-        except IOError, OSError:
+            style = open(os.path.join(os.path.dirname(__file__), "%s.sld" % s_name), encoding="utf-8").read()
+        except IOError as OSError:
+            logging.warning("mra.py::Layer::set_default_style IOError %s", OSError)
             return
 
         self.add_style_sld(mf, s_name, style)
@@ -294,13 +298,13 @@ class LayerGroup(object):
     def add_layer(self, layer):
         layer.ms.group = self.name
         layer.set_metadata("wms_group_name", self.name)
-        for k, v in self.mapfile.get_mra_metadata("layergroups")[self.name].iteritems():
+        for k, v in self.mapfile.get_mra_metadata("layergroups")[self.name].items():
             layer.set_metadata("wms_group_%s" % k, v)
         self.mapfile.move_layer_down(layer.ms.name)
 
     def add(self, *args):
         for layer in args:
-            if isinstance(layer, basestring):
+            if isinstance(layer, str):
                 layer = self.mapfile.get_layer(layer)
             self.add_layer(layer)
 
@@ -313,7 +317,7 @@ class LayerGroup(object):
 
     def remove(self, *args):
         for layer in args:
-            if isinstance(layer, basestring):
+            if isinstance(layer, str):
                 layer = mapfile.get_layer(layer)
             self.remove_layer(layer)
 
@@ -361,17 +365,17 @@ class Mapfile(MetadataMixin):
             self.ms.setSize(1, 1)
 
             for outputformat in [
-                    v for k in OUTPUTFORMAT.keys() for v in list(OUTPUTFORMAT[k].values())]:
+                    v for k in list(OUTPUTFORMAT.keys()) for v in list(OUTPUTFORMAT[k].values())]:
                 self.ms.appendOutputFormat(outputformat)
 
-            for k, v in config.get('metadata', {}).iteritems():
+            for k, v in config.get('metadata', {}).items():
                 self.set_metadata(k, v)
 
             for ows in ("ows", "wms", "wfs", "wcs"):
                 self.set_metadata("%s_enable_request" % ows, "*")
 
             if 'onlineresource' in config:
-                onlineresource = urlparse.urljoin(config.get('onlineresource'), self.ms.name)
+                onlineresource = urllib.parse.urljoin(config.get('onlineresource'), self.ms.name)
                 self.set_metadata('ows_onlineresource', onlineresource)
 
             fontset and self.ms.setFontSet(fontset)
@@ -390,13 +394,13 @@ class Mapfile(MetadataMixin):
         def check(f, v):
             return f(v) if callable(f) else f == v
 
-        for l in xrange(self.ms.numlayers):
+        for l in range(self.ms.numlayers):
             ms_layer = self.ms.getLayer(l)
-            if not all(check(checker, getattr(ms_layer, k, None)) for k, checker in attr.iteritems()):
+            if not all(check(checker, getattr(ms_layer, k, None)) for k, checker in attr.items()):
                 continue
-            if not all(check(checker, metadata.get_metadata(ms_layer, k, None)) for k, checker in meta.iteritems()):
+            if not all(check(checker, metadata.get_metadata(ms_layer, k, None)) for k, checker in meta.items()):
                 continue
-            if not all(check(checker, metadata.get_mra_metadata(ms_layer, k, None)) for k, checker in mra.iteritems()):
+            if not all(check(checker, metadata.get_mra_metadata(ms_layer, k, None)) for k, checker in mra.items()):
                 continue
             yield ms_layer
 
@@ -407,7 +411,7 @@ class Mapfile(MetadataMixin):
     def get_layer(self, l_name):
         try:
             return next(self.iter_layers(attr={"name": l_name}))
-        except StopIteration:
+        except (StopIteration, SystemError):
             raise KeyError(l_name)
 
     def has_layer(self, l_name):
@@ -464,7 +468,7 @@ class Mapfile(MetadataMixin):
         return LayerGroup(lg_name, self)
 
     def iter_layergroups(self):
-        return (LayerGroup(name, self) for name in self.get_mra_metadata("layergroups", {}).iterkeys())
+        return (LayerGroup(name, self) for name in self.get_mra_metadata("layergroups", {}).keys())
 
     def get_layergroup(self, lg_name):
         if lg_name in self.get_mra_metadata("layergroups", {}):
@@ -542,7 +546,7 @@ class FeatureTypeModel(LayerModel):
         # TODO: clean up this fallback.
         else:
             self.ms.connectiontype = mapscript.MS_SHAPEFILE
-            url = urlparse.urlparse(cparam["url"])
+            url = urllib.parse.urlparse(cparam["url"])
             self.ms.data = self.ws.mra.get_file_path(url.path)
 
         # Update mra metadata, and make sure the mandatory ones are left untouched.
@@ -602,7 +606,7 @@ class FeatureTypeModel(LayerModel):
             "gml_%s_type" % geometry_column: ft.get_geomtype_gml(),
             # TODO: Add gml_<geometry name>_occurances,
             "wfs_srs": ws.get_metadata("ows_srs"),
-            "wfs_getfeature_formatlist": ",".join(OUTPUTFORMAT["WFS"].keys())
+            "wfs_getfeature_formatlist": ",".join(list(OUTPUTFORMAT["WFS"].keys()))
             })
 
         if ft.get_fid_column() is not None:
@@ -639,7 +643,7 @@ class CoverageModel(LayerModel):
 
         #if cparam["dbtype"] in ["tif", "tiff"]:
         self.ms.connectiontype = mapscript.MS_RASTER
-        url = urlparse.urlparse(cparam["url"])
+        url = urllib.parse.urlparse(cparam["url"])
         self.ms.data = self.ws.mra.get_file_path(url.path)
             # TODO: strip extention.
         #else:
@@ -731,10 +735,10 @@ class Workspace(Mapfile):
         return info
 
     def iter_store_names(self, st_type):
-        return self.get_mra_metadata("%ss" % st_type, {}).iterkeys()
+        return iter(self.get_mra_metadata("%ss" % st_type, {}).keys())
 
     def iter_stores(self, st_type):
-        return self.get_mra_metadata("%ss" % st_type, {}).iteritems()
+        return iter(self.get_mra_metadata("%ss" % st_type, {}).items())
 
     def create_store(self, st_type, name, configuration):
         with self.mra_metadata("%ss" % st_type, {}) as stores:
@@ -791,7 +795,7 @@ class Workspace(Mapfile):
 
         try:
             next(self.iter_featuretypemodels(name))
-        except StopIteration:
+        except (StopIteration, SystemError):
             pass  # No layers use our store, all OK.
         else:
             raise ValueError("The datastore \"%s\" can't be delete because it is used." % name)
@@ -834,7 +838,7 @@ class Workspace(Mapfile):
 
         try:
             next(self.iter_coveragemodels(name))
-        except StopIteration:
+        except (StopIteration, SystemError):
             pass  # No layers use our store, all OK.
         else:
             raise ValueError("The coveragestore \"%s\" can't be delete because it is used." % name)
@@ -870,7 +874,7 @@ class Workspace(Mapfile):
     def get_layermodel(self, st_type, store, name):
         try:
             return next(self.iter_layermodels(attr={"name": self.__model_name(st_type, store, name)}))
-        except StopIteration:
+        except (StopIteration, SystemError):
             raise KeyError((st_type, store, name))
 
     def has_layermodel(self, st_type, name, store):
@@ -946,7 +950,7 @@ class Workspace(Mapfile):
 class MRA(object):
     def __init__(self, config_path):
         try:
-            self.config = yaml.load(open(config_path, "r"))
+            self.config = yaml.load(open(config_path, "r"), Loader=yaml.FullLoader)
         except yaml.YAMLError as e:
             exit("Error in configuration file: %s" % e)
 
@@ -987,7 +991,8 @@ class MRA(object):
     def list_fontset(self):
         try:
             return [line.split()[0] for line in open(self.get_fontset_path(), "r")]
-        except:
+        except Exception as e:
+            logging.warn('mra.py::MRA::list_fontset error %s', e)
             return []
 
     def update_fontset(self):
@@ -1039,18 +1044,18 @@ class MRA(object):
 
     def create_style(self, name, data):
         path = self.get_style_path("%s.sld" % name)
-        with open(self.mk_path(path), "w") as f:
+        with open(self.mk_path(path), "wb") as f:
             f.write(data)
         return path
 
     def get_style(self, name):
         try:
             return ET.tostring(
-                ET.parse(self.get_style_path("%s.sld" % name)).getroot())
+                ET.parse(self.get_style_path("%s.sld" % name)).getroot()).decode()
         except (OSError, IOError):
             if name in ["default_point", "default_line", "default_polygon"]:
                 return ET.tostring(ET.parse(
-                    os.path.join(os.path.dirname(__file__), "%s.sld" % name)).getroot())
+                    os.path.join(os.path.dirname(__file__), "%s.sld" % name)).getroot()).decode()
             raise KeyError(name)
 
     def delete_style(self, name):
@@ -1109,7 +1114,7 @@ class MRA(object):
         path = self.get_available_path("%s.ws.map" % name)
         try:
             return Workspace(self, path)
-        except IOError, OSError:
+        except IOError as OSError:
             raise KeyError(name)
 
     def delete_workspace(self, name):
@@ -1142,7 +1147,7 @@ class MRA(object):
     # URL Helpers:
 
     def href_parse(self, href, nb):
-        url = urlparse.urlparse(href)
+        url = urllib.parse.urlparse(href)
         parts = url.path.split("/")[-nb:]
         if parts:
             parts[-1] = parts[-1].rsplit(".", 1)[0]
@@ -1159,7 +1164,7 @@ class MRA(object):
             url += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
             return url
         elif "url" in cparam:
-            url = urlparse.urlparse(cparam["url"])
+            url = urllib.parse.urlparse(cparam["url"])
             if url.scheme != "file" or url.netloc:
                 raise ValueError("Only local files are suported.")
             return self.get_file_path(url.path)

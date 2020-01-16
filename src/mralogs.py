@@ -1,6 +1,3 @@
-#!/usr/bin/env python2.7
-# -*- coding: utf-8 -*-
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                       #
 #   MapServer REST API is a python wrapper around MapServer which       #
@@ -8,7 +5,7 @@
 #   developped to match as close as possible the way the GeoServer      #
 #   REST API acts.                                                      #
 #                                                                       #
-#   Copyright (C) 2011-2013 Neogeo Technologies.                        #
+#   Copyright (C) 2011-2020 Neogeo Technologies.                        #
 #                                                                       #
 #   This file is part of MapServer Rest API.                            #
 #                                                                       #
@@ -109,11 +106,11 @@ def logIn(level="debug", filter=(lambda *a, **kw:True)):
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
-            if filter(*args, **kwargs):
+            if list(filter(*args, **kwargs)):
                 arguments = inspect.getcallargs(getattr(f, "original_function", f), *args, **kwargs)
                 getattr(logging, level, "error")("function \"%s\" was called with args: %s" %
                                                  (f.__name__, dict([(a, short_str(v)) for a, v
-                                                                    in arguments.iteritems()])))
+                                                                    in arguments.items()])))
             return f(*args, **kwargs)
         wrapper.original_function = f
         return wrapper
@@ -137,7 +134,7 @@ def logOut(level="debug", filter=(lambda *a, **kw:True)):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             ret = f(*args, **kwargs)
-            if filter(ret, *args, **kwargs):
+            if list(filter(ret, *args, **kwargs)):
                 getattr(logging, level, "error")("function \"%s\" returned: %s" % (f.__name__, short_str(ret)))
             return ret
         wrapper.original_function = f
