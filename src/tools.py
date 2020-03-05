@@ -51,7 +51,7 @@ def gdal_version():
 def assert_is_empty(generator, tname, iname):
     try:
         next(generator)
-    except StopIteration:
+    except (StopIteration, SystemError):
         pass # Everything is ok.
     else:
         raise webapp.Forbidden(message="Can't remove \"%s\" because it is an non-empty %s." % (iname, tname))
