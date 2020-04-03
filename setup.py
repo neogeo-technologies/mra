@@ -49,7 +49,7 @@ setup(
     #package_dir={'':'src'},
     #namespace_packages=['mra'],
     install_requires=[
-        'web.py==0.40',
+        'web.py>=0.50,<0.60',
         'pyyaml',
         'gdal<2.5.0',
         ],
