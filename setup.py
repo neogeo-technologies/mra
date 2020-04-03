@@ -26,7 +26,7 @@ from distutils.core import setup
 
 setup(
     name='MapServer Rest API',
-    version='1.0.0',
+    version='1.0.1',
     author='Neogeo Technologies',
     author_email='contact@neogeo-online.net',
     description='A RESTFul interface for MapServer',
@@ -49,7 +49,7 @@ setup(
     #package_dir={'':'src'},
     #namespace_packages=['mra'],
     install_requires=[
-        'web.py==0.40',
+        'web.py>=0.50,<0.60',
         'pyyaml',
         'gdal<2.5.0',
         ],
