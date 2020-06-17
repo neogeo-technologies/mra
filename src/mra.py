@@ -588,8 +588,8 @@ class FeatureTypeModel(LayerModel):
         for field in ft.iterfields():
             layer.set_metadatas({
                 "ows_name": layer_name,
-                "ows_title": layer_name,
-                "ows_abstract": layer_name,
+                "ows_title": layer.get_metadata("ows_title", None) or layer_name,
+                "ows_abstract": layer.get_metadata("ows_abstract", None) or layer_name,
                 "gml_%s_alias" % field.get_name(): field.get_name(),
                 "gml_%s_type" % field.get_name(): field.get_type_gml(),
                 # TODO: Add gml_<field name>_precision, gml_<field name>_width
@@ -684,11 +684,11 @@ class CoverageModel(LayerModel):
 
         layer.set_metadatas({
             "ows_name": layer_name,
-            "ows_title": layer_name,
-            "ows_abstract": layer_name,
-            "wcs_name": layer_name,
-            "wcs_label": layer_name,
-            "wcs_description": layer_name
+            "ows_title": layer.get_metadata("ows_title", None) or layer_name,
+            "ows_abstract": layer.get_metadata("ows_abstract", None) or layer_name,
+            "wcs_name": layer.get_metadata("wcs_name", None) or layer_name,
+            "wcs_label": layer.get_metadata("wcs_label", None) or layer_name,
+            "wcs_description": layer.get_metadata("wcs_description", None) or layer_name
             })
 
         layer.enable(enabled)
