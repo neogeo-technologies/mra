@@ -26,7 +26,7 @@ from distutils.core import setup
 
 setup(
     name='MapServer Rest API',
-    version='1.0.1',
+    version='1.0.2',
     author='Neogeo Technologies',
     author_email='contact@neogeo-online.net',
     description='A RESTFul interface for MapServer',
