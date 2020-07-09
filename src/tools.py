@@ -21,19 +21,20 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 """
     Miscellaneous functions.
 
 """
 
+
+import mapscript
 import os
-import yaml
-import sys
+from osgeo import gdal
+from osgeo import osr
 import pyxml
 import webapp
-import xml.etree.ElementTree as etree
-from osgeo import osr, gdal
-import mapscript
+
 
 __config = None
 
@@ -52,7 +53,7 @@ def assert_is_empty(generator, tname, iname):
     try:
         next(generator)
     except (StopIteration, SystemError):
-        pass # Everything is ok.
+        pass  # Everything is ok.
     else:
         raise webapp.Forbidden(message="Can't remove \"%s\" because it is an non-empty %s." % (iname, tname))
 
@@ -76,11 +77,11 @@ def is_hidden(path):
 
 def get_dflt_sld_name(type):
     # TODO: Names should be changed...
-    if type == 0: # point
+    if type == 0:  # point
         return "default_point"
-    elif type == 1: # line
+    elif type == 1:  # line
         return "default_line"
-    elif type == 2: # polygon
+    elif type == 2:  # polygon
         return "default_polygon"
     else:
         return None
@@ -114,7 +115,7 @@ def wkt_to_authority(wkt):
     elif srs.GetAuthorityCode("GEOGCS") is not None:
         return srs.GetAuthorityName("GEOGCS"), srs.GetAuthorityCode("GEOGCS")
     else:
-        return "Unknown", "Unknown"  # :s it could be improved... (TODO)
+        return "Unknown", "Unknown"  # Bad, it could be improved... (TODO)
 
 
 def get_units(value):

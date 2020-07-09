@@ -21,16 +21,18 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 """
     Module for managing the logs.
 
 """
 
-import sys
-import string
+
+import functools
 import inspect
 import logging
-import functools
+import sys
+import string
 
 
 def setup(log_level, log_file=None, format="%(asctime)s %(levelname)7s: %(message)s"):
@@ -79,7 +81,7 @@ class Reccord(logging.Handler):
         return iter(self.records)
 
     def __del__(self):
-        logger.removeHandler(logging.getLogger(self.logger))
+        logging.removeHandler(logging.getLogger(self.logger))
         logging.Handler.__del__(self)
 
 
@@ -92,10 +94,10 @@ def short_str(obj, length=15, delta=5, tail="..."):
     s = str(obj)
     if len(s) < length:
         return s
-    return s[:length+1-delta+min(s[length-delta:length+delta].find(c) for c in string.punctuation)] + tail
+    return s[:length + 1 - delta + min(s[length - delta:length + delta].find(c) for c in string.punctuation)] + tail
 
 
-def logIn(level="debug", filter=(lambda *a, **kw:True)):
+def logIn(level="debug", filter=(lambda *a, **kw: True)):
     """Decorator factory used to log when the function is called.
     The log level can be specified using level.
     filter can be used to specify a function that should be used to
@@ -121,7 +123,7 @@ def logIn(level="debug", filter=(lambda *a, **kw:True)):
     return decorator
 
 
-def logOut(level="debug", filter=(lambda *a, **kw:True)):
+def logOut(level="debug", filter=(lambda *a, **kw: True)):
     """Decorator factory used to log when the function returns.
     The log level can be specified using level.
     filter can be used to specify a function that should be used to

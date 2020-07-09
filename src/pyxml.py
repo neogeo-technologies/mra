@@ -21,13 +21,16 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 """
     XML interface of the REST API.
 
 """
 
-import xml.etree.ElementTree as etree
+
+import logging
 from xml.etree.ElementTree import Element
+import xml.etree.ElementTree as etree
 from xml.sax.saxutils import escape
 
 
@@ -183,7 +186,7 @@ def xml_href(parent, obj, hint=None, xml_mapper=default_xml_mapper,
 
 
 def xml_string(parent, obj, _=None, xml_mapper=default_xml_mapper,
-             dict_mapper=default_xml_dict_mapper, list_mapper=default_xml_list_mapper):
+               dict_mapper=default_xml_dict_mapper, list_mapper=default_xml_list_mapper):
     """Adds obj to parent as if it is a string."""
     parent.text = escape(str(obj))
 
@@ -197,7 +200,7 @@ def xml_dict(parent, obj, hint=None, xml_mapper=default_xml_mapper,
     """
     for k, v in obj.items():
         if hint:
-            child = etree.Element(hint[0], attrib={hint[1]:k})
+            child = etree.Element(hint[0], attrib={hint[1]: k})
         else:
             child = etree.Element(k, attrib={})
         xml(v, parent=child, xml_mapper=xml_mapper, dict_mapper=dict_mapper, list_mapper=list_mapper)

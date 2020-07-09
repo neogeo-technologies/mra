@@ -21,14 +21,15 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 import httplib
-
-import pyxml
 import json
-
+import pyxml
 import sys
 
+
 default_encoding = "json"
+
 
 def deduce_content_type(type):
     if type == "json":
@@ -45,7 +46,7 @@ def APIRequest(method, url, data=None, encode=default_encoding, decode=default_e
     elif encode == "xml":
         data = pyxml.dumps(data)
 
-    if content_type == None:
+    if content_type is None:
         content_type = deduce_content_type(encode)
 
     surl = httplib.urlsplit(url)
@@ -58,13 +59,13 @@ def APIRequest(method, url, data=None, encode=default_encoding, decode=default_e
     if surl.query:
         url += "?" + surl.query
 
-    print >>sys.stderr, method, surl.geturl().replace(surl.path, url)
+    print(sys.stderr, method, surl.geturl().replace(surl.path, url))
     conn = httplib.HTTPConnection(surl.hostname, surl.port)
-    conn.request(method, url, body=data, headers={"Content-Type":content_type})
+    conn.request(method, url, body=data, headers={"Content-Type": content_type})
 
     r = conn.getresponse()
 
-    if expected_type == None:
+    if expected_type is None:
         expected_type = deduce_content_type(decode)
 
     # TODO: enable this test once it is suported.
@@ -78,10 +79,10 @@ def APIRequest(method, url, data=None, encode=default_encoding, decode=default_e
             recv = json.loads(recv)
         elif decode == "xml":
             recv = pyxml.loads(recv)
-    except:
+    except Exception:
         pass
 
-    print >>sys.stderr, r.status, r.reason
+    print(sys.stderr, r.status, r.reason)
     assert 200 <= r.status < 300, recv
 
     return (recv, r) if get_response else recv

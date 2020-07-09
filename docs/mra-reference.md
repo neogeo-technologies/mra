@@ -28,7 +28,7 @@ A data store contains one or more feature types which are vector based spatial r
 In cases of a _shapefile_, the feature type is unique and corresponds to the data store.
 In cases of a _PostGIS_ database, feature types corresponds to tables.
 
-A coverage store is a source of spatial data that is raster based. 
+A coverage store is a source of spatial data that is raster based.
 It can be a _GeoTIFF_ file and for this format file, the coverage is unique and corresponds to the coverage store.
 
 The concept of _workspace_ comes from GeoServer and it does not exist in MapServer.

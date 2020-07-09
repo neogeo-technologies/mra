@@ -1,18 +1,15 @@
 $def with (base, path, links, code)
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 <html>
   <head>
     <title>MRA</title>
     <link rel="StyleSheet" type="text/css" href="$base/static/bootstrap.css" />
-
     <style>
       .key:hover {
-      text-decoration:underline;
+        text-decoration:underline;
       }
     </style>
   </head>
-
   <body style="margin: 1em">
     <div class="alert alert-block">
       <h4>This data is also available in other formats!</h4>
@@ -20,13 +17,11 @@ $def with (base, path, links, code)
       $for comma, (type, link) in ((',' if i < len(links)-1 else '.', data) for i, data in enumerate(links)):
         <b><a href="$base$link">$type</a></b>$comma
     </div>
-
     <ul class="breadcrumb">
       <li><a href="$base/">mra</a></li>
       $for name in path[:-1]: <li><a href="$base$('/'.join(path[:loop.index]))">$name </a><span class="divider">/</span></li>
       <li class="active">$path[-1]</li>
     </ul>
-
     <script>
       function toggle(id) {
         e = document.getElementById(id);
@@ -47,8 +42,6 @@ $def with (base, path, links, code)
         }
       }
     </script>
-
 $:code
   </body>
-
 </html>

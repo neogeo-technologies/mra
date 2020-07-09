@@ -21,11 +21,10 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-import utils
+
+import random
 from utils import APIRequest
 
-import sys
-import random
 
 def _test_workspaces(target, map_name, delete=True):
 
@@ -52,8 +51,9 @@ def _test_workspaces(target, map_name, delete=True):
     # POST a datastore and GET it
 
     name, title = "testDS1", "test datastore 1"
-    _, r = APIRequest("POST", ws["dataStores"]["href"], {"dataStore":{"name":name, "title":title}},
-                      get_response=True)
+    _, r = APIRequest(
+        "POST", ws["dataStores"]["href"], {"dataStore": {"name": name, "title": title}},
+        get_response=True)
     ds_link = r.getheader("Location").rsplit(".", 1)[0]
 
     ds = APIRequest("GET", ds_link)["dataStore"]
@@ -64,7 +64,7 @@ def _test_workspaces(target, map_name, delete=True):
 
     ds["title"] = title.upper()
     del ds["href"]
-    APIRequest("PUT", ds_link, {"dataStore":ds})
+    APIRequest("PUT", ds_link, {"dataStore": ds})
 
     ds = APIRequest("GET", ds_link)["dataStore"]
     assert ds["title"] == title.upper()
@@ -73,7 +73,6 @@ def _test_workspaces(target, map_name, delete=True):
 
     fts = APIRequest("GET", ds["href"])["featureTypes"]
     assert len(fts) == 0
-
 
     # PUT file, and check if datastore is updated.
 
@@ -86,8 +85,9 @@ def _test_workspaces(target, map_name, delete=True):
     # POST a featuretype and GET it
 
     name, title = "timezones", "test feature type 1"
-    _, r = APIRequest("POST", ds["href"], {"featureType":{"name":name, "title":title}},
-                      get_response=True)
+    _, r = APIRequest(
+        "POST", ds["href"], {"featureType": {"name": name, "title": title}},
+        get_response=True)
     ft_link = r.getheader("Location").rsplit(".", 1)[0]
 
     ft = APIRequest("GET", ft_link)["featureType"]
@@ -97,7 +97,7 @@ def _test_workspaces(target, map_name, delete=True):
     # PUT a featuretype
 
     ft["title"] = title.upper()
-    APIRequest("PUT", ft_link, {"featureType":ft})
+    APIRequest("PUT", ft_link, {"featureType": ft})
 
     ft = APIRequest("GET", ft_link)["featureType"]
     assert ft["title"] == title.upper()
@@ -114,8 +114,6 @@ def _test_workspaces(target, map_name, delete=True):
         dss = APIRequest("GET", ws["dataStores"]["href"])["dataStores"]
         assert len(dss) == 0
 
-
-
     #
     # Test CoverageStores.
     #
@@ -128,8 +126,9 @@ def _test_workspaces(target, map_name, delete=True):
     # POST a coverageStore and GET it
 
     name, title = "testCS1", "test coverageStore 1"
-    _, r = APIRequest("POST", ws["coverageStores"]["href"], {"coverageStore":{"name":name, "title":title}},
-                      get_response=True)
+    _, r = APIRequest(
+        "POST", ws["coverageStores"]["href"], {"coverageStore": {"name": name, "title": title}},
+        get_response=True)
     cs_link = r.getheader("Location").rsplit(".", 1)[0]
 
     cs = APIRequest("GET", cs_link)["coverageStore"]
@@ -140,7 +139,7 @@ def _test_workspaces(target, map_name, delete=True):
 
     cs["title"] = title.upper()
     del cs["href"]
-    APIRequest("PUT", cs_link, {"coverageStore":cs})
+    APIRequest("PUT", cs_link, {"coverageStore": cs})
 
     cs = APIRequest("GET", cs_link)["coverageStore"]
     assert cs["title"] == title.upper()
@@ -149,7 +148,6 @@ def _test_workspaces(target, map_name, delete=True):
 
     fts = APIRequest("GET", cs["href"])["coverages"]
     assert len(fts) == 0
-
 
     # PUT file, and check if coverageStore is updated.
 
@@ -162,8 +160,9 @@ def _test_workspaces(target, map_name, delete=True):
     # POST a coverage and GET it
 
     name, title = "HYP_LR", "test coverage 1"
-    _, r = APIRequest("POST", cs["href"], {"coverage":{"name":name, "title":title}},
-                      get_response=True)
+    _, r = APIRequest(
+        "POST", cs["href"], {"coverage": {"name": name, "title": title}},
+        get_response=True)
     c_link = r.getheader("Location").rsplit(".", 1)[0]
 
     ft = APIRequest("GET", c_link)["coverage"]
@@ -173,13 +172,12 @@ def _test_workspaces(target, map_name, delete=True):
     # PUT a coverage
 
     ft["title"] = title.upper()
-    APIRequest("PUT", c_link, {"coverage":ft})
+    APIRequest("PUT", c_link, {"coverage": ft})
 
     ft = APIRequest("GET", c_link)["coverage"]
     assert ft["title"] == title.upper()
 
     # DELETE stuff
-
 
     if delete:
 
@@ -191,8 +189,8 @@ def _test_workspaces(target, map_name, delete=True):
         css = APIRequest("GET", ws["coverageStores"]["href"])["coverageStores"]
         assert len(css) == 0
 
-
     return ws
+
 
 def _test_styles(target, map_name):
 
@@ -207,11 +205,12 @@ def _test_styles(target, map_name):
     # Lets POST a style and GET it.
     name = "__test_awesome_style_name"
     data = open("./files/style.sld").read()
-    noise = "".join(map(str, random.sample(xrange(10000000), 60)))
+    noise = "".join(map(str, random.sample(range(10000000), 60)))
     # We add some noise, so we can check PUT later.
 
-    styles = APIRequest("POST", target + "/maps/" + map_name + "/styles?name=" + name,
-                        encode=None, content_type="application/vnd.ogc.sld+xml", data=data+noise)
+    styles = APIRequest(
+        "POST", target + "/maps/" + map_name + "/styles?name=" + name,
+        encode=None, content_type="application/vnd.ogc.sld+xml", data=data + noise)
 
     styles = APIRequest("GET", target + "/maps/" + map_name + "/styles")["styles"]
     assert len(styles) == 1
@@ -221,7 +220,7 @@ def _test_styles(target, map_name):
     style = APIRequest("GET", st_link)
 
     content = APIRequest("GET", style["href"], encode=None, decode=None)
-    assert content == data+noise
+    assert content == data + noise
 
     # Use PUT to remove the noise in the file.
     styles = APIRequest("PUT", style["href"], encode=None, content_type="application/vnd.ogc.sld+xml", data=data)
@@ -237,8 +236,9 @@ def _test_layers(target, map_name):
     ws = APIRequest("GET", wss[0]["href"])["workspace"]
     # DataStores.
     name, title = "testDS1", "test datastore 1"
-    _, r = APIRequest("POST", ws["dataStores"]["href"], {"dataStore":{"name":name, "title":title}},
-                      get_response=True)
+    _, r = APIRequest(
+        "POST", ws["dataStores"]["href"], {"dataStore": {"name": name, "title": title}},
+        get_response=True)
     ds_link = r.getheader("Location").rsplit(".", 1)[0]
     # PUT file
     APIRequest("PUT", ds_link + "/file.shp", open("./files/timezones_shp.zip", "rb"),
@@ -246,13 +246,15 @@ def _test_layers(target, map_name):
     ds = APIRequest("GET", ds_link)["dataStore"]
     # POST a featuretype
     name, title = "timezones", "test feature type 1"
-    _, r = APIRequest("POST", ds["href"], {"featureType":{"name":name, "title":title}},
-                      get_response=True)
+    _, r = APIRequest(
+        "POST", ds["href"], {"featureType": {"name": name, "title": title}},
+        get_response=True)
     ft_link = r.getheader("Location").rsplit(".", 1)[0]
     # CoverageStores.
     name, title = "testCS1", "test coverageStore 1"
-    _, r = APIRequest("POST", ws["coverageStores"]["href"], {"coverageStore":{"name":name, "title":title}},
-                      get_response=True)
+    _, r = APIRequest(
+        "POST", ws["coverageStores"]["href"], {"coverageStore": {"name": name, "title": title}},
+        get_response=True)
     cs_link = r.getheader("Location").rsplit(".", 1)[0]
     # PUT file
     APIRequest("PUT", cs_link + "/file.tif", open("./files/HYP_LR.zip", "rb"),
@@ -260,8 +262,9 @@ def _test_layers(target, map_name):
     cs = APIRequest("GET", cs_link)["coverageStore"]
     # POST a coverage
     name, title = "HYP_LR", "test coverage 1"
-    _, r = APIRequest("POST", cs["href"], {"coverage":{"name":name, "title":title}},
-                      get_response=True)
+    _, r = APIRequest(
+        "POST", cs["href"], {"coverage": {"name": name, "title": title}},
+        get_response=True)
     c_link = r.getheader("Location").rsplit(".", 1)[0]
 
     #
@@ -275,7 +278,7 @@ def _test_layers(target, map_name):
 
     name = "FTlayerTest"
     _, r = APIRequest("POST", target + "/maps/" + map_name + "/layers",
-                      {"layer":{"name":name, "resource":{"href":ft_link}}},
+                      {"layer": {"name": name, "resource": {"href": ft_link}}},
                       get_response=True)
     ftl_link = r.getheader("Location").rsplit(".", 1)[0]
 
@@ -292,13 +295,13 @@ def _test_layers(target, map_name):
     styles = APIRequest("GET", ftl_link + "/styles")["styles"]
     assert len(styles) == 1
 
-    APIRequest("POST", ftl_link + "/styles", {"style":{"resource":{"href":styles[0]["href"]}}})
+    APIRequest("POST", ftl_link + "/styles", {"style": {"resource": {"href": styles[0]["href"]}}})
 
     # A second layer for coverage
 
     name = "ClayerTest"
     _, r = APIRequest("POST", target + "/maps/" + map_name + "/layers",
-                      {"layer":{"name":name, "resource":{"href":c_link}}},
+                      {"layer": {"name": name, "resource": {"href": c_link}}},
                       get_response=True)
     cl_link = r.getheader("Location").rsplit(".", 1)[0]
 
@@ -319,7 +322,6 @@ def _test_layers(target, map_name):
     fields = APIRequest("GET", cl_link + "/styles")["styles"]
     assert len(fields) == 0
 
-
     # Now lets try layer groups.
 
     layers = APIRequest("GET", target + "/maps/" + map_name + "/layergroups")["layerGroups"]
@@ -327,7 +329,9 @@ def _test_layers(target, map_name):
 
     # POST an empty group
     name = "test_group"
-    _, r = APIRequest("POST", target + "/maps/" + map_name + "/layergroups", {"layerGroup":{"name":name}}, get_response=True)
+    _, r = APIRequest(
+        "POST", target + "/maps/" + map_name + "/layergroups",
+        {"layerGroup": {"name": name}}, get_response=True)
     g_link = r.getheader("Location").rsplit(".", 1)[0]
 
     # GET it.
@@ -338,7 +342,7 @@ def _test_layers(target, map_name):
     # PUT some new layers in it.
     group["layers"] = [x["name"] for x in group["layers"]] + [ftl["name"]]
     del group["bounds"]
-    APIRequest("PUT", g_link, {"layerGroup":group})
+    APIRequest("PUT", g_link, {"layerGroup": group})
 
     # GET it.
     group = APIRequest("GET", g_link)["layerGroup"]
@@ -347,7 +351,7 @@ def _test_layers(target, map_name):
     # PUT some new layers in it.
     group["layers"] = [x["name"] for x in group["layers"]] + [cl["name"]]
     del group["bounds"]
-    APIRequest("PUT", g_link, {"layerGroup":group})
+    APIRequest("PUT", g_link, {"layerGroup": group})
 
     # GET it.
     group = APIRequest("GET", g_link)["layerGroup"]
@@ -363,7 +367,7 @@ def test_scenario():
 
     # Clean the test file, now we are sure it is empty.
     APIRequest("DELETE", target + "/maps/" + map_name)
-    APIRequest("POST", target + "/maps", {"mapfile":{"name":map_name}})
+    APIRequest("POST", target + "/maps", {"mapfile": {"name": map_name}})
 
     # _test_workspaces(target, map_name)
     # _test_styles(target, map_name)
