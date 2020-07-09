@@ -83,6 +83,7 @@ def get_metadata_keys(obj):
 
 
 def set_metadata(obj, key, value):
+    # TODO: Fix this with upgrade to py3
     try:
         obj.setMetaData(key, value)
     except UnicodeEncodeError:

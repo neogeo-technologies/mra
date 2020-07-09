@@ -287,7 +287,7 @@ class Featuretype(object):
     def iterfeatures(self, what=[], when={}):
         if what != [] or when != {}:
             raise NotImplementedError("Iterfeature doesn't support filters yet.")
-        for i in range(self.backend.GetFeatureCount()):
+        for i in range(self.nbfeatures()):
             yield Feature(self.backend.GetFeature(i), self)
 
     def get_aditional_info(self):
@@ -369,6 +369,8 @@ class Band(object):
 class Coveragestore(object):
     """A coveragestore implementation backed by gdal."""
 
+    tindex = None
+
     def __init__(self, path):
         """Path will be used to open the store, it can be a simple filesystem path
         or something more complex used by gdal/ogr to access databases for example.
@@ -377,6 +379,14 @@ class Coveragestore(object):
 
         """
         self.backend = path if isinstance(path, gdal.Dataset) else gdal.Open(path)
+        if self.backend is None:
+            ds = Datastore(path if isinstance(path, ogr.DataSource) else ogr.Open(path))
+            if ds:
+                self.tindex = Featuretype(ds.backend.GetLayerByIndex(0), ds)
+                path = getattr(
+                    self.tindex.backend.GetFeature(0), self.get_tileitem())
+                self.backend = gdal.Open(str(path))
+
         if self.backend is None:
             raise ValueError("Coveragestore backend could not be opened. \"%s\"." % path)
 
@@ -387,7 +397,7 @@ class Coveragestore(object):
         return self.iterbands()
 
     def __contains__(self, idx):
-        return 0 < idx and idx < self.backend.RasterCount
+        return idx > 0 and idx < self.backend.RasterCount
 
     def __getitem__(self, idx):
         band = self.backend.GetRasterBand(idx)
@@ -408,12 +418,15 @@ class Coveragestore(object):
         return corners
 
     def get_extent(self):
+        if self.tindex is not None:
+            return self.tindex.get_extent()
+        #else:
         corners = self.get_corners()
-        minX = min(x for x, y in corners)
-        minY = min(y for x, y in corners)
-        maxX = max(x for x, y in corners)
-        maxY = max(y for x, y in corners)
-        return Extent(minX, minY, maxX, maxY)
+        minx = min(x for x, y in corners)
+        miny = min(y for x, y in corners)
+        maxx = max(x for x, y in corners)
+        maxy = max(y for x, y in corners)
+        return Extent(minx, miny, maxx, maxy)
 
     def get_latlon_extent(self):
         rect = mapscript.rectObj(*self.get_extent())
@@ -436,3 +449,16 @@ class Coveragestore(object):
     def iterbands(self):
         for i in range(1, self.backend.RasterCount + 1):
             yield Band(self.backend.GetRasterBand(i))
+
+    def get_tileindex(self):
+        """Return the path to the index file."""
+        if self.tindex is None:
+            return None
+        return self.tindex.ds.backend.GetName()
+
+    def get_tileitem(self):
+        """Return the field in the shapefile which contains
+           the filenames referenced by the index."""
+        if self.tindex is None:
+            return None
+        return self.tindex.backend.GetLayerDefn().GetFieldDefn(0).name

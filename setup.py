@@ -36,10 +36,9 @@ def parse_requirements(filename):
 
 
 dirname = os.path.dirname(__file__)
+
 reqs_filename = os.path.join(dirname, 'requirements.txt')
-
 reqs = [str(req) for req in parse_requirements(reqs_filename)]
-
 
 setup(
     name="MapServer Rest API",

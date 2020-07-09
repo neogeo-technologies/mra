@@ -642,13 +642,21 @@ class CoverageModel(LayerModel):
         info = ws.get_coveragestore_info(cs_name)
         cparam = info["connectionParameters"]
 
-        # if cparam["dbtype"] in ["tif", "tiff"]:
         self.ms.connectiontype = mapscript.MS_RASTER
         url = urllib.parse.urlparse(cparam["url"])
-        self.ms.data = self.ws.mra.get_file_path(url.path)
-        # TODO: strip extention.
-        # else:
-        #    raise ValueError("Unhandled type \"%s\"." % cparam["dbtype"])
+        filename = self.ws.mra.get_file_path(url.path)
+        if cs.tindex is None:
+            #if cparam["dbtype"] in ["tif", "tiff"]:
+            self.ms.data = filename
+            self.ms.tileindex = None
+            self.ms.tileitem = None
+            # TODO: strip extention.
+            #else:
+            #    raise ValueError("Unhandled type \"%s\"." % cparam["dbtype"])
+        else:
+            self.ms.data = None
+            self.ms.tileindex = cs.get_tileindex()
+            self.ms.tileitem = cs.get_tileitem()
 
         # Update mra metadatas, and make sure the mandatory ones are left untouched.
         self.update_mra_metadatas(metadata)
@@ -673,6 +681,8 @@ class CoverageModel(LayerModel):
         layer.ms.data = self.ms.data
         layer.ms.connectiontype = self.ms.connectiontype
         layer.ms.connection = self.ms.connection
+        layer.ms.tileindex = self.ms.tileindex
+        layer.ms.tileitem = self.ms.tileitem
 
         layer_name = self.get_mra_metadata("name")
 
@@ -889,18 +899,18 @@ class Workspace(Mapfile):
     def create_layermodel(self, st_type, store, name, metadata={}):
         if self.has_layermodel(st_type, store, name):
             raise KeyExists((st_type, store, name))
-        ft = self.__ms2model(mapscript.layerObj(self.ms), st_type=st_type)
+        lm = self.__ms2model(mapscript.layerObj(self.ms), st_type=st_type)
 
-        ft.update(store, name, metadata)
-        return ft
+        lm.update(store, name, metadata)
+        return lm
 
     def update_layermodel(self, st_type, store, name, metadata={}):
-        ft = self.get_layermodel(st_type, store, name)
-        ft.update(store, name, metadata)
+        lm = self.get_layermodel(st_type, store, name)
+        lm.update(store, name, metadata)
 
     def delete_layermodel(self, st_type, ds_name, ft_name):
-        model = self.get_layermodel(st_type, ds_name, ft_name)
-        if model.get_mra_metadata("layers", []):
+        lm = self.get_layermodel(st_type, ds_name, ft_name)
+        if lm.get_mra_metadata("layers", []):
             raise ValueError("The %s \"%s\" can't be delete because it is used." % (st_type, ft_name))
         self.ms.removeLayer(model.ms.index)
 
