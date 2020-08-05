@@ -912,7 +912,7 @@ class Workspace(Mapfile):
         lm = self.get_layermodel(st_type, ds_name, ft_name)
         if lm.get_mra_metadata("layers", []):
             raise ValueError("The %s \"%s\" can't be delete because it is used." % (st_type, ft_name))
-        self.ms.removeLayer(model.ms.index)
+        self.ms.removeLayer(lm.ms.index)
 
     # Featuretypes
 
