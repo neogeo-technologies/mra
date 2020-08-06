@@ -1,0 +1,20 @@
+---
+variables:
+  SONAR_TOKEN: "9864e0b53830ce6c7917fdc17ebe7e486d0eeba0"
+  SONAR_PROJECTKEY: "$CI_PROJECT_NAME"
+  SONAR_HOST_URL: "https://sonarqube.neogeo.fr"
+  GIT_DEPTH: 0
+# ---------------------------------------------------------------------------- #
+stages:
+  - sonarqube
+# ---------------------------------------------------------------------------- #
+sonarqube-check:
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  stage: sonarqube
+  script:
+    - sonar-scanner -Dsonar.qualitygate.wait=true -Dsonar.projectKey=$CI_PROJECT_NAME -Dsonar.projectName=$CI_PROJECT_NAME -Dsonar.projectVersion=$CI_COMMIT_BRANCH
+  allow_failure: true
+  only:
+    - rc/1.1.0
