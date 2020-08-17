@@ -25,7 +25,10 @@
 # this folder and they will automatically be loaded if this folder is
 # present in the mra.yaml configuration under plugins/loadpaths
 
-import os, os.path
+
+import os
+import os.path
+
 
 __all__ = []
 for module in os.listdir(os.path.dirname(__file__)):

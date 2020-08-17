@@ -21,6 +21,7 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 """
     Module for managing MapFiles in MRA conceptual model.
 
@@ -33,22 +34,22 @@
 
 """
 
+
+import functools
+import logging
+import mapscript
 import os
 import os.path
-import string
 import urllib.parse
-import functools
-import web
 import yaml
-import mapscript
-import tools
+import xml.etree.ElementTree as ET
+
 from extensions import plugins
+import metadata
+import stores
+import tools
 import webapp
 from webapp import KeyExists
-import stores
-import metadata
-import xml.etree.ElementTree as ET
-import logging
 
 
 yaml.warnings({'YAMLLoadWarning': False})
@@ -177,8 +178,8 @@ class Layer(MetadataMixin):
 
     def get_latlon_extent(self):
         rect = mapscript.rectObj(*self.get_extent())
-        res = rect.project(mapscript.projectionObj(self.get_proj4()),
-                           mapscript.projectionObj("+init=epsg:4326"))
+        rect.project(mapscript.projectionObj(self.get_proj4()),
+                     mapscript.projectionObj("+init=epsg:4326"))
         return stores.Extent(rect.minx, rect.miny, rect.maxx, rect.maxy)
 
     def get_fields(self):
@@ -186,7 +187,7 @@ class Layer(MetadataMixin):
 
         if fields == "all":
             # TODO: Get fields from feature type
-            raise NotImplemented()
+            raise NotImplementedError("TODO")
         elif not fields:
             return []
         else:
@@ -263,7 +264,7 @@ class Layer(MetadataMixin):
             self.ms.tolerance = 0
             self.ms.toleranceunits = 6
         else:
-            return
+            return None
 
         try:
             style = open(os.path.join(os.path.dirname(__file__), "%s.sld" % s_name), encoding="utf-8").read()
@@ -318,7 +319,7 @@ class LayerGroup(object):
     def remove(self, *args):
         for layer in args:
             if isinstance(layer, str):
-                layer = mapfile.get_layer(layer)
+                layer = self.mapfile.get_layer(layer)
             self.remove_layer(layer)
 
     def clear(self):
@@ -394,8 +395,8 @@ class Mapfile(MetadataMixin):
         def check(f, v):
             return f(v) if callable(f) else f == v
 
-        for l in range(self.ms.numlayers):
-            ms_layer = self.ms.getLayer(l)
+        for lay in range(self.ms.numlayers):
+            ms_layer = self.ms.getLayer(lay)
             if not all(check(checker, getattr(ms_layer, k, None)) for k, checker in attr.items()):
                 continue
             if not all(check(checker, metadata.get_metadata(ms_layer, k, None)) for k, checker in meta.items()):
@@ -542,7 +543,7 @@ class FeatureTypeModel(LayerModel):
             # self.set_metadata("ows_extent", "%s %s %s %s" %
             #     (ft.get_extent().minX(), ft.get_extent().minY(),
             #     ft.get_extent().maxX(), ft.get_extent().maxY()))
-        #elif cpram["dbtype"] in ["shp", "shapefile"]:
+        # elif cpram["dbtype"] in ["shp", "shapefile"]:
         # TODO: clean up this fallback.
         else:
             self.ms.connectiontype = mapscript.MS_SHAPEFILE
@@ -641,13 +642,21 @@ class CoverageModel(LayerModel):
         info = ws.get_coveragestore_info(cs_name)
         cparam = info["connectionParameters"]
 
-        #if cparam["dbtype"] in ["tif", "tiff"]:
         self.ms.connectiontype = mapscript.MS_RASTER
         url = urllib.parse.urlparse(cparam["url"])
-        self.ms.data = self.ws.mra.get_file_path(url.path)
+        filename = self.ws.mra.get_file_path(url.path)
+        if cs.tindex is None:
+            #if cparam["dbtype"] in ["tif", "tiff"]:
+            self.ms.data = filename
+            self.ms.tileindex = None
+            self.ms.tileitem = None
             # TODO: strip extention.
-        #else:
-        #    raise ValueError("Unhandled type \"%s\"." % cparam["dbtype"])
+            #else:
+            #    raise ValueError("Unhandled type \"%s\"." % cparam["dbtype"])
+        else:
+            self.ms.data = None
+            self.ms.tileindex = cs.get_tileindex()
+            self.ms.tileitem = cs.get_tileitem()
 
         # Update mra metadatas, and make sure the mandatory ones are left untouched.
         self.update_mra_metadatas(metadata)
@@ -672,6 +681,8 @@ class CoverageModel(LayerModel):
         layer.ms.data = self.ms.data
         layer.ms.connectiontype = self.ms.connectiontype
         layer.ms.connection = self.ms.connection
+        layer.ms.tileindex = self.ms.tileindex
+        layer.ms.tileitem = self.ms.tileitem
 
         layer_name = self.get_mra_metadata("name")
 
@@ -888,20 +899,20 @@ class Workspace(Mapfile):
     def create_layermodel(self, st_type, store, name, metadata={}):
         if self.has_layermodel(st_type, store, name):
             raise KeyExists((st_type, store, name))
-        ft = self.__ms2model(mapscript.layerObj(self.ms), st_type=st_type)
+        lm = self.__ms2model(mapscript.layerObj(self.ms), st_type=st_type)
 
-        ft.update(store, name, metadata)
-        return ft
+        lm.update(store, name, metadata)
+        return lm
 
     def update_layermodel(self, st_type, store, name, metadata={}):
-        ft = self.get_layermodel(st_type, store, name)
-        ft.update(store, name, metadata)
+        lm = self.get_layermodel(st_type, store, name)
+        lm.update(store, name, metadata)
 
     def delete_layermodel(self, st_type, ds_name, ft_name):
-        model = self.get_layermodel(st_type, ds_name, ft_name)
-        if model.get_mra_metadata("layers", []):
+        lm = self.get_layermodel(st_type, ds_name, ft_name)
+        if lm.get_mra_metadata("layers", []):
             raise ValueError("The %s \"%s\" can't be delete because it is used." % (st_type, ft_name))
-        self.ms.removeLayer(model.ms.index)
+        self.ms.removeLayer(lm.ms.index)
 
     # Featuretypes
 
@@ -1114,11 +1125,12 @@ class MRA(object):
         path = self.get_available_path("%s.ws.map" % name)
         try:
             return Workspace(self, path)
-        except IOError as OSError:
+        except IOError:
             raise KeyError(name)
 
     def delete_workspace(self, name):
-        path = self.get_available_path("%s.ws.map" % name)
+        # path = self.get_available_path("%s.ws.map" % name)
+        raise NotImplementedError("Method 'delete_workspace' is not yet available. (TODO)")
 
     # Services:
 

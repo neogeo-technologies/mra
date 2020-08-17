@@ -21,6 +21,7 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 """
     Wrapper for managing metadata of mapfiles.
 
@@ -29,13 +30,14 @@
 
 """
 
-import yaml
+
 import contextlib
-from mapscript import MapServerError
 import logging
+from mapscript import MapServerError
+import yaml
 
 
-METADATA_NAME="mra"
+METADATA_NAME = "mra"
 
 
 def get_metadata(obj, key, *args):
@@ -69,7 +71,7 @@ def iter_metadata_keys(obj):
 
     keys = []
     key = obj.getFirstMetaDataKey()
-    while key != None:
+    while key is not None:
         keys.append(key)
         key = obj.getNextMetaDataKey(key)
 
@@ -81,9 +83,10 @@ def get_metadata_keys(obj):
 
 
 def set_metadata(obj, key, value):
+    # TODO: Fix this with upgrade to py3
     try:
         obj.setMetaData(key, value)
-    except UnicodeEncodeError as e:
+    except UnicodeEncodeError:
         obj.setMetaData(key, value.encode('utf8'))
 
 
@@ -121,7 +124,7 @@ def __get_mra(obj):
     try:
         metadata = yaml.load(text)
     except yaml.parser.ParserError:
-        raise IOError("File has corrupted MRA metadata for entry \"%s\"." % key)
+        raise IOError("File has corrupted MRA metadata.")
     return metadata
 
 
@@ -169,7 +172,7 @@ def set_mra_metadata(obj, key, value):
 
 
 def del_mra_metadata(obj, key, value):
-    with mra_metadata(obj) as mra_metadata:
+    with mra_metadata(obj) as metadata:
         del metadata[key]
 
 

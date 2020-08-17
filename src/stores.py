@@ -21,14 +21,19 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 """
     A field implementation of georeferenced data (both vector and raster)
     backed by the GDAL/OGR library.
 
 """
 
-from osgeo import ogr, osr, gdal
+
 import mapscript
+from osgeo import gdal
+from osgeo import ogr
+from osgeo import osr
+
 import tools
 
 
@@ -102,7 +107,7 @@ class Field(object):
         if type in (4, 5):
             return "Character"
         if type in (6, 7):
-            return "Unknown" # :)
+            return "Unknown"  # :)
         if type in (9, 10):
             return "Date"
         else:
@@ -127,7 +132,7 @@ class Feature(object):
         """Backend should be a ogr.Feature object which will be used to retrieve data."""
 
         self.backend = backend
-        self.layer
+        self.layer = layer
 
     def __getattr__(self, attr):
         return self[attr]
@@ -135,14 +140,15 @@ class Feature(object):
     def __getitem__(self, idx):
         if not isinstance(idx, int):
             idx = self.backend.GetFieldIndex(idx)
-            if idx < 0: raise KeyError()
+            if idx < 0:
+                raise KeyError()
         return self.backend.GetField(idx)
 
     def get_id(self):
         return self.backend.GetFID()
 
     def get_field(self):
-        return Field(self.backend.GetFieldDefn(), layer)
+        return Field(self.backend.GetFieldDefn(), self.layer)
 
 
 class Featuretype(object):
@@ -252,15 +258,15 @@ class Featuretype(object):
 
     def get_latlon_extent(self):
         rect = mapscript.rectObj(*self.get_extent())
-        res = rect.project(mapscript.projectionObj(self.get_proj4()),
-                           mapscript.projectionObj("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
+        rect.project(mapscript.projectionObj(self.get_proj4()),
+                     mapscript.projectionObj("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
         return Extent(rect.minx, rect.miny, rect.maxx, rect.maxy)
 
     def get_native(self):
         return str(self.backend.GetSpatialRef())
 
     def fieldindex(self, field):
-        idx = GetLayerDefn().GetFieldIndex(field)
+        idx = self.backend.GetLayerDefn().GetFieldIndex(field)
         if idx < 0:
             raise AttributeError()
         return idx
@@ -281,7 +287,7 @@ class Featuretype(object):
     def iterfeatures(self, what=[], when={}):
         if what != [] or when != {}:
             raise NotImplementedError("Iterfeature doesn't support filters yet.")
-        for i in range(self.backend.GetFeatureCount()):
+        for i in range(self.nbfeatures()):
             yield Feature(self.backend.GetFeature(i), self)
 
     def get_aditional_info(self):
@@ -290,10 +296,11 @@ class Featuretype(object):
             tokens.insert(0, "public")
         schema, table = tokens
 
-        result = self.ds.backend.ExecuteSQL("SELECT column_name, is_nullable FROM INFORMATION_SCHEMA.COLUMNS "
-                                         "WHERE table_schema = '%s' AND table_name = '%s'" %
-                                         (schema, table))
-        if not result: return
+        result = self.ds.backend.ExecuteSQL(
+            "SELECT column_name, is_nullable FROM INFORMATION_SCHEMA.COLUMNS "
+            "WHERE table_schema = '%s' AND table_name = '%s'" % (schema, table))
+        if not result:
+            return None
 
         for i in range(result.GetFeatureCount()):
             feature = result.GetFeature(i)
@@ -313,7 +320,7 @@ class Datastore(object):
         """
         self.schema = schema
         self.backend = path if isinstance(path, ogr.DataSource) else ogr.Open(path)
-        if self.backend == None:
+        if self.backend is None:
             raise ValueError("Datastore backend could not be opened using \"%s\"." % path)
 
     def __len__(self):
@@ -324,7 +331,7 @@ class Datastore(object):
 
     def __contains__(self, key):
         try:
-            self[item]
+            self[key]
         except LookupError:
             return False
         return True
@@ -332,12 +339,14 @@ class Datastore(object):
     def __getitem__(self, key):
         if isinstance(key, int):
             item = self.backend.GetLayerByIndex(key)
-            if item == None: raise IndexError("No layer \"%s\"" % key)
+            if item is None:
+                raise IndexError("No layer \"%s\"" % key)
         else:
             if self.schema:
                 key = "%s.%s" % (self.schema, key)
             item = self.backend.GetLayerByName(key)
-            if item == None: raise KeyError(key)
+            if item is None:
+                raise KeyError(key)
         return Featuretype(item, self)
 
     def nblayers(self):
@@ -360,6 +369,8 @@ class Band(object):
 class Coveragestore(object):
     """A coveragestore implementation backed by gdal."""
 
+    tindex = None
+
     def __init__(self, path):
         """Path will be used to open the store, it can be a simple filesystem path
         or something more complex used by gdal/ogr to access databases for example.
@@ -368,7 +379,15 @@ class Coveragestore(object):
 
         """
         self.backend = path if isinstance(path, gdal.Dataset) else gdal.Open(path)
-        if self.backend == None:
+        if self.backend is None:
+            ds = Datastore(path if isinstance(path, ogr.DataSource) else ogr.Open(path))
+            if ds:
+                self.tindex = Featuretype(ds.backend.GetLayerByIndex(0), ds)
+                path = getattr(
+                    self.tindex.backend.GetFeature(0), self.get_tileitem())
+                self.backend = gdal.Open(str(path))
+
+        if self.backend is None:
             raise ValueError("Coveragestore backend could not be opened. \"%s\"." % path)
 
     def __len__(self):
@@ -378,11 +397,11 @@ class Coveragestore(object):
         return self.iterbands()
 
     def __contains__(self, idx):
-        return 0 < idx and idx < self.backend.RasterCount
+        return idx > 0 and idx < self.backend.RasterCount
 
     def __getitem__(self, idx):
         band = self.backend.GetRasterBand(idx)
-        if band == None:
+        if band is None:
             raise IndexError()
         return band
 
@@ -394,22 +413,25 @@ class Coveragestore(object):
         corners = set()
         for x in (0, self.backend.RasterXSize):
             for y in (0, self.backend.RasterYSize):
-                corners.add((gt[0]+(x*gt[1])+(y*gt[2]), gt[3]+(x*gt[4])+(y*gt[5])))
+                corners.add(
+                    (gt[0] + (x * gt[1]) + (y * gt[2]), gt[3] + (x * gt[4]) + (y * gt[5])))
         return corners
 
     def get_extent(self):
+        if self.tindex is not None:
+            return self.tindex.get_extent()
+        #else:
         corners = self.get_corners()
-        minX = min(x for x, y in corners)
-        minY = min(y for x, y in corners)
-        maxX = max(x for x, y in corners)
-        maxY = max(y for x, y in corners)
-        return Extent(minX, minY, maxX, maxY)
+        minx = min(x for x, y in corners)
+        miny = min(y for x, y in corners)
+        maxx = max(x for x, y in corners)
+        maxy = max(y for x, y in corners)
+        return Extent(minx, miny, maxx, maxy)
 
     def get_latlon_extent(self):
         rect = mapscript.rectObj(*self.get_extent())
-        res = rect.project(mapscript.projectionObj(self.get_proj4()),
-                           mapscript.projectionObj("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
-
+        rect.project(mapscript.projectionObj(self.get_proj4()),
+                     mapscript.projectionObj("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
         return Extent(rect.minx, rect.miny, rect.maxx, rect.maxy)
 
     def get_projection(self):
@@ -427,3 +449,16 @@ class Coveragestore(object):
     def iterbands(self):
         for i in range(1, self.backend.RasterCount + 1):
             yield Band(self.backend.GetRasterBand(i))
+
+    def get_tileindex(self):
+        """Return the path to the index file."""
+        if self.tindex is None:
+            return None
+        return self.tindex.ds.backend.GetName()
+
+    def get_tileitem(self):
+        """Return the field in the shapefile which contains
+           the filenames referenced by the index."""
+        if self.tindex is None:
+            return None
+        return self.tindex.backend.GetLayerDefn().GetFieldDefn(0).name

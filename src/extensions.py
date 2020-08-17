@@ -21,14 +21,16 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 """
     Module for managing add-ons (experimental).
 
 """
 
-import sys
-import os.path
+
 import logging
+import os.path
+import sys
 
 
 class ExtensionManager(object):

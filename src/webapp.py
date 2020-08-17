@@ -21,21 +21,17 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-"""
-    ...
 
-"""
-
-import web
+import functools
+import inspect
 import json
+import logging
+import os.path
+import web
+
+import mralogs
 import pyxml
 import pyhtml
-import inspect
-import functools
-import os.path
-import itertools
-import mralogs
-import logging
 
 
 class KeyExists(KeyError):
@@ -133,7 +129,7 @@ class exceptionManager(object):
 
 class exceptionsToHTTPError(exceptionManager):
     def __init__(self, message=None, exceptions=None, **kwargs):
-        if message != None:
+        if message is not None:
             self.message = message
         self.msg_args = kwargs
         exceptionManager.__init__(self, exceptions or self.exceptions)
@@ -478,10 +474,12 @@ def get_data(name=None, mandatory=[], authorized=[], forbidden=[]):
             data, dname = pyxml.loads(data, retname=True)
             print("received \"%s\"" % dname)
             print(data)
-            if name and dname != name: data = None
+            if name and dname != name:
+                data = None
         elif "application/json" in ctype:
             data = json.loads(data.decode())
-            if name: data = data.get(name, None)
+            if name:
+                data = data.get(name, None)
         else:
             raise web.badrequest("Content-type \"%s\" is not allowed." % ctype)
     except (AttributeError, ValueError):

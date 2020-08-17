@@ -21,27 +21,29 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 """
     URL mapping infrastructure and HTTP methods used by the REST API.
 
 
 """
 
+
 import os.path
 import sys
 import web
-import json
-import urllib.parse as urlparse
-import logging
-import mralogs
-from mra import MRA
-import webapp
-from webapp import HTTPCompatible, urlmap, get_data
-import tools
-from tools import href, assert_is_empty
-from pyxml import Entries
+
 from extensions import plugins
-import mapscript
+from mra import MRA
+import mralogs
+from pyxml import Entries
+import tools
+from tools import assert_is_empty
+from tools import href
+import webapp
+from webapp import get_data
+from webapp import HTTPCompatible
+from webapp import urlmap
 
 
 # Some helper functions first.
@@ -80,11 +82,14 @@ class version(object):
     """
     @HTTPCompatible()
     def GET(self, format):
-        return {"about": {"resources": [
-                        {"name": "MapServer", "version": tools.ms_version()},
-                        {"name": "GDAL", "version": tools.gdal_version()},
-                    ]}
+        return {
+            "about": {
+                "resources": [
+                    {"name": "MapServer", "version": tools.ms_version()},
+                    {"name": "GDAL", "version": tools.gdal_version()},
+                    ]
                 }
+            }
 
 
 class workspaces(object):
@@ -99,11 +104,12 @@ class workspaces(object):
     def GET(self, format, *args, **kwargs):
         """List all workspaces."""
 
-        return {"workspaces": [{
-                    "name": ws_name,
-                    "href": "%s/workspaces/%s.%s" % (web.ctx.home, ws_name, format)
-                    } for ws_name in mra.list_workspaces()]
-                }
+        return {
+            "workspaces": [{
+                "name": ws_name,
+                "href": "%s/workspaces/%s.%s" % (web.ctx.home, ws_name, format)
+                } for ws_name in mra.list_workspaces()]
+            }
 
     @HTTPCompatible()
     def POST(self, format):
@@ -144,14 +150,15 @@ class workspace(object):
         """Return workspace <ws>."""
 
         ws = get_workspace(ws_name)
-        return {"workspace": ({
-                    "name": ws.name,
-                    "dataStores":
-                        href("%s/workspaces/%s/datastores.%s" % (web.ctx.home, ws.name, format)),
-                    "coverageStores":
-                        href("%s/workspaces/%s/coveragestores.%s" % (web.ctx.home, ws.name, format)),
-                    })
-                }
+        return {
+            "workspace": ({
+                "name": ws.name,
+                "dataStores": href(
+                    "%s/workspaces/%s/datastores.%s" % (web.ctx.home, ws.name, format)),
+                "coverageStores": href(
+                    "%s/workspaces/%s/coveragestores.%s" % (web.ctx.home, ws.name, format)),
+                })
+            }
 
     # TODO: def PUT(...
     # TODO: def DELETE(...
@@ -170,12 +177,13 @@ class datastores(object):
         """List all data stores in workspace <ws>."""
 
         ws = get_workspace(ws_name)
-        return {"dataStores": [{
-                    "name": ds_name,
-                    "href": "%s/workspaces/%s/datastores/%s.%s" % (
-                        web.ctx.home, ws.name, ds_name, format)
-                    } for ds_name in ws.iter_datastore_names()]
-                }
+        return {
+            "dataStores": [{
+                "name": ds_name,
+                "href": "%s/workspaces/%s/datastores/%s.%s" % (
+                    web.ctx.home, ws.name, ds_name, format)
+                } for ds_name in ws.iter_datastore_names()]
+            }
 
     @HTTPCompatible()
     def POST(self, ws_name, format):
@@ -215,21 +223,20 @@ class datastore(object):
             info = ws.get_datastore_info(ds_name)
         connectionParameters = info.get("connectionParameters", {})
 
-        return {"dataStore": {
-                    "name": info["name"],
-                    "enabled": True,  # Always enabled
-                                      # TODO: Handle enabled/disabled states
-                    "workspace": {
-                        "name": ws.name,
-                        "href": "%s/workspaces/%s.%s" % (
-                            web.ctx.home, ws.name, format),
-                        },
-                    "featureTypes": href("%s/workspaces/%s/datastores/%s/featuretypes.%s" % (
-                                        web.ctx.home, ws.name, ds_name, format)
-                        ),
-                    "connectionParameters": Entries(connectionParameters, tag_name="entry"),
-                    }
+        return {
+            "dataStore": {
+                "name": info["name"],
+                "enabled": True,  # Always enabled
+                                  # TODO: Handle enabled/disabled states
+                "workspace": {
+                    "name": ws.name,
+                    "href": "%s/workspaces/%s.%s" % (web.ctx.home, ws.name, format),
+                    },
+                "featureTypes": href(
+                    "%s/workspaces/%s/datastores/%s/featuretypes.%s" % (web.ctx.home, ws.name, ds_name, format)),
+                "connectionParameters": Entries(connectionParameters, tag_name="entry"),
                 }
+            }
 
     @HTTPCompatible()
     def PUT(self, ws_name, ds_name, format):
@@ -274,12 +281,13 @@ class featuretypes(object):
         """List all feature types in selected data store <ds>."""
 
         ws = get_workspace(ws_name)
-        return {"featureTypes": [{
-                    "name": ft.name,
-                    "href": "%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
-                        web.ctx.home, ws.name, ds_name, ft.name, format)
-                    } for ft in ws.iter_featuretypemodels(ds_name)]
-                }
+        return {
+            "featureTypes": [{
+                "name": ft.name,
+                "href": "%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
+                    web.ctx.home, ws.name, ds_name, ft.name, format)
+                } for ft in ws.iter_featuretypemodels(ds_name)]
+            }
 
     @HTTPCompatible()
     def POST(self, ws_name, ds_name, format):
@@ -316,7 +324,7 @@ class featuretypes(object):
         wsmf.save()
 
         webapp.Created("%s/workspaces/%s/datastores/%s/featuretypes/%s.%s" % (
-                web.ctx.home, ws.name, ds_name, data["name"], format))
+                       web.ctx.home, ws.name, ds_name, data["name"], format))
 
 
 class featuretype(object):
@@ -343,7 +351,6 @@ class featuretype(object):
 
         extent = ft.get_extent()
         latlon_extent = ft.get_latlon_extent()
-
 
         # About attributs, we apply just values handled by
         # MapServer in a GetFeature response...
@@ -374,46 +381,47 @@ class featuretype(object):
                 # binding?
                 })
 
-        return {"featureType": ({
-                    # Why the name would it be different from nativeName?
-                    "name": ft.name,
-                    "nativeName": ft.name,
-                    "title": ft.get_mra_metadata("title", ft.name),
-                    "abstract": ft.get_mra_metadata("abstract", None),
-                    # TODO: keywords
-                    "nativeCRS": ft.get_wkt(),
-                    "attributes": attributes,
-                    "nativeBoundingBox": {
-                        "minx": extent.minX(),
-                        "miny": extent.minY(),
-                        "maxx": extent.maxX(),
-                        "maxy": extent.maxY(),
-                        "crs": "%s:%s" % (ft.get_authority_name(), ft.get_authority_code()),
-                        },
-                    "latLonBoundingBox": {
-                        "minx": latlon_extent.minX(),
-                        "miny": latlon_extent.minY(),
-                        "maxx": latlon_extent.maxX(),
-                        "maxy": latlon_extent.maxY(),
-                        "crs": "EPSG:4326",
-                        },
-                    # "srs": "%s:%s" % (ft.get_authority()[0], ft.get_authority()[1]),
-                    "projectionPolicy": "NONE",
-                    # About srs & projectionPolicy: (TODO: Handle the other cases)
-                    # In MRA, it is easier (or more logical?) to keep native CRS,
-                    # Or there is a problem of understanding on our part.
-                    # So, i prefer to comment 'srs' entry cause we force the
-                    # value of 'projectionPolicy' to 'NONE'... but it is something
-                    # we should investigate...
-                    "enabled": True,  # Always enabled => TODO
-                    "store": {  # TODO: add key: class="dataStore"
-                        "name": ds_name,
-                        "href": "%s/workspaces/%s/datastores/%s.%s" % (
-                            web.ctx.home, ws_name, ds_name, format)
-                        },
-                    # TODO: maxFeatures
-                    })
-                }
+        return {
+            "featureType": ({
+                # Why the name would it be different from nativeName?
+                "name": ft.name,
+                "nativeName": ft.name,
+                "title": ft.get_mra_metadata("title", ft.name),
+                "abstract": ft.get_mra_metadata("abstract", None),
+                # TODO: keywords
+                "nativeCRS": ft.get_wkt(),
+                "attributes": attributes,
+                "nativeBoundingBox": {
+                    "minx": extent.minX(),
+                    "miny": extent.minY(),
+                    "maxx": extent.maxX(),
+                    "maxy": extent.maxY(),
+                    "crs": "%s:%s" % (ft.get_authority_name(), ft.get_authority_code()),
+                    },
+                "latLonBoundingBox": {
+                    "minx": latlon_extent.minX(),
+                    "miny": latlon_extent.minY(),
+                    "maxx": latlon_extent.maxX(),
+                    "maxy": latlon_extent.maxY(),
+                    "crs": "EPSG:4326",
+                    },
+                # "srs": "%s:%s" % (ft.get_authority()[0], ft.get_authority()[1]),
+                "projectionPolicy": "NONE",
+                # About srs & projectionPolicy: (TODO: Handle the other cases)
+                # In MRA, it is easier (or more logical?) to keep native CRS,
+                # Or there is a problem of understanding on our part.
+                # So, i prefer to comment 'srs' entry cause we force the
+                # value of 'projectionPolicy' to 'NONE'... but it is something
+                # we should investigate...
+                "enabled": True,  # Always enabled => TODO
+                "store": {  # TODO: add key: class="dataStore"
+                    "name": ds_name,
+                    "href": "%s/workspaces/%s/datastores/%s.%s" % (
+                        web.ctx.home, ws_name, ds_name, format)
+                    },
+                # TODO: maxFeatures
+                })
+            }
 
     @HTTPCompatible()
     def PUT(self, ws_name, ds_name, ft_name, format):
@@ -439,8 +447,9 @@ class featuretype(object):
 
         # We need to check if there are any layers using this.
         mf = mra.get_available()
-        assert_is_empty(mf.iter_layers(mra={"name":ft_name, "workspace":ws_name, "storage":ds_name,
-                                            "type":"featuretype"}),"featuretype", ft_name)
+        assert_is_empty(
+            mf.iter_layers(mra={"name": ft_name, "workspace": ws_name, "storage": ds_name, "type": "featuretype"}),
+            "featuretype", ft_name)
 
         with webapp.mightNotFound("featureType", datastore=ds_name):
             ws.delete_featuretypemodel(ds_name, ft_name)
@@ -460,12 +469,13 @@ class coveragestores(object):
         """List all coverage stores in workspace."""
 
         ws = get_workspace(ws_name)
-        return {"coverageStores": [{
-                    "name": cs_name,
-                    "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
-                        web.ctx.home, ws.name, cs_name, format)
-                    } for cs_name in ws.iter_coveragestore_names()]
-                }
+        return {
+            "coverageStores": [{
+                "name": cs_name,
+                "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
+                    web.ctx.home, ws.name, cs_name, format)
+                } for cs_name in ws.iter_coveragestore_names()]
+            }
 
     @HTTPCompatible()
     def POST(self, ws_name, format):
@@ -487,7 +497,7 @@ class coveragestores(object):
         # mf.save()
 
         webapp.Created("%s/workspaces/%s/coveragestores/%s.%s" % (
-                web.ctx.home, ws_name, cs_name, format))
+                       web.ctx.home, ws_name, cs_name, format))
 
 
 class coveragestore(object):
@@ -507,25 +517,25 @@ class coveragestore(object):
             info = ws.get_coveragestore_info(cs_name)
         connectionParameters = info.get("connectionParameters", {})
 
-        return {"coverageStore": {
-                    "name": info["name"],
-                    "enabled": True, # Always enabled
-                                     # TODO: Handle enabled/disabled states
-                    "workspace": {
-                        "name": ws.name,
-                        "href": "%s/workspaces/%s.%s" % (
-                            web.ctx.home, ws.name, format),
-                        },
-                    "coverages": href("%s/workspaces/%s/coveragestores/%s/coverages.%s" % (
-                                    web.ctx.home, ws.name, cs_name, format)
-                        ),
-                    "connectionParameters": connectionParameters and Entries({
-                        "url": info["connectionParameters"]["url"],
-                        # "namespace": None, # TODO
-                        }, tag_name="entry"),
-                    # TODO: type
-                    }
+        return {
+            "coverageStore": {
+                "name": info["name"],
+                "enabled": True,  # Always enabled
+                                  # TODO: Handle enabled/disabled states
+                "workspace": {
+                    "name": ws.name,
+                    "href": "%s/workspaces/%s.%s" % (
+                        web.ctx.home, ws.name, format),
+                    },
+                "coverages": href("%s/workspaces/%s/coveragestores/%s/coverages.%s" % (
+                                  web.ctx.home, ws.name, cs_name, format)),
+                "connectionParameters": connectionParameters and Entries({
+                    "url": info["connectionParameters"]["url"],
+                    # "namespace": None, # TODO
+                    }, tag_name="entry"),
+                # TODO: type
                 }
+            }
 
     @HTTPCompatible()
     def PUT(self, ws_name, cs_name, format):
@@ -569,12 +579,13 @@ class coverages(object):
         """List all coverages in selected coverages store <cs>."""
 
         ws = get_workspace(ws_name)
-        return {"coverages": [{
-                    "name": c.name,
-                    "href": "%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
-                        web.ctx.home, ws.name, cs_name, c.name, format)
-                    } for c in ws.iter_coveragemodels(cs_name)]
-                }
+        return {
+            "coverages": [{
+                "name": c.name,
+                "href": "%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
+                    web.ctx.home, ws.name, cs_name, c.name, format)
+                } for c in ws.iter_coveragemodels(cs_name)]
+            }
 
     @HTTPCompatible()
     def POST(self, ws_name, cs_name, format):
@@ -609,7 +620,7 @@ class coverages(object):
         wsmf.save()
 
         webapp.Created("%s/workspaces/%s/coveragestores/%s/coverages/%s.%s" % (
-                web.ctx.home, ws.name, cs_name, data["name"], format))
+                       web.ctx.home, ws.name, cs_name, data["name"], format))
 
 
 class coverage(object):
@@ -633,61 +644,62 @@ class coverage(object):
         extent = c.get_extent()
         latlon_extent = c.get_latlon_extent()
 
-        return {"coverage": ({
-                    "name": c.name,
-                    "nativeName": c.name,
-                    "title": c.get_mra_metadata("title", c.name),
-                    "abstract": c.get_mra_metadata("abstract", None),
-                    # TODO: Keywords
-                    "nativeCRS": c.get_wkt(),  # TODO: Add key class="projected" if projected...
-                    "srs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()),
-                    "nativeBoundingBox": {
-                        "minx": extent.minX(),
-                        "miny": extent.minY(),
-                        "maxx": extent.maxX(),
-                        "maxy": extent.maxY(),
-                        "crs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()),  # TODO: Add key class="projected" if projected...
-                        },
-                    "latLonBoundingBox":{
-                        "minx": latlon_extent.minX(),
-                        "miny": latlon_extent.minY(),
-                        "maxx": latlon_extent.maxX(),
-                        "maxy": latlon_extent.maxY(),
-                        "crs": "EPSG:4326"
-                        },
-                    "enabled": True,  # Always enabled => TODO
-                    "store": {  # TODO: Add attr class="coverageStore"
-                        "name": cs_name,
-                        "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
-                            web.ctx.home, ws_name, cs_name, format)
-                        },
-                    # TODO:
-                    # "nativeFormat": None,
-                    # "grid": {
-                    #     "range": {
-                    #         "low": None,
-                    #         "high": None,
-                    #         },
-                    #     "transform": {
-                    #         "scaleX": None,
-                    #         "scaleY": None,
-                    #         "shearX": None,
-                    #         "shearY": None,
-                    #         "translateX": None,
-                    #         "translateY": None,
-                    #         },
-                    #     "crs": None,
-                    #     },
-                    # "supportedFormats": [],
-                    # "interpolationMethods": [],
-                    # "defaultInterpolationMethod": None,
-                    # "dimensions": [],
-                    # "projectionPolicy": None,
-                    # "requestSRS": None,
-                    # "responseSRS": None,
-                    # "parameters": None,
-                    })
-                }
+        return {
+            "coverage": ({
+                "name": c.name,
+                "nativeName": c.name,
+                "title": c.get_mra_metadata("title", c.name),
+                "abstract": c.get_mra_metadata("abstract", None),
+                # TODO: Keywords
+                "nativeCRS": c.get_wkt(),  # TODO: Add key class="projected" if projected...
+                "srs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()),
+                "nativeBoundingBox": {
+                    "minx": extent.minX(),
+                    "miny": extent.minY(),
+                    "maxx": extent.maxX(),
+                    "maxy": extent.maxY(),
+                    "crs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()),  # TODO: Add key class="projected" if projected...
+                    },
+                "latLonBoundingBox":{
+                    "minx": latlon_extent.minX(),
+                    "miny": latlon_extent.minY(),
+                    "maxx": latlon_extent.maxX(),
+                    "maxy": latlon_extent.maxY(),
+                    "crs": "EPSG:4326"
+                    },
+                "enabled": True,  # Always enabled => TODO
+                "store": {  # TODO: Add attr class="coverageStore"
+                    "name": cs_name,
+                    "href": "%s/workspaces/%s/coveragestores/%s.%s" % (
+                        web.ctx.home, ws_name, cs_name, format)
+                    },
+                # TODO:
+                # "nativeFormat": None,
+                # "grid": {
+                #     "range": {
+                #         "low": None,
+                #         "high": None,
+                #         },
+                #     "transform": {
+                #         "scaleX": None,
+                #         "scaleY": None,
+                #         "shearX": None,
+                #         "shearY": None,
+                #         "translateX": None,
+                #         "translateY": None,
+                #         },
+                #     "crs": None,
+                #     },
+                # "supportedFormats": [],
+                # "interpolationMethods": [],
+                # "defaultInterpolationMethod": None,
+                # "dimensions": [],
+                # "projectionPolicy": None,
+                # "requestSRS": None,
+                # "responseSRS": None,
+                # "parameters": None,
+                })
+            }
 
     @HTTPCompatible()
     def PUT(self, ws_name, cs_name, c_name, format):
@@ -712,8 +724,9 @@ class coverage(object):
         ws = get_workspace(ws_name)
         # We need to check if there are any layers using this.
         mf = mra.get_available()
-        assert_is_empty(mf.iter_layers(mra={"name":c_name, "workspace":ws_name, "storage":cs_name,
-                                            "type":"coverage"}), "coverage", c_name)
+        assert_is_empty(
+            mf.iter_layers(mra={"name": c_name, "workspace": ws_name, "storage": cs_name, "type": "coverage"}),
+            "coverage", c_name)
 
         with webapp.mightNotFound("coverage", coveragestore=cs_name):
             ws.delete_coveragemodel(c_name, cs_name)
@@ -842,11 +855,12 @@ class styles(object):
     def GET(self, format):
         """List all SLD styles."""
 
-        return {"styles": [{
-                    "name": s_name,
-                    "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format)
-                    } for s_name in mra.list_styles()]
-                }
+        return {
+            "styles": [{
+                "name": s_name,
+                "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format)
+                } for s_name in mra.list_styles()]
+            }
 
     @HTTPCompatible(authorize=["sld"])
     def POST(self, format):
@@ -887,12 +901,13 @@ class style(object):
         if format == "sld":
             return style
 
-        return {"style": {
-                    "name": s_name,
-                    "sldVersion": Entries(["1.0.0"], tag_name="version"),
-                    "filename": s_name + ".sld",
-                    }
+        return {
+            "style": {
+                "name": s_name,
+                "sldVersion": Entries(["1.0.0"], tag_name="version"),
+                "filename": s_name + ".sld",
                 }
+            }
 
     @HTTPCompatible(authorize=["sld"])
     def PUT(self, s_name, format):
@@ -918,11 +933,12 @@ class layers(object):
         """List all layers."""
 
         mf = mra.get_available()
-        return {"layers": [{
-                    "name": layer.ms.name,
-                    "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
-                    } for layer in mf.iter_layers()]
-                }
+        return {
+            "layers": [{
+                "name": layer.ms.name,
+                "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
+                } for layer in mf.iter_layers()]
+            }
 
     @HTTPCompatible()
     def POST(self, format):
@@ -941,7 +957,7 @@ class layers(object):
         except ValueError:
             raise webapp.NotFound(message="resource \"%s\" was not found." % href)
 
-        st_type, r_type = st_type[:-1], r_type[:-1] # Remove trailing s.
+        st_type, r_type = st_type[:-1], r_type[:-1]  # Remove trailing s.
 
         ws = get_workspace(ws_name)
         with webapp.mightNotFound(r_type, workspace=ws_name):
@@ -995,11 +1011,12 @@ class workspaceLayers(object):
         """List all layers."""
 
         wsmf = mra.get_service(ws_name)
-        return {"layers": [{
-                    "name": layer.ms.name,
-                    "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
-                    } for layer in wsmf.iter_layers()]
-                }
+        return {
+            "layers": [{
+                "name": layer.ms.name,
+                "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
+                } for layer in wsmf.iter_layers()]
+            }
 
 
 class layer(object):
@@ -1115,11 +1132,13 @@ class layer(object):
                     raise KeyError(r_type)
 
             if layer.get_mra_metadata("type") != r_type:
-                raise webapp.BadRequest("Can't change a \"%s\" layer into a \"%s\"."
-                                    % (layer.get_mra_metadata("type"), r_type))
+                raise webapp.BadRequest(
+                    "Can't change a \"%s\" layer into a \"%s\"."
+                    % (layer.get_mra_metadata("type"), r_type))
             if wslayer.get_mra_metadata("type") != r_type:
-                raise webapp.BadRequest("Can't change a \"%s\" layer into a \"%s\"."
-                                    % (wslayer.get_mra_metadata("type"), r_type))
+                raise webapp.BadRequest(
+                    "Can't change a \"%s\" layer into a \"%s\"."
+                    % (wslayer.get_mra_metadata("type"), r_type))
 
             model.configure_layer(layer, l_enabled)
             model.configure_layer(wslayer, l_enabled)
@@ -1265,11 +1284,12 @@ class layerstyles(object):
         if format == "sld":
             return layer.getSLD()
 
-        return {"styles": [{
-                    "name": s_name,
-                    "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
-                    } for s_name in layer.iter_styles()],
-                }
+        return {
+            "styles": [{
+                "name": s_name,
+                "href": "%s/styles/%s.%s" % (web.ctx.home, s_name, format),
+                } for s_name in layer.iter_styles()],
+            }
 
 
 class layerstyle(object):
@@ -1340,11 +1360,12 @@ class layergroups(object):
 
         mf = mra.get_available()
 
-        return {"layerGroups" : [{
-                    "name": lg.name,
-                    "href": "%s/layergroups/%s.%s" % (web.ctx.home, lg.name, format)
-                    } for lg in mf.iter_layergroups()]
-                }
+        return {
+            "layerGroups": [{
+                "name": lg.name,
+                "href": "%s/layergroups/%s.%s" % (web.ctx.home, lg.name, format)
+                } for lg in mf.iter_layergroups()]
+            }
 
     @HTTPCompatible()
     def POST(self, format):
@@ -1391,18 +1412,19 @@ class layergroup(object):
             "crs": "EPSG:4326",
             }
 
-        return {"layerGroup": ({
-                    "name": lg.name,
-                    "mode": "NAMED", # Only available mode in MRA.
-                    "publishables": Entries([{
-                            "name": layer.ms.name,
-                            "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
-                            } for layer in lg.iter_layers()], tag_name="published"),
-                    "bounds": Entries(bounds),
-                    # TODO: Styles
-                    # "styles": [],
-                    })
-                }
+        return {
+            "layerGroup": ({
+                "name": lg.name,
+                "mode": "NAMED",  # Only available mode in MRA.
+                "publishables": Entries([{
+                    "name": layer.ms.name,
+                    "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
+                    } for layer in lg.iter_layers()], tag_name="published"),
+                "bounds": Entries(bounds),
+                # TODO: Styles
+                # "styles": [],
+                })
+            }
 
     @HTTPCompatible()
     def PUT(self, lg_name, format):
@@ -1447,11 +1469,12 @@ class workspaceLayergroups(object):
         """List all layer groups in a workspace."""
 
         wsmf = mra.get_service(ws_name)
-        return {"layerGroups": [{
-                    "name": lg.name,
-                    "href": "%s/workspaces/%s/layergroups/%s.%s" % (web.ctx.home, wsmf.name, lg.name, format)
-                    } for lg in wsmf.iter_layergroups()]
-                }
+        return {
+            "layerGroups": [{
+                "name": lg.name,
+                "href": "%s/workspaces/%s/layergroups/%s.%s" % (web.ctx.home, wsmf.name, lg.name, format)
+                } for lg in wsmf.iter_layergroups()]
+            }
 
     @HTTPCompatible()
     def POST(self, ws_name, format):
@@ -1498,18 +1521,19 @@ class workspaceLayergroup(object):
             "crs": "EPSG:4326",
             }
 
-        return {"layerGroup": ({
-                    "name": lg.name,
-                    "mode": "NAMED", # Only available mode in MRA.
-                    "publishables": Entries([{
-                            "name": layer.ms.name,
-                            "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
-                            } for layer in lg.iter_layers()], tag_name="published"),
-                    "bounds": Entries(bounds),
-                    # TODO: Styles
-                    # "styles": [],
-                    })
-                }
+        return {
+            "layerGroup": ({
+                "name": lg.name,
+                "mode": "NAMED",  # Only available mode in MRA.
+                "publishables": Entries([{
+                    "name": layer.ms.name,
+                    "href": "%s/layers/%s.%s" % (web.ctx.home, layer.ms.name, format),
+                    } for layer in lg.iter_layers()], tag_name="published"),
+                "bounds": Entries(bounds),
+                # TODO: Styles
+                # "styles": [],
+                })
+            }
 
     @HTTPCompatible()
     def PUT(self, ws_name, lg_name, format):
@@ -1560,8 +1584,8 @@ class OWSGlobalSettings(object):
                 "enabled": mf.get_metadata("%s_enable_request" % ows) == "*" and True or False,
                 "name": ows,
                 "schemaBaseURL": mf.get_metadata("ows_schemas_location", "http://schemas.opengis.net"),
-                }
-            )}
+                })
+            }
 
     @HTTPCompatible()
     def PUT(self, ows, format):
@@ -1597,8 +1621,8 @@ class OWSWorkspaceSettings(object):
                 "title": mf.get_metadata("%s_title" % ows, None),
                 "abstract": mf.get_metadata("%s_abstract" % ows, None),
                 "schemaBaseURL": mf.get_metadata("ows_schemas_location", "http://schemas.opengis.net"),
-                }
-            )}
+                })
+            }
 
     @HTTPCompatible()
     def PUT(self, ows, ws_name, format):

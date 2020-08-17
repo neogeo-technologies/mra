@@ -21,16 +21,17 @@
 #                                                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 """
     HTML interface of the REST API.
 
 """
 
-import pyxml
+
 import io
-import urllib.parse
-from xml.etree import ElementTree as etree
 from cgi import escape
+import pyxml
+import urllib.parse
 from xml.sax.saxutils import unescape
 
 
@@ -60,7 +61,7 @@ def dump_xml(xml, fp, indent=0, indent_depth=2, reinit=True):
 
     def line(fmt, *args):
         """Writes a line to fp with corect indentation."""
-        fp.write(('%s' + fmt + '\n') % tuple([indent*' ']+list(args)))
+        fp.write(('%s' + fmt + '\n') % tuple([indent * ' '] + list(args)))
 
     if reinit:
         # We need to reset element ID if we where nto called recursivly.
@@ -89,7 +90,7 @@ def dump_xml(xml, fp, indent=0, indent_depth=2, reinit=True):
                      escape(child.tag), '' if not child.attrib else escape(" %s" % (child.attrib)))
 
             line('<td><div id="entry_%d">', id)
-            dump_xml(child, fp, indent=indent+indent_depth, reinit=False)
+            dump_xml(child, fp, indent=indent + indent_depth, reinit=False)
             line('</div></td>')
             indent -= indent_depth
             line('</tr>')
