@@ -40,7 +40,11 @@ import logging
 import mapscript
 import os
 import os.path
-import urllib.parse
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+    from urlparse import urljoin
 import yaml
 import xml.etree.ElementTree as ET
 
@@ -52,7 +56,7 @@ import webapp
 from webapp import KeyExists
 
 
-yaml.warnings({'YAMLLoadWarning': False})
+# yaml.warnings({'YAMLLoadWarning': False})  # Deprecated
 
 
 # Defines commons outputformats:
@@ -230,8 +234,6 @@ class Layer(MetadataMixin):
             logging.error("mra.py::Layer::add_style_sld: Bad sld (No NamedLayer/Name): %s", e)
             raise ValueError("Bad sld (No NamedLayer/Name)")
 
-        # Remove encoding ?
-        # @wapiflapi Mapscript ne gère pas les espaces...
         new_sld = xmlsld.toxml()
         new_sld = "".join(line.strip() for line in new_sld.split("\n"))
 
@@ -376,7 +378,7 @@ class Mapfile(MetadataMixin):
                 self.set_metadata("%s_enable_request" % ows, "*")
 
             if 'onlineresource' in config:
-                onlineresource = urllib.parse.urljoin(config.get('onlineresource'), self.ms.name)
+                onlineresource = urljoin(config.get('onlineresource'), self.ms.name)
                 self.set_metadata('ows_onlineresource', onlineresource)
 
             fontset and self.ms.setFontSet(fontset)
@@ -547,7 +549,7 @@ class FeatureTypeModel(LayerModel):
         # TODO: clean up this fallback.
         else:
             self.ms.connectiontype = mapscript.MS_SHAPEFILE
-            url = urllib.parse.urlparse(cparam["url"])
+            url = urlparse(cparam["url"])
             self.ms.data = self.ws.mra.get_file_path(url.path)
 
         # Update mra metadata, and make sure the mandatory ones are left untouched.
@@ -643,7 +645,7 @@ class CoverageModel(LayerModel):
         cparam = info["connectionParameters"]
 
         self.ms.connectiontype = mapscript.MS_RASTER
-        url = urllib.parse.urlparse(cparam["url"])
+        url = urlparse(cparam["url"])
         filename = self.ws.mra.get_file_path(url.path)
         if cs.tindex is None:
             #if cparam["dbtype"] in ["tif", "tiff"]:
@@ -961,7 +963,10 @@ class Workspace(Mapfile):
 class MRA(object):
     def __init__(self, config_path):
         try:
-            self.config = yaml.load(open(config_path, "r"), Loader=yaml.FullLoader)
+            self.config = yaml.load(
+                open(config_path, "r"),
+                # Loader=yaml.FullLoader  # Deprecated
+                )
         except yaml.YAMLError as e:
             exit("Error in configuration file: %s" % e)
 
@@ -1159,7 +1164,7 @@ class MRA(object):
     # URL Helpers:
 
     def href_parse(self, href, nb):
-        url = urllib.parse.urlparse(href)
+        url = urlparse(href)
         parts = url.path.split("/")[-nb:]
         if parts:
             parts[-1] = parts[-1].rsplit(".", 1)[0]
@@ -1176,7 +1181,7 @@ class MRA(object):
             url += " ".join("%s=%s" % (p, cparam[p]) for p in ["user", "password"] if p in cparam)
             return url
         elif "url" in cparam:
-            url = urllib.parse.urlparse(cparam["url"])
+            url = urlparse(cparam["url"])
             if url.scheme != "file" or url.netloc:
                 raise ValueError("Only local files are suported.")
             return self.get_file_path(url.path)

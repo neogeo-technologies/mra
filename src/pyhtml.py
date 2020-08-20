@@ -31,7 +31,10 @@
 import io
 from cgi import escape
 import pyxml
-import urllib.parse
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 from xml.sax.saxutils import unescape
 
 
@@ -40,7 +43,7 @@ def should_be_url(s):
     consider a string is a URL.
 
     """
-    parsed = urllib.parse.urlparse(s)
+    parsed = urlparse(s)
     return parsed.scheme and parsed.netloc
 
 
