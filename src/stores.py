@@ -420,7 +420,7 @@ class Coveragestore(object):
     def get_extent(self):
         if self.tindex is not None:
             return self.tindex.get_extent()
-        #else:
+        # else:
         corners = self.get_corners()
         minx = min(x for x, y in corners)
         miny = min(y for x, y in corners)

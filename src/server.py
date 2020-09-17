@@ -660,7 +660,7 @@ class coverage(object):
                     "maxy": extent.maxY(),
                     "crs": "%s:%s" % (c.get_authority_name(), c.get_authority_code()),  # TODO: Add key class="projected" if projected...
                     },
-                "latLonBoundingBox":{
+                "latLonBoundingBox": {
                     "minx": latlon_extent.minX(),
                     "miny": latlon_extent.minY(),
                     "maxx": latlon_extent.maxX(),
